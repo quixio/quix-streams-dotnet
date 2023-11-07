@@ -1,5 +1,5 @@
 # GitHub Page
-We are open source! For latest release notes, check https://github.com/quixio/quix-streams/releases
+We are open source! For latest release notes, check https://github.com/quixio/quix-streams-dotnet/releases
 
 # Supported architectures
 
@@ -9,4 +9,4 @@ We are open source! For latest release notes, check https://github.com/quixio/qu
 | Linux   | Supported      | Supported    |
 | MAC     | Supported      | Supported    |
 
-Apple silicon supported since 0.5.3, for previous versions rosetta is required, see https://github.com/quixio/quix-streams/blob/v0.5.3/mac-m1-m2-install.md
+Apple silicon supported since 0.5.3, for previous versions rosetta is required, see https://github.com/quixio/quix-streams-dotnet/blob/v0.5.3/mac-m1-m2-install.md

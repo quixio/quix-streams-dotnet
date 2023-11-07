@@ -63,7 +63,7 @@ try:
         description="Library optimized for easily sending and reading time series data using Kafka",
         long_description=long_description,
         long_description_content_type="text/markdown",
-        url="https://github.com/quixio/quix-streams",
+        url="https://github.com/quixio/quix-streams-dotnet",
         packages=setuptools.find_packages('src'),
         package_data={
             'quixstreams': QUIXSTREAMS_PACKAGE_DATA

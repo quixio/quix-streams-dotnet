@@ -1,6 +1,6 @@
 site_name: 'Quix Docs'
 site_description: 'Quix Streams Documentation'
-repo_url: https://github.com/quixio/quix-streams/docs
+repo_url: https://github.com/quixio/quix-streams-dotnet/docs
 edit_uri: tree/master/docs
 
 theme:
