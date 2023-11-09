@@ -95,20 +95,13 @@ An exception can occur on writing to a stream. This is handled for you by the de
 
 You can create a custom exception handler should you require functionality different to that provided by the default exception handler. The following code demonstrates how to create and register a custom exception handler:
 
-``` python
-topic_producer = client.get_topic_producer(topic_id_or_name = os.environ["output"])
-stream = topic_producer.create_stream()
-
-# custom exception handler
-def my_on_write_exception_handler(stream: qx.StreamProducer, ex: BaseException):
-    # your code here
-    print('Custom exception handler')
-    print('Stream: ', stream.stream_id)
-    print('Exception: ', ex.args[0])
-    return
-
-# register the exception handler
-stream.on_write_exception = my_on_write_exception_handler
+``` cs
+var topicProducer = client.GetTopicProducer(Environment.GetEnvironmentVariable("output"));
+var stream = topicProducer.CreateStream();
+stream.OnWriteException += (sender, exception) =>
+{
+    Console.WriteLine("Custom exception handler");
+};
 ```
 
 ## Close a stream

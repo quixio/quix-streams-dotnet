@@ -93,7 +93,7 @@ The following code sample demonstrates how to register a callback to handle data
 def on_stream_received_handler(stream_consumer: qx.StreamConsumer):
     stream_consumer.timeseries.on_dataframe_received = on_dataframe_received_handler
 
-# subscribe to new streams being received. 
+# subscribe to new streams received. 
 # callback will only be registered for an active stream
 topic_consumer.on_stream_received = on_stream_received_handler
 ```
