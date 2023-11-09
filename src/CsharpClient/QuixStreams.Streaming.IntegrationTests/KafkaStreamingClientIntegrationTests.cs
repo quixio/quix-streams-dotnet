@@ -585,12 +585,14 @@ namespace QuixStreams.Streaming.IntegrationTests
             messageContent = $"lorem ipsum - event";
             messageContentInBytes = Encoding.UTF8.GetBytes(messageContent);
 
-            var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest);
+            var topicConsumer = client.GetTopicConsumer(topic, autoOffset: AutoOffsetReset.Latest);
             
             var consumedEvents = new List<EventDataRaw>();
 
             topicConsumer.OnStreamReceived += (s, e) =>
             {
+                this.output.WriteLine($"Stream received: {e.StreamId}");
+
                 (e as IStreamConsumerInternal).OnEventData += (s, eventData) =>
                 {
                     this.output.WriteLine($"Event consumer received message: {eventData.Value}");
