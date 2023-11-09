@@ -1,10 +1,13 @@
 #### [QuixStreams.Streaming](index.md 'index')
 ### [QuixStreams.Streaming.States](QuixStreams.Streaming.States.md 'QuixStreams.Streaming.States').[StreamStateManager](StreamStateManager.md 'QuixStreams.Streaming.States.StreamStateManager')
 
-## StreamStateManager.DeleteStates() Method
+## StreamStateManager.StorageDir Field
 
-Deletes all states for the current stream.
+The directory where the states are stored on disk.
 
 ```csharp
-public void DeleteStates();
+public readonly string StorageDir;
 ```
+
+#### Field Value
+[System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')

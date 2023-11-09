@@ -257,7 +257,8 @@ namespace QuixStreams.Streaming.States
         
         private bool TryDisposeStreamState(string stateName)
         {
-            if (this.states.Remove(stateName, out var state))
+            if (!this.states.TryGetValue(stateName, out var state)) return false;
+            if (this.states.Remove(stateName))
             {
                 state.Dispose(); // Disposes the storage
                 return true;

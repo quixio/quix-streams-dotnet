@@ -11,6 +11,7 @@
 | [LeadingEdgeTimeBuffer](LeadingEdgeTimeBuffer.md 'QuixStreams.Streaming.Models.LeadingEdgeTimeBuffer') | Leading edge buffer where time is the only key and tags are not treated as part of the key |
 | [LeadingEdgeTimeRow](LeadingEdgeTimeRow.md 'QuixStreams.Streaming.Models.LeadingEdgeTimeRow') | Represents a single row of data in the [LeadingEdgeTimeBuffer](LeadingEdgeTimeBuffer.md 'QuixStreams.Streaming.Models.LeadingEdgeTimeBuffer') |
 | [ParameterDefinition](ParameterDefinition.md 'QuixStreams.Streaming.Models.ParameterDefinition') | Describes additional context for the parameter |
+| [StreamConsumerId](StreamConsumerId.md 'QuixStreams.Streaming.Models.StreamConsumerId') | |
 | [TimeseriesBuffer](TimeseriesBuffer.md 'QuixStreams.Streaming.Models.TimeseriesBuffer') | Represents a class used to consume and produce stream messages in a buffered manner. |
 | [TimeseriesBufferConfiguration](TimeseriesBufferConfiguration.md 'QuixStreams.Streaming.Models.TimeseriesBufferConfiguration') | Describes the configuration for timeseries buffers |
 | [TimeseriesData](TimeseriesData.md 'QuixStreams.Streaming.Models.TimeseriesData') | Represents a collection of [TimeseriesDataTimestamp](TimeseriesDataTimestamp.md 'QuixStreams.Streaming.Models.TimeseriesDataTimestamp') |

@@ -3,8 +3,10 @@
 
 ## StreamScalarState.Clear() Method
 
-Sets the value of in-memory state to null and marks the state for clearing when flushed.
+Interface for a stream state
 
 ```csharp
 public void Clear();
 ```
+
+Implements [Clear()](IStreamState.Clear().md 'QuixStreams.Streaming.States.IStreamState.Clear()')

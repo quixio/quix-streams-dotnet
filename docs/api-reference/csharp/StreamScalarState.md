@@ -7,12 +7,13 @@ Represents a scalar storage of a value with a specific means to be persisted.
 
 ```csharp
 public class StreamScalarState :
-QuixStreams.Streaming.States.IStreamState
+QuixStreams.Streaming.States.IStreamState,
+System.IDisposable
 ```
 
 Inheritance [System.Object](https://docs.microsoft.com/en-us/dotnet/api/System.Object 'System.Object') &#129106; StreamScalarState
 
-Implements [IStreamState](IStreamState.md 'QuixStreams.Streaming.States.IStreamState')
+Implements [IStreamState](IStreamState.md 'QuixStreams.Streaming.States.IStreamState'), [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
 
 | Properties | |
 | :--- | :--- |
@@ -20,7 +21,7 @@ Implements [IStreamState](IStreamState.md 'QuixStreams.Streaming.States.IStreamS
 
 | Methods | |
 | :--- | :--- |
-| [Clear()](StreamScalarState.Clear().md 'QuixStreams.Streaming.States.StreamScalarState.Clear()') | Sets the value of in-memory state to null and marks the state for clearing when flushed. |
+| [Clear()](StreamScalarState.Clear().md 'QuixStreams.Streaming.States.StreamScalarState.Clear()') | Interface for a stream state |
 | [Flush()](StreamScalarState.Flush().md 'QuixStreams.Streaming.States.StreamScalarState.Flush()') | Flushes the changes made to the in-memory state to the specified storage. |
 | [Reset()](StreamScalarState.Reset().md 'QuixStreams.Streaming.States.StreamScalarState.Reset()') | Reset the state to before in-memory modifications |
 

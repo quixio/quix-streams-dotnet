@@ -13,6 +13,7 @@ public interface IStreamConsumer
 | Properties | |
 | :--- | :--- |
 | [Events](IStreamConsumer.Events.md 'QuixStreams.Streaming.IStreamConsumer.Events') | Gets the consumer for accessing event related information of the stream such as event definitions and values. |
+| [Id](IStreamConsumer.Id.md 'QuixStreams.Streaming.IStreamConsumer.Id') | Stream consumer identifier information. |
 | [Properties](IStreamConsumer.Properties.md 'QuixStreams.Streaming.IStreamConsumer.Properties') | Gets the consumer for accessing the properties and metadata of the stream. |
 | [StreamId](IStreamConsumer.StreamId.md 'QuixStreams.Streaming.IStreamConsumer.StreamId') | Gets the stream Id of the stream. |
 | [Timeseries](IStreamConsumer.Timeseries.md 'QuixStreams.Streaming.IStreamConsumer.Timeseries') | Gets the consumer for accessing timeseries related information of the stream such as parameter definitions and values. |

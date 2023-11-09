@@ -13,6 +13,7 @@ Inheritance [System.Object](https://docs.microsoft.com/en-us/dotnet/api/System.O
 
 | Methods | |
 | :--- | :--- |
-| [GetStateManager()](App.GetStateManager().md 'QuixStreams.Streaming.App.GetStateManager()') | Retrieves the state manager for the application |
+| [GetStateStorageRootDir()](App.GetStateStorageRootDir().md 'QuixStreams.Streaming.App.GetStateStorageRootDir()') | Retrieves the root directory for state storages |
 | [Run(CancellationToken, Action, bool)](App.Run(CancellationToken,Action,bool).md 'QuixStreams.Streaming.App.Run(System.Threading.CancellationToken, System.Action, bool)') | Helper method to handle default streaming behaviors and handle automatic resource cleanup on shutdown |
-| [SetStateStorage(IStateStorage)](App.SetStateStorage(IStateStorage).md 'QuixStreams.Streaming.App.SetStateStorage(QuixStreams.State.Storage.IStateStorage)') | Sets the state storage for the app |
+| [SetStateStorageRootDir(string)](App.SetStateStorageRootDir(string).md 'QuixStreams.Streaming.App.SetStateStorageRootDir(string)') | Sets the state storage for the app |
+| [SetStateStorageType(StateStorageTypes)](App.SetStateStorageType(StateStorageTypes).md 'QuixStreams.Streaming.App.SetStateStorageType(QuixStreams.State.Storage.StateStorageTypes)') | Sets the state storage for the app |

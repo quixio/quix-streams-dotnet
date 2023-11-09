@@ -6,7 +6,7 @@
 Gets the dictionary type stream state for the specified storage name using the provided default value factory.
 
 ```csharp
-public static QuixStreams.Streaming.States.StreamDictionaryState<T> GetDictionaryState<T>(this QuixStreams.Streaming.IStreamConsumer streamConsumer, string storageName, QuixStreams.Streaming.States.StreamStateDefaultValueDelegate<T> defaultValueFactory=null);
+public static QuixStreams.Streaming.States.StreamDictionaryState<T> GetDictionaryState<T>(this QuixStreams.Streaming.IStreamConsumer streamConsumer, string stateName, QuixStreams.Streaming.States.StreamStateDefaultValueDelegate<T> defaultValueFactory=null);
 ```
 #### Type parameters
 
@@ -23,11 +23,11 @@ The type of the stream state value.
 
 The stream consumer to get the state for
 
-<a name='QuixStreams.Streaming.IStreamConsumerExtensions.GetDictionaryState_T_(thisQuixStreams.Streaming.IStreamConsumer,string,QuixStreams.Streaming.States.StreamStateDefaultValueDelegate_T_).storageName'></a>
+<a name='QuixStreams.Streaming.IStreamConsumerExtensions.GetDictionaryState_T_(thisQuixStreams.Streaming.IStreamConsumer,string,QuixStreams.Streaming.States.StreamStateDefaultValueDelegate_T_).stateName'></a>
 
-`storageName` [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')
+`stateName` [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')
 
-The name of the storage.
+The name of the state.
 
 <a name='QuixStreams.Streaming.IStreamConsumerExtensions.GetDictionaryState_T_(thisQuixStreams.Streaming.IStreamConsumer,string,QuixStreams.Streaming.States.StreamStateDefaultValueDelegate_T_).defaultValueFactory'></a>
 

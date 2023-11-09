@@ -6,7 +6,7 @@
 Deletes the state with the specified name
 
 ```csharp
-public bool DeleteState(string stateName);
+public void DeleteState(string stateName);
 ```
 #### Parameters
 
@@ -15,7 +15,3 @@ public bool DeleteState(string stateName);
 `stateName` [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')
 
 The state to delete
-
-#### Returns
-[System.Boolean](https://docs.microsoft.com/en-us/dotnet/api/System.Boolean 'System.Boolean')  
-Whether the state was deleted

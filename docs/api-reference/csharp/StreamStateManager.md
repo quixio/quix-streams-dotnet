@@ -3,7 +3,7 @@
 
 ## StreamStateManager Class
 
-Manages the states of a stream.
+Manages the states.
 
 ```csharp
 public class StreamStateManager
@@ -11,9 +11,9 @@ public class StreamStateManager
 
 Inheritance [System.Object](https://docs.microsoft.com/en-us/dotnet/api/System.Object 'System.Object') &#129106; StreamStateManager
 
-| Constructors | |
+| Fields | |
 | :--- | :--- |
-| [StreamStateManager(string, IStateStorage, ILoggerFactory, string)](StreamStateManager.StreamStateManager(string,IStateStorage,ILoggerFactory,string).md 'QuixStreams.Streaming.States.StreamStateManager.StreamStateManager(string, QuixStreams.State.Storage.IStateStorage, Microsoft.Extensions.Logging.ILoggerFactory, string)') | Initializes a new instance of the [StreamStateManager](StreamStateManager.md 'QuixStreams.Streaming.States.StreamStateManager') class with the specified parameters. |
+| [StorageDir](StreamStateManager.StorageDir.md 'QuixStreams.Streaming.States.StreamStateManager.StorageDir') | The directory where the states are stored on disk. |
 
 | Methods | |
 | :--- | :--- |
@@ -21,6 +21,7 @@ Inheritance [System.Object](https://docs.microsoft.com/en-us/dotnet/api/System.O
 | [DeleteStates()](StreamStateManager.DeleteStates().md 'QuixStreams.Streaming.States.StreamStateManager.DeleteStates()') | Deletes all states for the current stream. |
 | [GetDictionaryState(string)](StreamStateManager.GetDictionaryState(string).md 'QuixStreams.Streaming.States.StreamStateManager.GetDictionaryState(string)') | Creates a new application state of dictionary type with automatically managed lifecycle for the stream |
 | [GetDictionaryState&lt;T&gt;(string, StreamStateDefaultValueDelegate&lt;T&gt;)](StreamStateManager.GetDictionaryState_T_(string,StreamStateDefaultValueDelegate_T_).md 'QuixStreams.Streaming.States.StreamStateManager.GetDictionaryState<T>(string, QuixStreams.Streaming.States.StreamStateDefaultValueDelegate<T>)') | Creates a new application state of dictionary type with automatically managed lifecycle for the stream |
+| [GetOrCreate(ITopicConsumer, StreamConsumerId, ILoggerFactory)](StreamStateManager.GetOrCreate(ITopicConsumer,StreamConsumerId,ILoggerFactory).md 'QuixStreams.Streaming.States.StreamStateManager.GetOrCreate(QuixStreams.Streaming.ITopicConsumer, QuixStreams.Streaming.Models.StreamConsumerId, Microsoft.Extensions.Logging.ILoggerFactory)') | Initializes or gets an existing instance of the [StreamStateManager](StreamStateManager.md 'QuixStreams.Streaming.States.StreamStateManager') class with the specified parameters. |
 | [GetScalarState(string)](StreamStateManager.GetScalarState(string).md 'QuixStreams.Streaming.States.StreamStateManager.GetScalarState(string)') | Creates a new application state of scalar type with automatically managed lifecycle for the stream |
 | [GetScalarState&lt;T&gt;(string, StreamStateDefaultValueDelegate&lt;T&gt;)](StreamStateManager.GetScalarState_T_(string,StreamStateDefaultValueDelegate_T_).md 'QuixStreams.Streaming.States.StreamStateManager.GetScalarState<T>(string, QuixStreams.Streaming.States.StreamStateDefaultValueDelegate<T>)') | Creates a new application state of scalar type with automatically managed lifecycle for the stream |
-| [GetStates()](StreamStateManager.GetStates().md 'QuixStreams.Streaming.States.StreamStateManager.GetStates()') | Returns an enumerable collection of all available state names for the current stream. |
+| [TryRevoke(StreamConsumerId)](StreamStateManager.TryRevoke(StreamConsumerId).md 'QuixStreams.Streaming.States.StreamStateManager.TryRevoke(QuixStreams.Streaming.Models.StreamConsumerId)') | Tries to revoke the stream state manager for the specified stream consumer id. |

@@ -6,7 +6,8 @@
 Interface for a stream state
 
 ```csharp
-public interface IStreamState
+public interface IStreamState :
+System.IDisposable
 ```
 
 Derived  
@@ -15,8 +16,11 @@ Derived
 &#8627; [StreamScalarState](StreamScalarState.md 'QuixStreams.Streaming.States.StreamScalarState')  
 &#8627; [StreamScalarState&lt;T&gt;](StreamScalarState_T_.md 'QuixStreams.Streaming.States.StreamScalarState<T>')
 
+Implements [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
+
 | Methods | |
 | :--- | :--- |
+| [Clear()](IStreamState.Clear().md 'QuixStreams.Streaming.States.IStreamState.Clear()') | Clears the value of in-memory state and marks the state for clearing when flushed. |
 | [Flush()](IStreamState.Flush().md 'QuixStreams.Streaming.States.IStreamState.Flush()') | Flushes the changes made to the in-memory state to the specified storage. |
 | [Reset()](IStreamState.Reset().md 'QuixStreams.Streaming.States.IStreamState.Reset()') | Reset the state to before in-memory modifications |
 

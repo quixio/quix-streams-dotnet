@@ -2,10 +2,9 @@
 
 	<PropertyGroup>
 		<DocumentationFile>bin\$(OutputDir)\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-		<Configurations>Debug;Release;Python</Configurations>
+		<Configurations>Debug;Release</Configurations>
 		<Platforms>AnyCPU</Platforms>
-		<TargetFramework Condition=" '$(Configuration)' == 'Python' ">net8.0</TargetFramework>
-		<TargetFrameworks Condition=" '$(Configuration)' != 'Python' ">net7.0;netstandard2.0</TargetFrameworks>
+		<TargetFrameworks>net7.0;netstandard2.0</TargetFrameworks>
 		<LangVersion>9.0</LangVersion>
 	</PropertyGroup>
 
@@ -20,11 +19,6 @@
 		<Product>QuixStreams.State</Product>
 		<Description>State abstraction and implementation for Quix Streams</Description>
 		<Copyright>Copyright © Quix Analytics Ltd 2020</Copyright>
-	</PropertyGroup>
-
-	<PropertyGroup Condition=" '$(Configuration)' == 'Python'">
-		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-		<GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -626,7 +626,6 @@ namespace QuixStreams.Streaming
                                                   this.handler?.SslProtocols == SslProtocols.None)
             {
                 // This is here for rare compatibility issue when for some reason the library is unable to pick an SSL protocol based on OS configuration
-                // So far only seen it happen when running on windows the lib wrapped in python->pythonnet->lib manner. 
                 this.logger.LogDebug("Could not create SSL/TLS secure channel for request to {0}, Forcing TLS 1.2", uri.AbsoluteUri);
                 this.handler = new HttpClientHandler()
                 {

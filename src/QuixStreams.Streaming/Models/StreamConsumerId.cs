@@ -43,7 +43,14 @@ namespace QuixStreams.Streaming.Models
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(ConsumerGroup, TopicName, Partition, StreamId);
+            unchecked
+            {
+                var hashCode = (ConsumerGroup != null ? ConsumerGroup.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (TopicName != null ? TopicName.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ Partition.GetHashCode();
+                hashCode = (hashCode * 397) ^ (StreamId != null ? StreamId.GetHashCode() : 0);
+                return hashCode;
+            }
         }
     }
 }
