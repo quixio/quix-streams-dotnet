@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
 using QuixStreams.Telemetry.Models.Codecs;
 using QuixStreams.Telemetry.Models.Telemetry.Parameters.Codecs;
-using QuixStreams.Transport.Fw.Codecs;
 
 namespace QuixStreams.Telemetry.Models
 {
@@ -37,6 +37,7 @@ namespace QuixStreams.Telemetry.Models
             RegisterType<StreamEnd>(codec);
             RegisterType<TimeseriesDataRaw>(codec);
             RegisterType<ParameterDefinitions>(codec);
+            RegisterType<EventDataRaw>(codec);
             RegisterType<EventDataRaw[]>(codec);
             RegisterType<List<EventDataRaw>>(codec);
             RegisterType<EventDefinitions>(codec);
@@ -69,7 +70,7 @@ namespace QuixStreams.Telemetry.Models
                 case CodecType.Json:
                     foreach (var modelKey in modelKeys)
                     {
-                        QuixStreams.Transport.Registry.CodecRegistry.RegisterCodec(modelKey, new DefaultJsonCodec<TType>());   
+                        QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(modelKey, new DefaultJsonCodec<TType>());   
                     }
                     break;
                 case CodecType.CompactJsonForBetterPerformance:
@@ -77,9 +78,11 @@ namespace QuixStreams.Telemetry.Models
                     {
                         if (typeof(TimeseriesDataRaw) == modelType)
                         {
-                            // Register the better performing specific codecs also for writing/reading
-                            QuixStreams.Transport.Registry.CodecRegistry.RegisterCodec(modelKey, new TimeseriesDataReadableCodec());
+                            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(modelKey, new TimeseriesDataReadableCodec());
+                            continue;
                         }
+                        
+                        QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(modelKey, new DefaultJsonCodec<TType>());
                     }
 
                     break;
@@ -89,7 +92,7 @@ namespace QuixStreams.Telemetry.Models
                         if (typeof(TimeseriesDataRaw) == modelType)
                         {
                             // Register the better performing specific codecs also for writing/reading
-                            QuixStreams.Transport.Registry.CodecRegistry.RegisterCodec(modelKey, new TimeseriesDataProtobufCodec());
+                            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(modelKey, new TimeseriesDataProtobufCodec());
                         }
                     }
 

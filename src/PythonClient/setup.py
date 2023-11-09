@@ -5,7 +5,7 @@ import os.path
 import re
 import fileinput
 
-package_version = "0.5.7"
+package_version = "0.6.0.dev1"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -82,7 +82,7 @@ try:
         ],
         python_requires='>=3.6, <4',
         install_requires=[
-            'pandas>=1.0.0,<2',
+            'pandas>=1.0.0,<3',
             'Deprecated>=1.1,<2'
         ]
     )

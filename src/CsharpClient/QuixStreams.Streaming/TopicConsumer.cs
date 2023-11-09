@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using QuixStreams;
+using QuixStreams.Streaming.Models;
 using QuixStreams.Streaming.States;
 using QuixStreams.Telemetry;
 using QuixStreams.Telemetry.Kafka;
@@ -12,12 +15,11 @@ namespace QuixStreams.Streaming
     /// </summary>
     public class TopicConsumer : ITopicConsumer
     {
-        private readonly ILogger logger = Logging.CreateLogger<StreamConsumer>();
+        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<StreamConsumer>();
         private readonly TelemetryKafkaConsumer telemetryKafkaConsumer;
         private bool isDisposed = false;
         private readonly object stateLock = new object();
-        private volatile TopicStateManager stateManager = null;
-
+        
         /// <inheritdoc />
         public event EventHandler<IStreamConsumer> OnStreamReceived;
 
@@ -50,8 +52,14 @@ namespace QuixStreams.Streaming
         public TopicConsumer(TelemetryKafkaConsumer telemetryKafkaConsumer)
         {
             telemetryKafkaConsumer.ForEach(streamId =>
-            {
-                var stream = new StreamConsumer(this, streamId);
+            { 
+                if (!telemetryKafkaConsumer.ContextCache.TryGet(streamId, out var streamContext))
+                {
+                    throw new ArgumentException($"Stream context not found for streamId: {streamId}");
+                }
+
+                var topicPartition = streamContext.LastTopicPartitionOffset.Partition.Value;
+                var stream = new StreamConsumer(this, new StreamConsumerId(telemetryKafkaConsumer.GroupId, telemetryKafkaConsumer.Topic, topicPartition, streamId));
                 try
                 {
                     this.OnStreamReceived?.Invoke(this, stream);
@@ -87,14 +95,22 @@ namespace QuixStreams.Streaming
             this.OnRevoking?.Invoke(this, EventArgs.Empty);
         }
 
-        private void StreamsRevokedEventHandler(IStreamPipeline[] obj)
+        private void StreamsRevokedEventHandler(IStreamPipeline[] objs)
         {
             if (this.OnStreamsRevoked == null) return;
-            if (obj == null || obj.Length == 0) return;
+            if (objs == null || objs.Length == 0) return;
+            
+            foreach (var iStreamPipeline in objs)
+            {
+                if (iStreamPipeline is IStreamConsumer streamConsumer)
+                {
+                    StreamStateManager.TryRevoke(streamConsumer.Id);
+                }
+            }
             
             // This is relying on the assumption that the StreamConsumer that we've created in the StreamPipelineFactoryHandler (see kafkareader.foreach)
             // is being returned here.
-            var readers = obj.Select(y => y as IStreamConsumer).Where(y => y != null).ToArray();
+            var readers = objs.Select(y => y as IStreamConsumer).Where(y => y != null).ToArray();
             if (readers.Length == 0) return;
             this.OnStreamsRevoked?.Invoke(this, readers);
         }
@@ -114,23 +130,21 @@ namespace QuixStreams.Streaming
         }
 
         /// <inheritdoc />
-        public TopicStateManager GetStateManager()
+        public StreamStateManager GetStreamStateManager(string streamId)
         {
-            if (isDisposed) throw new ObjectDisposedException(nameof(TopicConsumer));
-
-            if (this.stateManager != null) return this.stateManager;
-            lock (stateLock)
+            if (!this.telemetryKafkaConsumer.ContextCache.TryGet(streamId, out var streamContext))
             {
-                if (this.stateManager != null) return this.stateManager;
-                var topic = this.telemetryKafkaConsumer.Topic;
-
-                this.stateManager = App.GetStateManager().GetTopicStateManager(this, topic);
+                throw new ArgumentException($"Stream {streamId} not found. It hasn't been consumed by this consumer.");
             }
 
-            return this.stateManager;
+            var topicPartition = streamContext.LastTopicPartitionOffset.Partition.Value;
+
+            this.logger.LogTrace("Creating Stream state manager for {0}", streamId);
+            return StreamStateManager.GetOrCreate(this,
+                new StreamConsumerId(telemetryKafkaConsumer.GroupId, telemetryKafkaConsumer.Topic, topicPartition, streamId),
+                Logging.Factory);
         }
-
-
+        
         /// <inheritdoc />
         public void Dispose()
         {
@@ -144,5 +158,4 @@ namespace QuixStreams.Streaming
             this.OnDisposed?.Invoke(this, EventArgs.Empty);
         }
     }
-
 }

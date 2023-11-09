@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using QuixStreams.Streaming.Models;
 using QuixStreams.Streaming.Models.StreamConsumer;
 using QuixStreams.Streaming.States;
 using QuixStreams.Telemetry;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
-using QuixStreams.Transport.IO;
 
 namespace QuixStreams.Streaming
 {
@@ -22,20 +22,18 @@ namespace QuixStreams.Streaming
         private readonly StreamTimeseriesConsumer streamTimeseriesConsumer;
         private readonly StreamEventsConsumer streamEventsConsumer;
         private bool isClosed = false;
-        private volatile StreamStateManager stateManager;
-        private readonly object stateLock = new object();
 
         /// <summary>
         /// Initializes a new instance of <see cref="StreamConsumer"/>
         /// This constructor is called internally by the <see cref="StreamPipelineFactory"/>
         /// </summary>
         /// <param name="topicConsumer">The topic the reader belongs to</param>
-        /// <param name="streamId">Stream Id of the source that has generated this Stream Consumer. 
-        /// Commonly the Stream Id will be coming from the protocol. 
-        /// If no stream Id is passed, like when a new stream is created for producing data, a Guid is generated automatically.</param>
-        internal StreamConsumer(ITopicConsumer topicConsumer, string streamId): base(streamId)
+        /// <param name="id">Stream consumer identifier</param>
+        internal StreamConsumer(ITopicConsumer topicConsumer, StreamConsumerId id): base(id.StreamId)
         {
             this.topicConsumer = topicConsumer;
+            this.Id = id;
+            
             // Managed readers
             this.streamPropertiesConsumer = new StreamPropertiesConsumer(this.topicConsumer, this);
             this.streamTimeseriesConsumer = new StreamTimeseriesConsumer(this.topicConsumer, this);
@@ -51,7 +49,10 @@ namespace QuixStreams.Streaming
         {
             
         }
-
+        
+        /// <inheritdoc />
+        public StreamConsumerId Id { get; }
+        
         /// <inheritdoc />
         public StreamPropertiesConsumer Properties => streamPropertiesConsumer;
 
@@ -80,18 +81,14 @@ namespace QuixStreams.Streaming
         /// <inheritdoc />
         public StreamStateManager GetStateManager()
         {
-            if (this.stateManager != null) return this.stateManager;
-            lock (stateLock)
-            {
-                if (this.stateManager != null) return this.stateManager;
-
-                this.stateManager = this.topicConsumer.GetStateManager().GetStreamStateManager(this.StreamId);
-            }
-
-            return this.stateManager;
+            this.logger.LogTrace("Creating Stream state manager for {0}", StreamId);
+            return StreamStateManager.GetOrCreate(
+                this.topicConsumer,
+                new StreamConsumerId(Id.ConsumerGroup, Id.TopicName, Id.Partition, StreamId),
+                Logging.Factory);
+            
         }
-
-
+        
         /// <inheritdoc />
         public virtual event Action<IStreamConsumer, QuixStreams.Telemetry.Models.StreamProperties> OnStreamPropertiesChanged;
 
@@ -116,6 +113,7 @@ namespace QuixStreams.Streaming
             this.Subscribe<QuixStreams.Telemetry.Models.TimeseriesDataRaw>(OnTimeseriesDataReceived);
             this.Subscribe<QuixStreams.Telemetry.Models.ParameterDefinitions>(OnParameterDefinitionsReceived);
             this.Subscribe<QuixStreams.Telemetry.Models.EventDataRaw[]>(OnEventDataReceived);
+            this.Subscribe<QuixStreams.Telemetry.Models.EventDataRaw>(OnEventDataReceived);
             this.Subscribe<QuixStreams.Telemetry.Models.EventDefinitions>(OnEventDefinitionsReceived);
             this.Subscribe<QuixStreams.Telemetry.Models.StreamEnd>(OnStreamEndReceived);
             this.Subscribe(OnStreamPackageReceived);
@@ -133,7 +131,7 @@ namespace QuixStreams.Streaming
                 this.logger.LogTrace("StreamConsumer: OnStreamPackageReceived - raw message.");
                 var ev = new EventDataRaw
                 {
-                    Timestamp = ((DateTime)package.TransportContext[KnownTransportContextKeys.BrokerMessageTime]).ToUnixNanoseconds(),
+                    Timestamp = package.KafkaMessage.Timestamp.UtcDateTime.ToUnixNanoseconds(),
                     Id = streamPipeline.StreamId,
                     Tags = new Dictionary<string, string>(),
                     Value = Encoding.UTF8.GetString((byte[])package.Value)
@@ -164,6 +162,12 @@ namespace QuixStreams.Streaming
         {
             this.logger.LogTrace("StreamConsumer: OnParameterDefinitionsReceived");
             this.OnParameterDefinitionsChanged?.Invoke(this, obj);
+        }
+        
+        private void OnEventDataReceived(IStreamPipeline streamPipeline, QuixStreams.Telemetry.Models.EventDataRaw @event)
+        {
+            this.logger.LogTrace("StreamConsumer: OnEventDataReceived");
+            this.OnEventData?.Invoke(this, @event);
         }
 
         private void OnEventDataReceived(IStreamPipeline streamPipeline, QuixStreams.Telemetry.Models.EventDataRaw[] events)
