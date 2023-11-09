@@ -6,14 +6,6 @@ Quix Streams enables you to subscribe to the data in your topics in real time. T
 
 To subscribe to data from your Kafka topics, you need an instance of `KafkaStreamingClient`. To create an instance, use the following code:
 
-=== "Python"
-	
-	``` python
-    from quixstreams import KafkaStreamingClient
-
-	client = KafkaStreamingClient('127.0.0.1:9092')
-	```
-
 === "C\#"
 	
 	``` cs
@@ -26,12 +18,6 @@ You can read about other ways to connect to your message broker in the [Connecti
 
 Topics are central to stream processing operations. To subscribe to data in a topic you need an instance of `TopicConsumer`. This instance enables you to receive all the incoming streams on the specified topic. You can create an instance using the client’s `get_topic_consumer` method, passing the `TOPIC` as the parameter.
 
-=== "Python"
-    
-    ``` python
-    topic_consumer = client.get_topic_consumer(TOPIC)
-    ```
-
 === "C\#"
     
     ``` cs
@@ -41,12 +27,6 @@ Topics are central to stream processing operations. To subscribe to data in a to
 ### Consumer group
 
 The [Consumer group](kafka.md#consumer-group) is a concept used when you want to [scale horizontally](features/horizontal-scaling.md). Each consumer group is identified using an ID, which you set optionally when opening a connection to the topic for reading:
-
-=== "Python"
-    
-    ``` python
-    topic_consumer = client.get_topic_consumer("{topic}","{your-consumer-group-id}")
-    ```
 
 === "C\#"
     
@@ -61,23 +41,6 @@ This indicates to the message broker that all the replicas of your process will 
 	If you want to consume data from the topic locally for debugging purposes, and the model is also deployed elsewhere, make sure that you change the consumer group ID to prevent clashing with the other deployment. If the clash happens, only one instance will be able to receive data for a partition at the same time.
 
 ## Subscribing to streams
-
-=== "Python"  
-    Once you have the `TopicConsumer` instance you can start receiving streams. For each stream received by the specified topic, `TopicConsumer` will execute the callback `on_stream_received`. This callback will be invoked every time you receive a new Stream. For example, the following code prints the `StreamId` for each stream received by that topic:
-    
-    ``` python
-    from quixstreams import TopicConsumer, StreamConsumer
-
-    def on_stream_received_handler(stream_received: StreamConsumer):
-        print("Stream received:" + stream_received.stream_id)
-    
-    topic_consumer.on_stream_received = on_stream_received_handler
-    topic_consumer.subscribe()
-    ```
-
-    !!! note
-        `subscribe()` method starts consuming streams and data from your topic. You should only do this after you’ve registered callbacks for all the events you want to listen to. `App.run()` can also be used for this and provides other benefits. Find out more about [App.run()](app-management.md).
-
 
 === "C\#"
     Once you have the `TopicConsumer` instance you can start consuming streams. For each stream received by the specified topic, `TopicConsumer` will execute the event `OnStreamReceived`. You can attach a callback to this event to execute code that reacts when you receive a new stream. For example, the following code prints the `StreamId` for each stream received by that Topic:
@@ -112,26 +75,6 @@ The following table shows an example:
 | 3         | 125   | 3    |
 | 6         | 110   | 2    |
 
-=== "Python"
-
-    You can subscribe to time-series data from streams using the `on_data_received` callback of the `StreamConsumer` instance. In the following example, you consume and print the first timestamp and value of the parameter `ParameterA` received in the [TimeseriesData](#timeseriesdata-format) packet:
-    
-    ``` python
-    from quixstreams import TopicConsumer, StreamConsumer, TimeseriesData
-
-    def on_stream_received_handler(stream_received: StreamConsumer):
-        stream_received.timeseries.on_data_received = on_timeseries_data_received_handler
-    
-    def on_timeseries_data_received_handler(stream: StreamConsumer, data: TimeseriesData):
-        with data:
-            timestamp = data.timestamps[0].timestamp
-            num_value = data.timestamps[0].parameters['ParameterA'].numeric_value
-            print("ParameterA - " + str(timestamp) + ": " + str(num_value))
-    
-    topic_consumer.on_stream_received = on_stream_received_handler
-    topic_consumer.subscribe()
-    ```
-
 === "C\#"
 
     You can subscribe to time-series data from streams using the `OnDataReceived` event of the `StreamConsumer` instance. For instance, in the following example we consume and print the first timestamp and value of the parameter `ParameterA` received in the [TimeseriesData](#timeseriesdata-format) packet:
@@ -158,12 +101,6 @@ The following table shows an example:
 
 Quix Streams supports numeric, string, and binary value types. You should use the correct property depending of the value type of your parameter:
 
-=== "Python"
-    
-      - `numeric_value`: Returns the numeric value of the parameter, represented as a `float` type.    
-      - `string_value`: Returns the string value of the parameter, represented as a `string` type.    
-      - `binary_value`: Returns the binary value of the parameter, represented as a `bytearray` type.
-
 === "C\#"
     
       - `NumericValue`: Returns the numeric value of the parameter, represented as a `double` type.    
@@ -171,15 +108,6 @@ Quix Streams supports numeric, string, and binary value types. You should use th
       - `BinaryValue`: Returns the binary value of the parameter, represented as an array of `byte`.
 
 This is a simple example showing how to consume `Speed` values of the `TimeseriesData` used in the previous example:
-
-=== "Python"
-    
-    ``` python
-    for ts in data.timestamps:
-        timestamp = ts.timestamp_nanoseconds
-        numValue = ts.parameters['Speed'].numeric_value
-        print("Speed - " + str(timestamp) ": " + str(numValue))
-    ```
 
 === "C\#"
 
@@ -201,65 +129,9 @@ Speed - 3: 125
 Speed - 6: 110
 ```
 
-### pandas DataFrame format
-
-If you use the Python version of Quix Streams you can use [pandas DataFrame](features/data-frames.md) for consuming and publishing time-series data. Use the callback `on_dataframe_received` instead of `on_data_received` when consuming from a stream:
-
-``` python
-from quixstreams import TopicConsumer, StreamConsumer
-
-def on_stream_received_handler(stream_received: StreamConsumer):
-    stream_received.timeseries.on_dataframe_received = on_dataframe_received_handler
-
-def on_dataframe_received_handler(stream: StreamConsumer, df: pd.DataFrame):
-    print(df.to_string())
-
-topic_consumer.on_stream_received = on_stream_received_handler
-topic_consumer.subscribe()
-```
-    
-Alternatively, you can always convert a [TimeseriesData](#timeseriesdata-format) to a pandas `DataFrame` using the method `to_dataframe`:
-
-``` python
-from quixstreams import TopicConsumer, StreamConsumer, TimeseriesData
-
-def on_stream_received_handler(stream_received: StreamConsumer):
-    stream_received.timeseries.on_data_received = on_timeseries_data_received_handler
-
-def on_timeseries_data_received_handler(stream: StreamConsumer, data: TimeseriesData):
-    with data:
-        # consume from input stream
-        df = data.to_dataframe()
-        print(df.to_string())
-
-topic_consumer.on_stream_received = on_stream_received_handler
-topic_consumer.subscribe()
-```
-
-!!! tip
-
-	The conversions from [TimeseriesData](#timeseriesdata-format) to pandas `DataFrame` have an intrinsic cost overhead. For high-performance models using pandas `DataFrame`, you should use the `on_dataframe_received` callback provided by the library, which is optimized to do as few conversions as possible.
-
 ### Raw data format
 
-In addition to the `TimeseriesData` and pandas `DataFrame` formats (Python only), there is also the raw data format. You can use the `on_raw_received` callback (Python), or `OnRawRceived` event (C#) to handle this data format, as demonstrated in the following code:
-
-=== "Python"
-
-    ``` python
-    from quixstreams import TopicConsumer, StreamConsumer, TimeseriesDataRaw
-
-    def on_stream_received_handler(stream_received: StreamConsumer):
-        stream_received.timeseries.on_raw_received = on_timeseries_raw_received_handler
-
-    def on_timeseries_raw_received_handler(stream: StreamConsumer, data: TimeseriesDataRaw):
-        with data:
-            # consume from input stream
-            print(data)
-
-    topic_consumer.on_stream_received = on_stream_received_handler
-    topic_consumer.subscribe()
-    ```
+In addition to the `TimeseriesData`, there is also the raw data format. You can use the `OnRawReceived` event (C#) to handle this data format, as demonstrated in the following code:
 
 === "C\#"
 
@@ -272,18 +144,11 @@ In addition to the `TimeseriesData` and pandas `DataFrame` formats (Python only)
 	};
     ```
 
-If you are developing in Python you will typically use either `TimeseriesData` or `DataFrame`. In C# `TimeseriesDataRaw` is mainly used for optimizing performance.
+In C# `TimeseriesDataRaw` is mainly used for optimizing performance.
 
 ### Using a Buffer
 
 Quix Streams provides you with an optional programmable buffer which you can configure to your needs. Using buffers to consume data enables you to process data in batches according to your needs. The buffer also helps you to develop models with a high-performance throughput.
-
-=== "Python"
-    You can use the `buffer` property embedded in the `timeseries` property of your `stream`, or create a separate instance of that buffer using the `create_buffer` method:
-
-    ``` python
-    buffer = newStream.timeseries.create_buffer()
-    ```
 
 === "C\#"
     You can use the `Buffer` property embedded in the `Timeseries` property of your `stream`, or create a separate instance of that buffer using the `CreateBuffer` method:
@@ -294,34 +159,13 @@ Quix Streams provides you with an optional programmable buffer which you can con
 
 You can configure a buffer’s input requirements using built-in properties. For example, the following configuration means that the Buffer will release a packet when the time span between first and last timestamp inside the buffer reaches 100 milliseconds:
 
-=== "Python"
-    
-    ``` python
-    buffer.time_span_in_milliseconds = 100
-    ```
-
 === "C\#"
     
     ``` cs
     buffer.TimeSpanInMilliseconds = 100;
     ```
 
-Consuming data from that buffer is achieved by using callbacks (Python) or events (C#). The buffer uses the same callbacks and events as when consuming without the buffer. For example, the following code prints the `ParameterA` value of the first timestamp of each packet released from the buffer:
-
-=== "Python"
-    
-    ``` python
-    from quixstreams import TopicConsumer, StreamConsumer, TimeseriesData
-
-    def on_data_released_handler(stream: StreamConsumer, data: TimeseriesData):
-        with data:
-            timestamp = data.timestamps[0].timestamp
-            num_value = data.timestamps[0].parameters['ParameterA'].numeric_value
-            print("ParameterA - " + str(timestamp) + ": " + str(num_value))
-    
-    buffer.on_data_released = on_data_released_handler
-    # buffer.on_dataframe_released and other callbacks are also available, check consuming without buffer for more info
-    ```
+Consuming data from that buffer is achieved by subscribing to events. The buffer uses the same events as when consuming without the buffer. For example, the following code prints the `ParameterA` value of the first timestamp of each packet released from the buffer:
 
 === "C\#"
     
@@ -334,19 +178,7 @@ Consuming data from that buffer is achieved by using callbacks (Python) or event
     };
     ```
 
-Other callbacks are available in addition to `on_data_released` (for `TimeseriesData`), including `on_dataframe_released` (for pandas `DataFrame`) and `on_raw_released` (for `TimeseriesDataRaw`). You use the callback appropriate to your stream data format. 
-
 You can configure multiple conditions to determine when the buffer has to release data, if any of these conditions become true, the buffer will release a new packet of data and that data is cleared from the buffer:
-
-=== "Python"
-    
-      - `buffer.buffer_timeout`: The maximum duration in milliseconds for which the buffer will be held before releasing the data. A packet of data is released when the configured timeout value has elapsed from the last data received in the buffer.    
-      - `buffer.packet_size`: The maximum packet size in terms of number of timestamps. Each time the buffer has this amount of timestamps, the packet of data is released.    
-      - `buffer.time_span_in_nanoseconds`: The maximum time between timestamps in nanoseconds. When the difference between the earliest and latest buffered timestamp surpasses this number, the packet of data is released.    
-      - `buffer.time_span_in_milliseconds`: The maximum time between timestamps in milliseconds. When the difference between the earliest and latest buffered timestamp surpasses this number, the packet of data is released. Note: This is a millisecond converter on top of `time_span_in_nanoseconds`. They both work with the same underlying value.    
-      - `buffer.custom_trigger_before_enqueue`: A custom function which is invoked **before** adding a new timestamp to the buffer. If it returns true, the packet of data is released before adding the timestamp to it.    
-      - `buffer.custom_trigger`: A custom function which is invoked **after** adding a new timestamp to the buffer. If it returns true, the packet of data is released with the entire buffer content.    
-      - `buffer.filter`: A custom function to filter the incoming data before adding it to the buffer. If it returns true, data is added, otherwise it isn’t.
 
 === "C\#"
     
@@ -362,13 +194,6 @@ You can configure multiple conditions to determine when the buffer has to releas
 
 The following buffer configuration sends data every 100ms or, if no data is buffered in the 1 second timeout period, it will empty the buffer and send the pending data anyway:
 
-=== "Python"
-    
-    ``` python
-    stream.timeseries.buffer.packet_size = 100
-    stream.timeseries.buffer.buffer_timeout = 1000
-    ```
-
 === "C\#"
     
     ``` cs
@@ -377,13 +202,6 @@ The following buffer configuration sends data every 100ms or, if no data is buff
     ```
 
 The following buffer configuration sends data every 100ms window, or if critical data arrives:
-
-=== "Python"
-    
-    ``` python
-    buffer.time_span_in_milliseconds = 100
-    buffer.custom_trigger = lambda data: data.timestamps[0].tags["is_critical"] == 'True'
-    ```
 
 === "C\#"
     
@@ -415,17 +233,6 @@ You can imagine a list of `EventData` instances as a table of three columns wher
 
 Consuming events from a stream is similar to consuming timeseries data. In this case, the library does not use a buffer, but the way you consume Event Data from a stream is similar:
 
-=== "Python"
-    from quixstreams import TopicConsumer, StreamConsumer, EventData
-
-    ``` python
-    def on_event_data_received_handler(stream: StreamConsumer, data: EventData):
-        with data:
-            print("Event consumed for stream. Event Id: " + data.id)
-    
-    stream_received.events.on_data_received = on_event_data_received_handler
-    ```
-
 === "C\#"
     
     ``` cs
@@ -450,13 +257,6 @@ If the properties of a stream are changed, the consumer can detect this and hand
 
 You can write the handler as follows:
 
-=== "Python"
-
-    ``` python
-    def on_stream_properties_changed_handler(stream_consumer: qx.StreamConsumer):
-        print('stream properties changed for stream: ', stream_consumer.stream_id)
-    ```
-
 === "C\#"
 
     ``` cs
@@ -467,14 +267,6 @@ You can write the handler as follows:
     ```
 
 Then register the properties change handler:
-
-=== "Python"
-
-    ``` python
-    def on_stream_received_handler(stream_consumer: qx.StreamConsumer):
-        stream_consumer.events.on_data_received = on_event_data_received_handler
-        stream_consumer.properties.on_changed = on_stream_properties_changed_handler
-    ```
 
 === "C\#"
 
@@ -503,18 +295,6 @@ You can keep a copy of the properties if you need to find out which properties h
 ## Responding to changes in parameter definitions
 
 It is possible to handle changes in [parameter definitions](./publish.md#parameter-definitions). Parameter definitions are metadata attached to data in a stream. The `on_definitions_changed` event is linked to an appropriate event handler, as shown in the following example code:
-
-=== "Python"
-
-    ``` python
-    def on_definitions_changed_handler(stream_consumer: qx.StreamConsumer):
-        # handle change in definitions
-
-
-    def on_stream_received_handler(stream_consumer: qx.StreamConsumer):
-        stream_consumer.events.on_data_received = on_event_data_received_handler
-        stream_consumer.events.on_definitions_changed = on_definitions_changed_handler
-    ```
 
 === "C\#"
 
@@ -552,18 +332,6 @@ By default, Quix Streams automatically commits processed messages at a regular d
 
 If you need to use different automatic commit intervals, use the following code:
 
-=== "Python"
-    
-    ``` python
-    from quixstreams import CommitOptions
-    
-    commit_settings = CommitOptions()
-    commit_settings.commit_every = 100 # note, you can set this to None
-    commit_settings.commit_interval = 500 # note, you can set this to None
-    commit_settings.auto_commit_enabled = True
-    topic_consumer = client.get_topic_consumer('yourtopic', commit_settings=commit_settings)
-    ```
-
 === "C\#"
     
     ``` cs
@@ -581,14 +349,6 @@ The code above commits every 100 processed messages or 500 ms, whichever is soon
 
 Some use cases need manual committing to mark completion of work, for example when you wish to batch process data, so the frequency of commit depends on the data. This can be achieved by first enabling manual commit for the topic:
 
-=== "Python"
-    
-    ``` python
-    from quixstreams import CommitMode
-    
-    topic_consumer = client.get_topic_consumer('yourtopic', commit_settings=CommitMode.Manual)
-    ```
-
 === "C\#"
     
     ``` cs
@@ -596,12 +356,6 @@ Some use cases need manual committing to mark completion of work, for example wh
     ```
 
 Then, whenever your commit condition is fulfilled, call:
-
-=== "Python"
-    
-    ``` python
-    topic_consumer.commit()
-    ```
 
 === "C\#"
     
@@ -612,19 +366,6 @@ Then, whenever your commit condition is fulfilled, call:
 The previous code commits parameters, events, or metadata that is consumed and served to you from the topic you subscribed to, up to this point.
 
 ### Committed and committing events
-
-=== "Python"
-
-    Whenever a commit completes, a callback is raised that can be connected to a handler. This callback is invoked for both manual and automatic commits. You can set the callback using the following code:
-    
-    ``` python
-    from quixstreams import TopicConsumer
-
-    def on_committed_handler(topic_consumer: TopicConsumer):
-        # your code doing something when committed to broker
-    
-    topic_consumer.on_committed = on_committed_handler
-    ```
 
 === "C\#"
 
@@ -653,14 +394,6 @@ When setting the `AutoOffsetReset` you can specify one of three options:
 
 The default option is `Latest`.
 
-=== "Python"
-    
-    ``` python
-    topic_consumer = client.get_topic_consumer(test_topic, auto_offset_reset=AutoOffsetReset.Latest)
-    or
-    topic_consumer = client.get_topic_consumer(test_topic, auto_offset_reset=AutoOffsetReset.Earliest)
-    ```
-
 === "C\#"
     
     ``` cs
@@ -683,15 +416,6 @@ When working with a broker, you have a certain number of topic streams assigned 
 
 One or more streams are about to be revoked from your client, but you have a limited time frame, according to your broker configuration, to react to this and optionally commit to the broker:
 
-=== "Python"
-    
-    ``` python
-    def on_revoking_handler(topic_consumer: TopicConsumer):
-        # your code
-    
-    topic_consumer.on_revoking = on_revoking_handler
-    ```
-
 === "C\#"
     
     ``` cs
@@ -705,18 +429,6 @@ One or more streams are about to be revoked from your client, but you have a lim
 
 One or more streams are revoked from your client. You can no longer commit to these streams, you can only handle the revocation in your client:
 
-=== "Python"
-    
-    ``` python
-    from quixstreams import StreamConsumer
-    
-    def on_streams_revoked_handler(topic_consumer: TopicConsumer, streams: [StreamConsumer]):
-        for stream in streams:
-            print("Stream " + stream.stream_id + " got revoked")
-    
-    topic_consumer.on_streams_revoked = on_streams_revoked_handler
-    ```
-
 === "C\#"
     
     ``` cs
@@ -727,17 +439,6 @@ One or more streams are revoked from your client. You can no longer commit to th
     ```
 
 ## Stream closure
-
-=== "Python"
-
-    You can detect stream closure with the `on_stream_closed` callback which has the stream and the `StreamEndType` to help determine the closure reason if required.
-    
-    ``` python
-    def on_stream_closed_handler(stream: StreamConsumer, end_type: StreamEndType):
-            print("Stream closed with {}".format(end_type))
-    
-    stream_received.on_stream_closed = on_stream_closed_handler
-    ```
 
 === "C\#"
 
@@ -764,37 +465,6 @@ The `StreamEndType` can be one of:
 ## Minimal example
 
 This is a minimal code example you can use to receive data from a topic using Quix Streams:
-
-=== "Python"
-    
-    ``` python
-    from quixstreams import *
-    
-    client = KafkaStreamingClient('127.0.0.1:9092')
-    
-    topic_consumer = client.get_topic_consumer(TOPIC_ID)
-    
-    # Consume streams
-    def on_stream_received_handler(stream_received: StreamConsumer):    
-        buffer = stream_received.timeseries.create_buffer()
-        buffer.on_data_released = on_data_released_handler
-    
-    def on_data_released_handler(stream: StreamConsumer, data: TimeseriesData):
-        with data:
-            df = data.to_dataframe()
-            print(df.to_string())    
-    
-    # Hook up events before subscribing to avoid losing out on any data
-    topic_consumer.on_stream_received = on_stream_received_handler
-    
-    # Hook up to termination signal (for docker image) and CTRL-C
-    print("Listening to streams. Press CTRL-C to exit.")
-    
-    # Handle graceful exit
-    App.run()
-    ```
-
-    Find out more about [App.run()](app-management.md)
 
 === "C\#"
     
@@ -848,24 +518,6 @@ This is a minimal code example you can use to receive data from a topic using Qu
 ## Subscribing to raw Kafka messages
 
 Quix Streams uses an internal protocol which is both data and speed optimized, but you do need to use the library for both the producer and consumer. Custom formats need to be handled manually. To enable this, the library provides the ability to [publish](publish.md#publish-raw-kafka-messages) and [subscribe](subscribe.md#subscribe-raw-kafka-messages) to the raw, unformatted messages, and to work with them as bytes. This gives you the means to implement the protocol as needed and convert between formats.
-
-=== "Python"
-    
-    ``` python
-    from quixstreams import RawTopicConsumer, RawMessage
-
-    raw_consumer = client.get_raw_topic_consumer(TOPIC_ID)
-    
-    def on_message_received_handler(topic: RawTopicConsumer, msg: RawMessage):
-        #bytearray containing bytes received from kafka
-        data = msg.value
-    
-        #broker metadata as dict
-        meta = msg.metadata
-    
-    raw_consumer.on_message_received = on_message_received_handler
-    raw_consumer.subscribe()  # or use App.run()
-    ```
 
 === "C\#"
     

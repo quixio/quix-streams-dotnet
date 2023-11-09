@@ -41,7 +41,7 @@ In general, we follow the ["fork-and-pull" Git workflow](https://github.com/susa
 
 ## Coding standards
 
-To keep the code as consistent as possible, please familiarize yourself with the existing style of the project. If you're contributing to the Python code base, follow the [PEP 8 - Style Guide for Python Code](https://peps.python.org/pep-0008/). If contributing to the C# code base, follow the [Microsoft&reg; C# Coding Conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions).
+To keep the code as consistent as possible, please familiarize yourself with the existing style of the project and you can find some guidelines at [Microsoft&reg; C# Coding Conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions).
 
 >  Consistency within a project is more important. Consistency within one module or function is the most important.
 

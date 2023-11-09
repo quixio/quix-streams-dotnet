@@ -28,9 +28,6 @@ foreach (var data in unorderedData)
 
 buffer.Publish();
 ```
-
-Note: The example code provided is in C#, and as of now, the Python implementation does not exist yet
-
     
 The leading edge delay configuration gives out-of-order data a chance to be sorted in the correct order.
 Setting a leading edge delay means that you're not processing the data in real-time. Instead, you're processing it near real-time, with a delay equal to the leading edge delay you've set.

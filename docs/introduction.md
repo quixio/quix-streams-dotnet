@@ -2,8 +2,6 @@
 
 Quix Streams helps simplify the process of developing streaming applications. It’s designed to be used for high-performance telemetry services where you need to process high volumes of data with quick response times in a scalable way.
 
-Quix Streams is available for Python and C\#.
-
 Using Quix Streams, you can:
 
 * [Publish time-series data](publish.md) to a Kafka topic.

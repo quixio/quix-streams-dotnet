@@ -12,17 +12,13 @@
 
 # Quix Streams
 
-Quix Streams is a cloud-native library for processing data in Kafka using pure Python. It’s designed to give you the power of a distributed system in a lightweight library by combining the low-level scalability and resiliency features of Kafka and Kubernetes in a highly abstracted and easy to use Python interface.
+Quix Streams is a cloud-native library for processing data in Kafka. It’s designed to give you the power of a distributed system in a lightweight library by combining the low-level scalability and resiliency features of Kafka and Kubernetes in a highly abstracted and easy to use interface.
 
 Quix Streams has the following benefits:
 
- - No JVM, no orchestrator, no server-side engine.
-
- - Pure Python (no DSL’s!) providing native support for the entire Python ecosystem (Pandas, scikit-learn, TensorFlow, PyTorch etc).
+ - No orchestrator, no server-side engine.
 
  - Simplified [state management](https://quix.io/docs/client-library/state-management.html) backed by Kubernetes PVC for enhanced resiliency.
-
- - [DataFrames](#support-for-dataframes) and buffers provide a powerful processing environment where a Python data scientist can use their existing batch skills to process streaming data.
 
  - Resilient horizontal scaling using [Streaming Context](https://quix.io/docs/client-library/features/streaming-context.html).
 
@@ -40,11 +36,7 @@ Use Quix Streams if you’re building machine learning/AI and physics-based appl
 
 ### Install Quix Streams
 
-Install Quix streams with the following command: 
-
-```shell
-python3 -m pip install quixstreams
-```
+Install Quix streams using [nuget](https://www.nuget.org/packages/QuixStreams.Streaming).
 
 ### Install Kafka
 
@@ -240,20 +232,6 @@ If you’re sending data at <b>high frequency</b>, processing each message can b
 
 
 For a detailed overview of built-in buffers, [visit our documentation](https://quix.io/docs/client-library/features/builtin-buffers.html).
-
-### Support for DataFrames
-
-Time-series parameters are emitted at the same time, so they share one timestamp. Handling this data independently is wasteful. The library uses a tabular system that can work for instance with <b>Pandas DataFrames</b> natively. Each row has a timestamp and <b>user-defined tags</b> as indexes.
-
-```python
-# Callback triggered for each new data frame
-def on_timeseries_data_handler(stream: StreamConsumer, df: pd.DataFrame):
-    
-    # If the braking force applied is more than 50%, we mark HardBraking with True
-    df["HardBraking"] = df.apply(lambda row: "True" if row.Brake > 0.5 else "False", axis=1)
-
-    stream_producer.timeseries.publish(df)  # Send data back to the stream
-```
 
 ### Multiple data types
 

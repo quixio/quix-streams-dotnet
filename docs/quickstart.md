@@ -19,14 +19,11 @@ Initially you will work with your local Kafka installation, and then you'll lear
 
 ## Prerequisites
 
-The prerequisites for this guide are as follows:
-
-* [Python 3.x](https://www.python.org/downloads/){target=_blank}.
-* You have a local installation of [Kafka](https://kafka.apache.org/documentation/){target=_blank} up and running. You use this to test your code.
+You have a local installation of [Kafka](https://kafka.apache.org/documentation/){target=_blank} up and running. You use this to test your code.
 
 Optionally:
 
-* Sign up for a free [Quix account](https://portal.platform.quix.ai/self-sign-up){target=_blank}. You may just want to connect to your own Kafka installation, but if you'd like to connect to the Quix Platform you'll need a free account.
+Sign up for a free [Quix account](https://portal.platform.quix.ai/self-sign-up){target=_blank}. You may just want to connect to your own Kafka installation, but if you'd like to connect to the Quix Platform you'll need a free account.
 
 ## Getting help
 

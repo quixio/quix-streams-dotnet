@@ -2,7 +2,7 @@
 
 In order to reduce the amount of boilerplate code added to each of our samples, we developed the `App.run()` feature.
 
-`App.run` takes care of several small but important tasks in managing your Python apps. These include:
+`App.run` takes care of several small but important tasks in managing your apps. These include:
 
 * Start subscribing to topics
 * Handle termination
