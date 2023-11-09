@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -119,9 +119,7 @@ namespace QuixStreams.State
             this.Add((string)key, (StateValue)value);
         }
 
-        /// <summary>
-        /// Removes all key-value pairs from the in-memory state and marks the state for clearing when flushed.
-        /// </summary>
+        /// <inheritdoc cref="IState"/>
         public void Clear()
         {
             lock (this.SyncRoot)
@@ -390,6 +388,11 @@ namespace QuixStreams.State
 
                 this.changes.Clear();
                 Task.WaitAll(tasks.ToArray());
+                
+                if (this.storage.CanPerformTransactions)
+                {
+                    this.storage.Flush();
+                }
 
                 OnFlushed?.Invoke(this, EventArgs.Empty);
                 this.logger.LogTrace("Flushed {0} state changes.", tasks.Count());
@@ -440,12 +443,20 @@ namespace QuixStreams.State
                     if (value == null) continue;
                     this.inMemoryState[key] = value;
                 }
-
+                
                 // Reset changes
                 var count = this.changes.Count;
                 this.changes.Clear();
                 this.logger.LogTrace($"Reset {count} state");
             }
+        }
+        
+        /// <summary>
+        /// Releases storage resources used by the state.
+        /// </summary>
+        public void Dispose()
+        {
+            this.storage.Dispose();
         }
 
         /// <summary>
@@ -900,6 +911,13 @@ namespace QuixStreams.State
             }
         }
         
+        /// <summary>
+        /// Releases storage resources used by the state.
+        /// </summary>
+        public void Dispose()
+        {
+            this.underlyingDictionaryState.Dispose();
+        }
         
         /// <summary>
         /// Represents the types of changes made to the state.
