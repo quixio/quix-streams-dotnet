@@ -388,7 +388,7 @@ namespace QuixStreams.State
 
                 this.changes.Clear();
                 Task.WaitAll(tasks.ToArray());
-                
+
                 if (this.storage.CanPerformTransactions)
                 {
                     this.storage.Flush();
@@ -436,14 +436,14 @@ namespace QuixStreams.State
 
                 Task.WaitAll(tasks);
 
-                // Assign result to inmemory
+                // Assign result to in-memory
                 foreach (var task in tasks)
                 {
                     var (key, value) = task.Result;
                     if (value == null) continue;
                     this.inMemoryState[key] = value;
                 }
-                
+
                 // Reset changes
                 var count = this.changes.Count;
                 this.changes.Clear();

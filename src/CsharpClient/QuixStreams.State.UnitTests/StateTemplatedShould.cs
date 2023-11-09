@@ -375,7 +375,6 @@ namespace QuixStreams.State.UnitTests
             state[key].Should().Be(8);
         }
 
-
         [Fact]
         public void Clear_ShouldRemoveAllValues()
         {
