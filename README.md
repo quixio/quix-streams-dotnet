@@ -370,31 +370,8 @@ For a detailed overview of features, [visit our documentation](https://www.quix.
 
 ### What's Next
 
-This library is being actively developed. We have some more features planned in the library's [roadmap](https://github.com/orgs/quixio/projects/1) coming soon. The main highlight a new feature called "streaming data frames" that simplifies stateful stream processing for users coming from a batch processing environment. It eliminates the need for users to manage state in memory, update rolling windows, deal with checkpointing and state persistence, and manage state recovery after a service unexpectedly restarts. By introducing a familiar interface to Pandas DataFrames, we hopes to make stream processing even more accessible to data professionals who are new to streaming data.
+This library is being actively developed, however we have separated out the python library into https://github.com/quixio/quix-streams, where python version of 2.0 and above will be hosted. Because of this, you will find this repo only contains C#. If you're looking for the maintenance branch of 0.5.x, you can find it at https://github.com/quixio/quix-streams/tree/release/v0.5. We're going to maintain compatibility between the two versions and over time take new features developed in python to C#.
 
-The following example shows how you would perform rolling window calculation on a streaming data frame:
-
-```python
-# Create a projection for columns we need.
-df = consumer_stream.df[["gForceX", "gForceY", "gForceZ"]] 
-
-# Create new feature by simply combining three columns to one new column.
-df["gForceTotal"] = df["gForceX"].abs() + df["gForceY"].abs() + df["gForceZ"].abs()
-
-# Calculate rolling window of previous column for last 10 minutes
-df["gForceTotal_avg10s"] = df["gForceTotal"].rolling("10m").mean()
-
-# Loop through the stream row by row as data flows through the service. 
-# The async iterator will stop the code if there is no new data incoming from the consumer stream
-async for row in df:
-    print(row)
-    await producer_stream.write(row)
-```
-Note that this is exactly how you would do the same calculation on static data in Jupyter notebook—so will be easy to learn for those of you who are used to batch processing. 
-
-There's also no need to get your head around the complexity of stateful processing on streaming data—this will all be managed by the library. Moreover, although it will still feel like Pandas, it will use binary tables under the hood—which adds a significant performance boost compared to traditional Pandas DataFrames.
-
-To find out when the next version is ready, make sure you watch this repo.
 
 ## Using Quix Streams with the Quix SaaS platform
 
@@ -402,25 +379,20 @@ This library doesn't have any dependency on any commercial product, but if you u
 
 ## Contribution Guide
 
-Contributing is a great way to learn and we especially welcome those who haven't contributed to an OSS project before. We're very open to any feedback or code contributions to this OSS project ❤️. Before contributing, please read our [Contributing File](https://github.com/quixio/quix-streams/blob/main/CONTRIBUTING.md) and familiarize yourself with our [architecture](https://github.com/quixio/quix-streams/blob/main/arch-notes.md) for how you can best give feedback and contribute. 
+Contributing is a great way to learn and we especially welcome those who haven't contributed to an OSS project before. We're very open to any feedback or code contributions to this OSS project ❤️. Before contributing, please read our [Contributing File](https://github.com/quixio/quix-streams-dotnet/blob/main/CONTRIBUTING.md) and familiarize yourself with our [architecture](https://github.com/quixio/quix-streams-dotnet/blob/main/arch-notes.md) for how you can best give feedback and contribute. 
 
 ## Need help?
 
-If you run into any problems, ask on #quix-help in [The Stream Slack channel](https://quix.io/slack-invite), alternatively create an [issue](https://github.com/quixio/quix-streams/issues)
+If you run into any problems, ask on #quix-help in [The Stream Slack channel](https://quix.io/slack-invite), alternatively create an [issue](https://github.com/quixio/quix-streams-dotnet/issues)
 
-## Roadmap
-
-You can view and contribute to our feature [roadmap](https://github.com/orgs/quixio/projects/1).
 
 ## Community 👭
 
-Join other software engineers in [The Stream](https://quix.io/slack-invite), an online community of people interested in all things data streaming. This is a space to both listen to and share learnings.
-
-🙌  [Join our Slack community!](https://quix.io/slack-invite)
+Join other software engineers in our [slack](https://quix.io/slack-invite), an online community of people interested in all things data streaming. This is a space to both listen to and share learnings.
 
 ## License
 
-Quix Streams is licensed under the Apache 2.0 license. View a copy of the License file [here](https://github.com/quixio/quix-streams/blob/main/LICENSE).
+Quix Streams is licensed under the Apache 2.0 license. View a copy of the License file [here](https://github.com/quixio/quix-streams-dotnet/blob/main/LICENSE).
 
 ## Stay in touch 👋
 

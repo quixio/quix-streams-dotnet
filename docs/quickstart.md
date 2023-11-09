@@ -2,7 +2,7 @@
 
 Quix Streams provides you with a library for developing real-time streaming applications focused on time-series data.
 
-If you would like to know more about Quix Streams, you can view the [Quix Streams GitHub repository](https://github.com/quixio/quix-streams){target=_blank}. Quix Streams is open source under the Apache 2.0 license.
+If you would like to know more about Quix Streams, you can view the [Quix Streams GitHub repository](https://github.com/quixio/quix-streams-dotnet){target=_blank}. Quix Streams is open source under the Apache 2.0 license.
 
 In this quickstart guide you will learn how to start using Quix Streams as quickly as possible. This guide covers how to:
 
@@ -48,7 +48,7 @@ pip install quixstreams
 
 You can read information about installation for your platform on the [PyPi page](https://pypi.org/project/quixstreams/){target=_blank} for Quix Streams.
 
-The [README](https://github.com/quixio/quix-streams) for Quix Streams also has the latest information on installation.
+The [README](https://github.com/quixio/quix-streams-dotnet) for Quix Streams also has the latest information on installation.
 
 !!! note
 
@@ -403,7 +403,7 @@ Try one of the following resources to continue your Quix learning journey:
 
 * [Get a free Quix account](https://portal.platform.quix.ai/self-sign-up){target=_blank}
 
-* [Quix Streams GitHub](https://github.com/quixio/quix-streams){target=_blank}
+* [Quix Streams GitHub](https://github.com/quixio/quix-streams-dotnet){target=_blank}
 
 * [Quix Platform glossary](https://quix.io/docs/platform/glossary.html)
 
