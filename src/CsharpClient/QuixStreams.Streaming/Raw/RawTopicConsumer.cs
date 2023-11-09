@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using QuixStreams.Kafka;
+using QuixStreams;
+using QuixStreams.Kafka.Transport;
 using QuixStreams.Telemetry.Kafka;
-using QuixStreams.Transport.IO;
-using QuixStreams.Transport.Kafka;
 
 namespace QuixStreams.Streaming.Raw
 {
@@ -22,7 +22,7 @@ namespace QuixStreams.Streaming.Raw
         bool errorHandlerRegistered = false;
 
         /// <inheritdoc />
-        public event EventHandler<RawMessage> OnMessageReceived;
+        public event EventHandler<KafkaMessage> OnMessageReceived;
         
         /// <inheritdoc />
         public event EventHandler OnDisposed;
@@ -85,37 +85,20 @@ namespace QuixStreams.Streaming.Raw
         {
             if (connectionStarted)
             {
-                var logger = Logging.CreateLogger<RawTopicConsumer>();
+                var logger = QuixStreams.Logging.CreateLogger<RawTopicConsumer>();
                 logger.LogWarning("Attempted to subscribe to topic {0} more than once.", this.topicName);
                 return;
             }
 
-            kafkaConsumer.OnNewPackage = OnNewPackageHandler;
+            kafkaConsumer.OnMessageReceived = OnNewMessageReceivedHandler;
 
             kafkaConsumer.Open();
             connectionStarted = true;
         }
 
-        private Task OnNewPackageHandler(Package package)
+        private Task OnNewMessageReceivedHandler(KafkaMessage kafkaMessage)
         {
-            byte[] message = (byte[])package.Value;
-
-            Dictionary<string, string> vals = new Dictionary<string, string>();
-            foreach (var el in package.TransportContext)
-            {
-                var value = el.Value;
-                if (value == null)
-                {
-                    vals[el.Key] = "";
-                }
-                else
-                {
-                    vals[el.Key] = value.ToString();
-                }
-            }
-
-            var meta = new ReadOnlyDictionary<string, string>(vals);
-            this.OnMessageReceived?.Invoke(this, new RawMessage(package.GetKey(), message, meta));
+            this.OnMessageReceived?.Invoke(this, kafkaMessage);
             return Task.CompletedTask;
         }
         
@@ -125,7 +108,7 @@ namespace QuixStreams.Streaming.Raw
             if (!connectionStarted) return;
 
             kafkaConsumer.Close();
-            kafkaConsumer.OnNewPackage = null;
+            kafkaConsumer.OnMessageReceived = null;
             connectionStarted = false;
         } 
 

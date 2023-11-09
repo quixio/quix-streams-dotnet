@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Mono.Unix;
 using Mono.Unix.Native;
+using QuixStreams;
 using QuixStreams.State.Storage;
 using QuixStreams.State.Storage.FileStorage.LocalFileStorage;
 using QuixStreams.Streaming.Raw;
@@ -48,7 +49,7 @@ namespace QuixStreams.Streaming
         /// <param name="subscribe">Whether the consumer defined should be automatically subscribed to start receiving messages</param>
         public static void Run(CancellationToken cancellationToken = default, Action beforeShutdown = null, bool subscribe = true)
         {
-            var logger = Logging.CreateLogger<object>();
+            var logger = QuixStreams.Logging.CreateLogger<object>();
             var waitForProcessShutdownStart = new ManualResetEventSlim();
             var waitForMainExit = new ManualResetEventSlim();
             Action actualBeforeShutdown = () =>

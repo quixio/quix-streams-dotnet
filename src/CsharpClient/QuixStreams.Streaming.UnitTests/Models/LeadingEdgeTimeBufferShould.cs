@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using FluentAssertions;
 using NSubstitute;
 using Quix.TestBase.Extensions;
-using QuixStreams;
 using QuixStreams.Streaming.Models;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
@@ -25,7 +24,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             // Arrange
             var topicProducer = Substitute.For<ITopicProducer>();
             var streamProducer = Substitute.For<IStreamProducerInternal>();
-            streamProducer.Epoch.Returns(DateTime.UnixEpoch);
+            streamProducer.Epoch.Returns(TimeExtensions.UnixEpoch);
 
             var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
 
@@ -56,7 +55,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             // Arrange
             var topicProducer = Substitute.For<ITopicProducer>();
             var streamProducer = Substitute.For<IStreamProducerInternal>();
-            streamProducer.Epoch.Returns(DateTime.UnixEpoch);
+            streamProducer.Epoch.Returns(TimeExtensions.UnixEpoch);
 
             var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
 
@@ -89,7 +88,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             // Arrange
             var topicProducer = Substitute.For<ITopicProducer>();
             var streamProducer = Substitute.For<IStreamProducerInternal>();
-            streamProducer.Epoch.Returns(DateTime.UnixEpoch);
+            streamProducer.Epoch.Returns(TimeExtensions.UnixEpoch);
 
             var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
 
@@ -138,7 +137,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             // Arrange
             var topicProducer = Substitute.For<ITopicProducer>();
             var streamProducer = Substitute.For<IStreamProducerInternal>();
-            streamProducer.Epoch.Returns(DateTime.UnixEpoch);
+            streamProducer.Epoch.Returns(TimeExtensions.UnixEpoch);
 
             var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
 
@@ -209,7 +208,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             // Arrange
             var topicProducer = Substitute.For<ITopicProducer>();
             var streamProducer = Substitute.For<IStreamProducerInternal>();
-            streamProducer.Epoch.Returns(DateTime.UnixEpoch);
+            streamProducer.Epoch.Returns(TimeExtensions.UnixEpoch);
             
             var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
 
@@ -243,7 +242,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var topicProducer = Substitute.For<ITopicProducer>();
             var streamProducer = Substitute.For<IStreamProducerInternal>();
             var offsetTs = TimeSpan.FromSeconds(1);
-            streamProducer.Epoch.Returns(DateTime.UnixEpoch + offsetTs);
+            streamProducer.Epoch.Returns(TimeExtensions.UnixEpoch + offsetTs);
             
             var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
 
@@ -276,7 +275,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var topicProducer = Substitute.For<ITopicProducer>();
             var streamProducer = Substitute.For<IStreamProducerInternal>();
             var offsetTs = TimeSpan.FromSeconds(1);
-            streamProducer.Epoch.Returns(DateTime.UnixEpoch.AddTicks(offsetTs.ToNanoseconds() * 10000 / 1000)); // this should be totally ignored
+            streamProducer.Epoch.Returns(TimeExtensions.UnixEpoch.AddTicks(offsetTs.ToNanoseconds() * 10000 / 1000)); // this should be totally ignored
             
             var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
 
