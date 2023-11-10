@@ -40,4 +40,11 @@ namespace QuixStreams.Streaming.States
     /// <param name="missingStateKey">The name of the key being accessed.</param>
     /// <returns>The default value for the specified key.</returns>
     public delegate T StreamStateDefaultValueDelegate<out T>(string missingStateKey);
+    
+    /// <summary>
+    /// Represents a method that returns the default value for a scalar state.
+    /// </summary>
+    /// <typeparam name="T">The type of the default value.</typeparam>
+    /// <returns>The default value for the specified key.</returns>
+    public delegate T StreamStateScalarDefaultValueDelegate<out T>();
 }

@@ -78,9 +78,9 @@ namespace QuixStreams.Streaming
         /// <typeparam name="T">The type of the stream state value.</typeparam>
         /// <param name="streamConsumer">The stream consumer to get the state for</param>
         /// <param name="stateName">The name of the state.</param>
-        /// <param name="defaultValueFactory">A delegate that creates the default value for the stream state when a previously not set key is accessed.</param>
+        /// <param name="defaultValueFactory">A delegate that creates the default value for the stream state.</param>
         /// <returns>The dictionary stream state for the specified storage name using the provided default value factory.</returns>
-        public static StreamScalarState<T> GetScalarState<T>(this IStreamConsumer streamConsumer, string stateName, StreamStateDefaultValueDelegate<T> defaultValueFactory = null)
+        public static StreamScalarState<T> GetScalarState<T>(this IStreamConsumer streamConsumer, string stateName, StreamStateScalarDefaultValueDelegate<T> defaultValueFactory = null)
         {
             return streamConsumer.GetStateManager().GetScalarState(stateName, defaultValueFactory);
         }

@@ -816,7 +816,7 @@ namespace QuixStreams.Streaming.IntegrationTests
                 // Clean previous run
                 stream.GetStateManager().DeleteStates();
 
-                var rollingSum = stream.GetScalarState("RollingSumTotal", (sid) => 0d);
+                var rollingSum = stream.GetScalarState("RollingSumTotal", () => 0d);
                 var rollingSumPerParameter = stream.GetDictionaryState("RollingSum", (sid) => 0d);
 
                 stream.Timeseries.OnDataReceived += (o, args) =>
@@ -1015,7 +1015,7 @@ namespace QuixStreams.Streaming.IntegrationTests
                 // Clean previous run
                 stream.GetStateManager().DeleteStates();
 
-                var rollingSum = stream.GetScalarState("RollingSumTotal", (sid) => 0d);
+                var rollingSum = stream.GetScalarState("RollingSumTotal", () => 0d);
 
                 stream.Timeseries.OnDataReceived += (o, args) =>
                 {
@@ -1100,7 +1100,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             {
                 // Clean previous run
                 stream.GetStateManager().DeleteStates();
-                stream.GetScalarState("RandomScalar", (sid) => 0d);
+                stream.GetScalarState("RandomScalar", () => 0d);
 
                 stream.Timeseries.OnDataReceived += (o, args) =>
                 {

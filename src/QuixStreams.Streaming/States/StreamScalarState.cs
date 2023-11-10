@@ -91,7 +91,7 @@ namespace QuixStreams.Streaming.States
         /// <summary>
         /// A function that returns a default value of type T when the value has not been set yet.
         /// </summary>
-        private readonly StreamStateDefaultValueDelegate<T> defaultValueFactory;
+        private readonly StreamStateScalarDefaultValueDelegate<T> defaultValueFactory;
 
         /// <summary>
         /// Raised immediately before a flush operation is performed.
@@ -109,10 +109,10 @@ namespace QuixStreams.Streaming.States
         /// <param name="storage">The storage the stream state is going to use as underlying storage</param>
         /// <param name="defaultValueFactory">A function that returns a default value of type T when the value has not been set yet</param>
         /// <param name="loggerFactory">The logger factory to use</param>
-        internal StreamScalarState(IStateStorage storage, StreamStateDefaultValueDelegate<T> defaultValueFactory, ILoggerFactory loggerFactory)
+        internal StreamScalarState(IStateStorage storage, StreamStateScalarDefaultValueDelegate<T> defaultValueFactory, ILoggerFactory loggerFactory)
         {
             this.scalarState = new State.ScalarState<T>(storage, loggerFactory);
-            this.defaultValueFactory = defaultValueFactory ?? (s => throw new KeyNotFoundException("The specified key was not found and there was no default value factory set."));
+            this.defaultValueFactory = defaultValueFactory ?? (() => default(T));
         }
         
         /// <summary>
@@ -124,7 +124,7 @@ namespace QuixStreams.Streaming.States
             get
             {
                 if (this.scalarState.Value != null) return this.scalarState.Value;
-                var val = this.defaultValueFactory(string.Empty);
+                var val = this.defaultValueFactory();
                 this.scalarState.Value = val;
                 return val;
             }

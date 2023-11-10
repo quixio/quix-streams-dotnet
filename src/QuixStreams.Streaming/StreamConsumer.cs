@@ -73,7 +73,7 @@ namespace QuixStreams.Streaming
             return this.GetStateManager().GetDictionaryState(stateName, defaultValueFactory);
         }
         
-        public StreamScalarState<T> GetScalarState<T>(string stateName, StreamStateDefaultValueDelegate<T> defaultValueFactory)
+        public StreamScalarState<T> GetScalarState<T>(string stateName, StreamStateScalarDefaultValueDelegate<T> defaultValueFactory)
         {
             return this.GetStateManager().GetScalarState(stateName, defaultValueFactory);
         }

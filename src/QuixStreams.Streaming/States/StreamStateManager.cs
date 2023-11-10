@@ -172,10 +172,10 @@ namespace QuixStreams.Streaming.States
         /// Creates a new application state of scalar type with automatically managed lifecycle for the stream
         /// </summary>
         /// <param name="stateName">The name of the state</param>
-        /// <param name="defaultValueFactory">The value factory for the state when the state has no value for the key</param>
+        /// <param name="defaultValueFactory">The value factory for the state when the state has no value</param>
         /// <returns>Dictionary stream state</returns>
         public StreamScalarState<T> GetScalarState<T>(string stateName,
-            StreamStateDefaultValueDelegate<T> defaultValueFactory = null)
+            StreamStateScalarDefaultValueDelegate<T> defaultValueFactory = null)
         {
             return GetStreamState(stateName, (stateName) =>
             {

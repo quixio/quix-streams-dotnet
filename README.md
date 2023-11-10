@@ -273,7 +273,7 @@ This library allows you to produce and consume different types of mixed data in 
                         .AddValue("ticket", JsonSerializer.Serialize(ticket));
 
                     // preferably some logic to avoid ticketing more than once per certain period
-                    // would be beneficial
+                    // would be better user experience but is out of the scope of this sample
                 }
             }
         };
@@ -282,38 +282,39 @@ This library allows you to produce and consume different types of mixed data in 
 
 ### Support for stateful processing 
 
-Quix Streams includes a state management feature that let's you store intermediate steps in complex calculations. To use it, you can create an instance of `LocalFileStorage` or use one of our helper classes to manage the state such as `InMemoryStorage`. 
+Quix Streams includes a state management feature that let's you store intermediate steps in complex calculations. Out of box you are provided with a RocksDB backed state. To use it, you can create an instance of `LocalFileStorage` or use one of our helper classes to manage the state such as `InMemoryStorage`. 
 Here's an example of a stateful operation sum for a selected column in data.
 
-```python
-state = InMemoryStorage(LocalFileStorage())
+    ``` cs
+    consumer.OnStreamReceived += (sender, streamConsumer) =>
+    {
+        // Create a dictionary for rolling sums, starting with 0
+        // This would allow us to have any number of rolling sums for the stream
+        // rather than just one
+        var rollingSums = streamConsumer.GetDictionaryState("rolling_sums", (key) => 0d);
+        
+        // Scalar state when you do not need a dictionary
+        var gforceMax = streamConsumer.GetScalarState("gforce_max", () => 0d);
+        
+        streamConsumer.Timeseries.OnDataReceived += (o, args) =>
+        {
+            foreach (var timestamp in args.Data.Timestamps)
+            {
+                var gforce = timestamp.Parameters["gforce"].NumericValue;
+                if (gforce > gforceMax.Value)
+                {
+                    gforceMax.Value = gforce.Value;
+                }
 
-def on_g_force(stream_consumer: StreamConsumer, data: TimeseriesData):
+                rollingSums["gforce"] += gforce ?? 0;
+            }
+        };
+    };
 
-    for row in data.timestamps:
-		# Append G-Force sensor value to accumulated state (SUM).
-        state[stream_consumer.stream_id] += abs(row.parameters["gForceX"].numeric_value)
-				
-		# Attach new column with aggregated values.
-        row.add_value("gForceX_sum", state[stream_consumer.stream_id])
-
-	# Send updated rows to the producer topic.
-    topic_producer.get_or_create_stream(stream_consumer.stream_id).timeseries.publish(data)
-
-
-# read streams
-def read_stream(stream_consumer: StreamConsumer):
-        # If there is no record for this stream, create a default value.
-		if stream_consumer.stream_id not in state:
-            state[stream_consumer.stream_id] = 0
-		
-	# We subscribe to gForceX column.
-    stream_consumer.timeseries.create_buffer("gForceX").on_read = on_g_force
-
-
-topic_consumer.on_stream_received = read_stream
-topic_consumer.on_committed = state.flush
-```
+    // App.SetStateStorageType(StateStorageTypes.InMemory);
+    // App.SetStateStorageType(StateStorageTypes.RocksDb); // The default
+    // App.SetStateStorageRootDir("./another_folder"); // the default is ./state
+    ```
 
 ## Performance and Usability Enhancements
 
