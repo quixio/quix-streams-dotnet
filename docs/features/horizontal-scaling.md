@@ -14,14 +14,12 @@ When the purple replica crashes, "stream 4" is assigned automatically to the blu
 
 This situation triggers an event on the topic consumer in the blue replica indicating that "stream 4" has been received:
 
-=== "C\#"
-    
-    ``` cs
-    topicConsumer.OnStreamReceived += (topic, newStream) =>
-    {
-        Console.WriteLine($"New stream received: {newStream.StreamId}");
-    };
-    ```
+``` cs
+topicConsumer.OnStreamReceived += (topic, newStream) =>
+{
+    Console.WriteLine($"New stream received: {newStream.StreamId}");
+};
+```
 
 This would result in the following output on blue replica:
 
@@ -35,22 +33,20 @@ When the purple replica restarts and becomes available again, it signals to the 
 
 This will trigger two events, one in the blue replica indicating that "stream 4" has been revoked, and one in the purple replica indicating that "stream 4" has been assigned again:
 
-=== "C\#"
-    
-    ``` cs
-    topicConsumer.OnStreamReceived += (topic, newStream) =>
+``` cs
+topicConsumer.OnStreamReceived += (topic, newStream) =>
+{
+    Console.WriteLine($"New stream received: {newStream.StreamId}");
+};
+
+topicConsumer.OnStreamsRevoked += (topic, streamsRevoked) =>
+{
+    foreach (var stream in streamsRevoked)
     {
-        Console.WriteLine($"New stream received: {newStream.StreamId}");
-    };
-    
-    topicConsumer.OnStreamsRevoked += (topic, streamsRevoked) =>
-    {
-        foreach (var stream in streamsRevoked)
-        {
-            Console.WriteLine($"Stream revoked: {stream.StreamId}");
-        }
-    };
-    ```
+        Console.WriteLine($"Stream revoked: {stream.StreamId}");
+    }
+};
+```
 
 Results in the following output on the blue replica:
 

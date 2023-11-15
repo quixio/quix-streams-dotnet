@@ -6,22 +6,20 @@ The typical pattern for creating a service is to [subscribe](subscribe.md) to da
 
 The following examples show how to process data in the Pandas data frame format, the format defined by the `TimeseriesData` class, and the event data format:
 
-=== "C\#"
-    
-    ``` cs
-    streamConsumer.timeseries.OnDataReceived += (stream, args) =>
-    {
-        var outputData = new TimeseriesData();
-    
-        // Calculate mean value for each second of data to effectively down-sample source topic to 1Hz.
-        outputData.AddTimestamp(args.Data.Timestamps.First().Timestamp)
-            .AddValue("ParameterA 10Hz", args.Data.Timestamps.Average(s => s.Parameters["ParameterA"].NumericValue.GetValueOrDefault()))
-            .AddValue("ParameterA source frequency", args.Data.Timestamps.Count);
-    
-        // Send data back to the stream
-        streamProducer.Timeseries.Publish(outputData);
-    };
-    ```
+``` cs
+streamConsumer.timeseries.OnDataReceived += (stream, args) =>
+{
+    var outputData = new TimeseriesData();
+
+    // Calculate mean value for each second of data to effectively down-sample source topic to 1Hz.
+    outputData.AddTimestamp(args.Data.Timestamps.First().Timestamp)
+        .AddValue("ParameterA 10Hz", args.Data.Timestamps.Average(s => s.Parameters["ParameterA"].NumericValue.GetValueOrDefault()))
+        .AddValue("ParameterA source frequency", args.Data.Timestamps.Count);
+
+    // Send data back to the stream
+    streamProducer.Timeseries.Publish(outputData);
+};
+```
 
 !!! tip
 

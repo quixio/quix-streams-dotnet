@@ -6,11 +6,9 @@ Quix Streams enables you use stream context to publish data to your topic. You c
 
 In order to start publishing data to Quix you first need an instance of `KafkaStreamingClient` (or `QuixStreamingClient` if using the Quix Platform). To create an instance, use the following code:
 
-=== "C\#"
-	
-	``` cs
-	var client = new QuixStreams.Streaming.KafkaStreamingClient("127.0.0.1:9092");
-	```
+``` cs
+var client = new QuixStreams.Streaming.KafkaStreamingClient("127.0.0.1:9092");
+```
 
 You can read about other ways to connect to your message broker in the [Connecting to a broker](connect.md) section of this documentation.
 
@@ -18,29 +16,23 @@ You can read about other ways to connect to your message broker in the [Connecti
 
 To publish data to a topic you need an instance of `TopicProducer`. This instance enables you to publish data and additional context for streams using the provided topic. You can create an instance using the client’s `get_topic_producer` method, passing the `TOPIC` as the parameter.
 
-=== "C\#"
-    
-    ``` cs
-    var topicProducer = client.GetTopicProducer(TOPIC);
-    ```
+``` cs
+var topicProducer = client.GetTopicProducer(TOPIC);
+```
 
 ## Create / reopen a stream
 
 [Streams](features/streaming-context.md) are the central context of data in Quix Streams. Streams make it easy to manage, discover, and work with your data. You can create as many streams as you want using the `create_stream` method of your `TopicProducer` instance:
 
-=== "C\#"
-    
-    ``` cs
-    var stream = topicProducer.CreateStream();
-    ```
+``` cs
+var stream = topicProducer.CreateStream();
+```
 
 A stream ID is auto-generated, but you can also pass a `StreamId` to the method to append data to an existing stream. This is also useful when you want to have a consistent `StreamId` so you can continue using the same stream in the future.
 
-=== "C\#"
-    
-    ``` cs
-    var stream = topicProducer.CreateStream("existing-stream-id");
-    ```
+``` cs
+var stream = topicProducer.CreateStream("existing-stream-id");
+```
 
 ## Stream properties
 
@@ -48,24 +40,20 @@ You can add optional context to your streams by adding a name, some metadata, or
 
 You can add these using the `Properties` options of the generated `stream` instance:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Properties.Name = "Hello World C# stream";
-    stream.Properties.Location = "/test/location";
-    stream.Properties.Metadata["metakey"] = "value1";
-    stream.Properties.Metadata["metakey2"] = "value2";
-    ```
+``` cs
+stream.Properties.Name = "Hello World C# stream";
+stream.Properties.Location = "/test/location";
+stream.Properties.Metadata["metakey"] = "value1";
+stream.Properties.Metadata["metakey2"] = "value2";
+```
 
 ### Stream name
 
 When using Quix Platform, the stream name is the display name of your stream in the platform. If you specify one, Quix Platform uses it instead of the Stream ID to represent your stream inside the platform. For example, the following name:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Properties.Name = "Hello World my first stream";
-    ```
+``` cs
+stream.Properties.Name = "Hello World my first stream";
+```
 
 Would result in this visualization in the list of streams of your workspace:
 
@@ -77,11 +65,9 @@ The stream location property defines a default folder for the stream in the fold
 
 For example, the following location:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Properties.Location = $"/Game/Codemasters/F1-2019/{track}"
-    ```
+``` cs
+stream.Properties.Location = $"/Game/Codemasters/F1-2019/{track}"
+```
 
 Would result in this hierarchy:
 
@@ -112,14 +98,12 @@ However, sometimes a stream can be closed for other reasons, such as if an error
 
 These snippets show you how to close a stream and how to specify the `StreamEndType`:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Close(); // same as when used with StreamEndType.Closed
-    stream.Close(StreamEndType.Closed);
-    stream.Close(StreamEndType.Aborted);
-    stream.Close(StreamEndType.Terminated);
-    ```
+``` cs
+stream.Close(); // same as when used with StreamEndType.Closed
+stream.Close(StreamEndType.Closed);
+stream.Close(StreamEndType.Aborted);
+stream.Close(StreamEndType.Terminated);
+```
 
 The `StreamEndType` can be one of the following possible end types:
 
@@ -164,49 +148,43 @@ The following table shows an example:
 
 The following code would generate the previous `TimeseriesData` and publish it to the stream:
 
-=== "C\#"
-    
-    ``` cs
-    var data = new TimeseriesData();
-    
-    data.AddTimestampNanoseconds(1)
-        .AddValue("Speed", 120)
-        .AddValue("Gear", 3);
-    data.AddTimestampNanoseconds(2)
-        .AddValue("Speed", 123)
-        .AddValue("Gear", 3);
-    data.AddTimestampNanoseconds(3)
-        .AddValue("Speed", 125)
-        .AddValue("Gear", 3);
-    data.AddTimestampNanoseconds(6)
-        .AddValue("Speed", 110)
-        .AddValue("Gear", 2);
-    
-    stream.Timeseries.Publish(data);
-    ```
+``` cs
+var data = new TimeseriesData();
+
+data.AddTimestampNanoseconds(1)
+    .AddValue("Speed", 120)
+    .AddValue("Gear", 3);
+data.AddTimestampNanoseconds(2)
+    .AddValue("Speed", 123)
+    .AddValue("Gear", 3);
+data.AddTimestampNanoseconds(3)
+    .AddValue("Speed", 125)
+    .AddValue("Gear", 3);
+data.AddTimestampNanoseconds(6)
+    .AddValue("Speed", 110)
+    .AddValue("Gear", 2);
+
+stream.Timeseries.Publish(data);
+```
 
 Although Quix Streams enables you to publish `TimeseriesData` to a stream directly, without any buffering, Quix recommends you use the built-in [Buffer](#using-a-buffer) feature to achieve high throughput. The following code would publish the same `TimeseriesData` through a buffer:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Timeseries.Buffer.Publish(data);
-    ```
+``` cs
+stream.Timeseries.Buffer.Publish(data);
+```
 
 Visit the [Buffer](#using-a-buffer) section of this documentation to find out more about the built-in buffer feature.
 
 Quix Streams enables you to attach numbers, strings, or binary data to your timestamps. The following code attaches one of each to the same timestamp:
 
-=== "C\#"
-    
-    ``` cs
-    var data = new TimeseriesData();
-    
-    data.AddTimestamp(DateTime.UtcNow)
-        .AddValue("ParameterA", 10)
-        .AddValue("ParameterB", "hello")
-        .AddValue("ParameterC", Encoding.ASCII.GetBytes("Hello Quix!")); // Publish binary data as a byte array.
-    ```
+``` cs
+var data = new TimeseriesData();
+
+data.AddTimestamp(DateTime.UtcNow)
+    .AddValue("ParameterA", 10)
+    .AddValue("ParameterB", "hello")
+    .AddValue("ParameterC", Encoding.ASCII.GetBytes("Hello Quix!")); // Publish binary data as a byte array.
+```
 
 ### Timestamps
 
@@ -215,13 +193,10 @@ Quix Streams supports common date and time formats for timestamps when adding da
 There are several helper functions to add new timestamps to `Buffer`, `TimeseriesData`, and `EventData` instances with several types of date/time formats.
 
 These are the helper functions:
-
-=== "C\#"
-    
-      - `AddTimestamp(DateTime dateTime)` : Add a new timestamp in `DateTime` format. Default `Epoch` will never be added to this.    
-      - `AddTimestamp(TimeSpan timeSpan)` : Add a new timestamp in `TimeSpan` format since the default `Epoch` determined in the stream.    
-      - `AddTimestampMilliseconds(long timeMilliseconds)` : Add a new timestamp in milliseconds since the default `Epoch` determined in the stream.    
-      - `AddTimestampNanoseconds(long timeNanoseconds)` : Add a new timestamp in nanoseconds since the default `Epoch` determined in the stream.
+- `AddTimestamp(DateTime dateTime)` : Add a new timestamp in `DateTime` format. Default `Epoch` will never be added to this.    
+- `AddTimestamp(TimeSpan timeSpan)` : Add a new timestamp in `TimeSpan` format since the default `Epoch` determined in the stream.    
+- `AddTimestampMilliseconds(long timeMilliseconds)` : Add a new timestamp in milliseconds since the default `Epoch` determined in the stream.    
+- `AddTimestampNanoseconds(long timeNanoseconds)` : Add a new timestamp in nanoseconds since the default `Epoch` determined in the stream.
 
 #### Epoch
 
@@ -229,37 +204,31 @@ There is a stream property called `epoch` (set to 0 by default, meaning 00:00:00
 
 The following code indicates to Quix Streams to set the current date as `epoch` and add it to each timestamp added to the stream:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Epoch = DateTime.Today;
-    ```
+``` cs
+stream.Epoch = DateTime.Today;
+```
 
 Adding data without using the `epoch` property:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Timeseries.Buffer
-        .AddTimestamp(DateTime.UtcNow)
-        .AddValue("ParameterA", 10)
-        .AddValue("ParameterB", "hello")
-        .Publish();
-    ```
+``` cs
+stream.Timeseries.Buffer
+    .AddTimestamp(DateTime.UtcNow)
+    .AddValue("ParameterA", 10)
+    .AddValue("ParameterB", "hello")
+    .Publish();
+```
 
 Or you can add a timestamp 1000ms from the epoch `Today`:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Epoch = DateTime.Today;
-    
-    stream.Timeseries.Buffer
-        .AddTimestampInMilliseconds(1000)
-        .AddValue("ParameterA", 10)
-        .AddValue("ParameterB", "hello")
-        .Publish();
-    ```
+``` cs
+stream.Epoch = DateTime.Today;
+
+stream.Timeseries.Buffer
+    .AddTimestampInMilliseconds(1000)
+    .AddValue("ParameterA", 10)
+    .AddValue("ParameterB", "hello")
+    .Publish();
+```
 
 ### Using a Buffer
 
@@ -267,100 +236,86 @@ Quix Streams provides you with an optional programmable buffer which you can con
 
 The following code configures the buffer to publish a packet when the size of the buffer reaches 100 timestamps:
 
-=== "C\#"
-    You can use the `Buffer` property embedded in the `Parameters` property of your `stream`:
-    ``` cs
-    stream.Timeseries.Buffer.PacketSize = 100;
-    ```
+``` cs
+stream.Timeseries.Buffer.PacketSize = 100;
+```
+
 Once created, you can then write data to that buffer:
 
-=== "C\#"
-    Writing a [TimeseriesData](#timeseriesdata-format) to that buffer is as simple as using the `Publish` method of that built-in `Buffer`:
-    ``` cs
-    stream.Timeseries.Buffer.Publish(data);
-    ```
+Writing a [TimeseriesData](#timeseriesdata-format) to that buffer is as simple as using the `Publish` method of that built-in `Buffer`:
+``` cs
+stream.Timeseries.Buffer.Publish(data);
+```
 
 Quix Streams also enables you to publish data to the buffer without creating a `TimeseriesData` instance explicitly. To do so, you can use the same helper methods that are supported by the `TimeseriesData` class like `add_timestamp`, `add_value` or `add_tag`. Then use the `publish` method to publish that timestamp to the buffer.
-
-=== "C\#"
     
-    ``` cs
-    stream.Timeseries.Buffer
-        .AddTimestamp(DateTime.UtcNow)
-        .AddValue("ParameterA", 10)
-        .AddValue("ParameterB", "hello")
-        .AddValue("ParameterC", Encoding.ASCII.GetBytes("Hello Quix!")) // Publish binary data as a byte array.
-        .Publish();
-    ```
+``` cs
+stream.Timeseries.Buffer
+    .AddTimestamp(DateTime.UtcNow)
+    .AddValue("ParameterA", 10)
+    .AddValue("ParameterB", "hello")
+    .AddValue("ParameterC", Encoding.ASCII.GetBytes("Hello Quix!")) // Publish binary data as a byte array.
+    .Publish();
+```
 
 You can configure multiple conditions to determine when the buffer has to release data. If any of these conditions become true, the buffer releases a new packet of data and that data is cleared from the buffer:
 
-=== "C\#"
-    
-      - `Buffer.BufferTimeout`: The maximum duration in milliseconds for which the buffer will be held before releasing the data. A packet of data is released when the configured timeout value has elapsed from the last data received in the buffer.    
-      - `Buffer.PacketSize`: The maximum packet size in terms of number of timestamps. Each time the buffer has this number of timestamps, the packet of data is released.    
-      - `Buffer.TimeSpanInNanoseconds`: The maximum time between timestamps in nanoseconds. When the difference between the earliest and latest buffered timestamp surpasses this number, the packet of data is released.    
-      - `Buffer.TimeSpanInMilliseconds`: The maximum time between timestamps in milliseconds. When the difference between the earliest and latest buffered timestamp surpasses this number, the packet of data is released. Note: This is a millisecond converter on top of `TimeSpanInNanoseconds`. They both work with the same underlying value.    
-      - `Buffer.CustomTriggerBeforeEnqueue`: A custom function which is invoked **before** adding a new timestamp to the buffer. If it returns true, the packet of data is released before adding the timestamp to it.    
-      - `Buffer.CustomTrigger`: A custom function which is invoked **after** adding a new timestamp to the buffer. If it returns true, the packet of data is released with the entire buffer content.    
-      - `Buffer.Filter`: A custom function to filter the incoming data before adding it to the buffer. If it returns true, data is added, otherwise it isn’t.
+
+- `Buffer.BufferTimeout`: The maximum duration in milliseconds for which the buffer will be held before releasing the data. A packet of data is released when the configured timeout value has elapsed from the last data received in the buffer.    
+- `Buffer.PacketSize`: The maximum packet size in terms of number of timestamps. Each time the buffer has this number of timestamps, the packet of data is released.    
+- `Buffer.TimeSpanInNanoseconds`: The maximum time between timestamps in nanoseconds. When the difference between the earliest and latest buffered timestamp surpasses this number, the packet of data is released.    
+- `Buffer.TimeSpanInMilliseconds`: The maximum time between timestamps in milliseconds. When the difference between the earliest and latest buffered timestamp surpasses this number, the packet of data is released. Note: This is a millisecond converter on top of `TimeSpanInNanoseconds`. They both work with the same underlying value.    
+- `Buffer.CustomTriggerBeforeEnqueue`: A custom function which is invoked **before** adding a new timestamp to the buffer. If it returns true, the packet of data is released before adding the timestamp to it.    
+- `Buffer.CustomTrigger`: A custom function which is invoked **after** adding a new timestamp to the buffer. If it returns true, the packet of data is released with the entire buffer content.    
+- `Buffer.Filter`: A custom function to filter the incoming data before adding it to the buffer. If it returns true, data is added, otherwise it isn’t.
 
 #### Examples
 
 The following buffer configuration will publish data every 100ms or, if no data is buffered in the 1 second timeout period, it will flush and empty the buffer anyway:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Timeseries.Buffer.TimeSpanInMilliseconds = 100;
-    stream.Timeseries.Buffer.BufferTimeout = 1000;
-    ```
+``` cs
+stream.Timeseries.Buffer.TimeSpanInMilliseconds = 100;
+stream.Timeseries.Buffer.BufferTimeout = 1000;
+```
 
 The following buffer configuration will publish data every 100ms window, or if critical data is added to it:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Timeseries.Buffer.TimeSpanInMilliseconds = 100;
-    stream.Timeseries.Buffer.CustomTrigger = data => data.Timestamps[0].Tags["is_critical"] == "True";
-    ```
+``` cs
+stream.Timeseries.Buffer.TimeSpanInMilliseconds = 100;
+stream.Timeseries.Buffer.CustomTrigger = data => data.Timestamps[0].Tags["is_critical"] == "True";
+```
 
 ### Parameter definitions
 
 Quix Streams enables you to define metadata for parameters and events to describe them. You can define things like human readable names, descriptions, acceptable ranges of values, and so on. Quix Platform uses some of this configuration when visualizing data on the platform, but you can also use them in your own models, bridges, or visualization implementations.
 
-=== "C\#"  
-    We call this parameter metadata `ParameterDefinitions`, and all you need to do is to use the `AddDefinition` helper function of the `stream.timeseries` property:
-    
-    ``` cs
-    stream.Timeseries.AddDefinition("ParameterIdForCode", "DisplayNameForHumans", "Additional Description")
-    ```
+We call this parameter metadata `ParameterDefinitions`, and all you need to do is to use the `AddDefinition` helper function of the `stream.timeseries` property:
+
+``` cs
+stream.Timeseries.AddDefinition("ParameterIdForCode", "DisplayNameForHumans", "Additional Description")
+```
 
 Once you have added a new definition, you can attach some additional properties to it. This is the list of visualization and metadata options you can attach to a `ParameterDefinition`:
 
-=== "C\#"
-    
-      - `SetRange(double minimumValue, double maximumValue)` : Set the minimum and maximum range of the parameter.    
-      - `SetUnit(string unit)` : Set the unit of the parameter.    
-      - `SetFormat(string format)` : Set the format of the parameter.    
-      - `SetCustomProperties(string customProperties)` : Set the custom properties of the parameter for your own needs
-    
-    Example:
-    
-    ``` cs
-    stream.Timeseries
-        .AddDefinition("vehicle-speed", "Vehicle speed", "Current vehicle speed measured using wheel sensor")
-        .SetUnit("kmh")
-        .SetRange(0, 400);
-    ```
+- `SetRange(double minimumValue, double maximumValue)` : Set the minimum and maximum range of the parameter.    
+- `SetUnit(string unit)` : Set the unit of the parameter.    
+- `SetFormat(string format)` : Set the format of the parameter.    
+- `SetCustomProperties(string customProperties)` : Set the custom properties of the parameter for your own needs
+
+Example:
+
+``` cs
+stream.Timeseries
+    .AddDefinition("vehicle-speed", "Vehicle speed", "Current vehicle speed measured using wheel sensor")
+    .SetUnit("kmh")
+    .SetRange(0, 400);
+```
 
 The Min and Max range definition sets the Y axis range in the waveform visualisation view in Quix Platform. This definition:
 
-=== "C\#"
-    
-    ``` cs
-    .AddDefinition("Speed").SetRange(0, 400)
-    ```
+``` cs
+.AddDefinition("Speed").SetRange(0, 400)
+```
 
 Will set up this view in Data explorer:
 
@@ -374,15 +329,13 @@ You can also define a `Location` before adding parameter and event definitions. 
 
 For example, setting this parameter location:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Timeseries
-        .AddLocation("/Player/Motion/Car")
-        .AddDefinition("Pitch")
-        .AddDefinition("Roll")
-        .AddDefinition("Yaw");
-    ```
+``` cs
+stream.Timeseries
+    .AddLocation("/Player/Motion/Car")
+    .AddDefinition("Pitch")
+    .AddDefinition("Roll")
+    .AddDefinition("Yaw");
+```
 
 Will result in this parameter hierarchy in the parameter selection dialogs.
 
@@ -409,37 +362,33 @@ You can imagine a list of `EventData` instances as a table of three columns wher
 
 The following code would generate the list of `EventData` shown in the previous example and publish it to the stream:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Events.Publish(new EventData("failure23", 1, "Gearbox has a failure"));
-    stream.Events.Publish(new EventData("box-event2", 2, "Car has entered to the box"));
-    stream.Events.Publish(new EventData("motor-off", 3, "Motor has stopped"));
-    stream.Events.Publish(new EventData("race-event3", 6, "Race has finished"));
-    ```
+``` cs
+stream.Events.Publish(new EventData("failure23", 1, "Gearbox has a failure"));
+stream.Events.Publish(new EventData("box-event2", 2, "Car has entered to the box"));
+stream.Events.Publish(new EventData("motor-off", 3, "Motor has stopped"));
+stream.Events.Publish(new EventData("race-event3", 6, "Race has finished"));
+```
 
 Quix Streams enables you publish events without creating `EventData` instances explicitly. To do so, you can use similar helpers to those present in [TimeseriesData](#timeseriesdata-format) format such as `add_timestamp`, `add_value` or `add_tag`. Then use the `publish` method to publish that timestamp to the stream.
 
-=== "C\#"
-    
-    ``` cs
-    stream.Events
-        .AddTimestamp(1)
-        .AddValue("failure23", "Gearbox has a failure")
-        .Publish();
-    stream.Events
-        .AddTimestamp(2)
-        .AddValue("box-event2", "Car has entered to the box")
-        .Publish();
-    stream.Events
-        .AddTimestamp(3)
-        .AddValue("motor-off", "Motor has stopped")
-        .Publish();
-    stream.Events
-        .AddTimestamp(6)
-        .AddValue("race-event3", "Race has finished")
-        .Publish();
-    ```
+``` cs
+stream.Events
+    .AddTimestamp(1)
+    .AddValue("failure23", "Gearbox has a failure")
+    .Publish();
+stream.Events
+    .AddTimestamp(2)
+    .AddValue("box-event2", "Car has entered to the box")
+    .Publish();
+stream.Events
+    .AddTimestamp(3)
+    .AddValue("motor-off", "Motor has stopped")
+    .Publish();
+stream.Events
+    .AddTimestamp(6)
+    .AddValue("race-event3", "Race has finished")
+    .Publish();
+```
 
 ### Event definitions
 
@@ -452,11 +401,9 @@ This is the list of visualization and metadata options you can attach to a `Even
 
 For example, the following code defines a human readable name and a Severity level for the `EventA`:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Events.AddDefinition("EventA", "The Event A").SetLevel(EventLevel.Critical).SetCustomProperties("{this could be a json}");
-    ```
+``` cs
+stream.Events.AddDefinition("EventA", "The Event A").SetLevel(EventLevel.Critical).SetCustomProperties("{this could be a json}");
+```
 
 ## Tags
 
@@ -466,37 +413,35 @@ Tags work as a part of the primary key inside `TimeseriesData` and `EventData`, 
 
 For example, the following code:
 
-=== "C\#"
-    
-    ``` cs
-    var data = new TimeseriesData();
-    
-    data.AddTimestampNanoseconds(1)
-        .AddTag("CarId", "car1")
-        .AddValue("Speed", 120)
-        .AddValue("Gear", 3);
-    data.AddTimestampNanoseconds(2)
-        .AddTag("CarId", "car1")
-        .AddValue("Speed", 123)
-        .AddValue("Gear", 3);
-    data.AddTimestampNanoseconds(3)
-        .AddTag("CarId", "car1")
-        .AddValue("Speed", 125)
-        .AddValue("Gear", 3);
-    
-    data.AddTimestampNanoseconds(1)
-        .AddTag("CarId", "car2")
-        .AddValue("Speed", 95)
-        .AddValue("Gear", 2);
-    data.AddTimestampNanoseconds(2)
-        .AddTag("CarId", "car2")
-        .AddValue("Speed", 98)
-        .AddValue("Gear", 2);
-    data.AddTimestampNanoseconds(3)
-        .AddTag("CarId", "car2")
-        .AddValue("Speed", 105)
-        .AddValue("Gear", 2);
-    ```
+``` cs
+var data = new TimeseriesData();
+
+data.AddTimestampNanoseconds(1)
+    .AddTag("CarId", "car1")
+    .AddValue("Speed", 120)
+    .AddValue("Gear", 3);
+data.AddTimestampNanoseconds(2)
+    .AddTag("CarId", "car1")
+    .AddValue("Speed", 123)
+    .AddValue("Gear", 3);
+data.AddTimestampNanoseconds(3)
+    .AddTag("CarId", "car1")
+    .AddValue("Speed", 125)
+    .AddValue("Gear", 3);
+
+data.AddTimestampNanoseconds(1)
+    .AddTag("CarId", "car2")
+    .AddValue("Speed", 95)
+    .AddValue("Gear", 2);
+data.AddTimestampNanoseconds(2)
+    .AddTag("CarId", "car2")
+    .AddValue("Speed", 98)
+    .AddValue("Gear", 2);
+data.AddTimestampNanoseconds(3)
+    .AddTag("CarId", "car2")
+    .AddValue("Speed", 105)
+    .AddValue("Gear", 2);
+```
 
 Will generate the following `TimeseriesData` packet with tagged data:
 
@@ -515,76 +460,71 @@ Will generate the following `TimeseriesData` packet with tagged data:
 
 The following example of **good tagging practice** enables you to query the maximum speed for driver identifier "Peter":
 
-=== "C\#"
-    
-    ``` cs
-    stream.Timeseries.Buffer
-        .AddTimestamp(DateTime.UtcNow)
-        .AddTag("vehicle-plate", "SL96 XCX")
-        .AddTag("driver-id", "Peter")
-        .AddValue("Speed", 53)
-        .AddValue("Gear", 4)
-        .Publish();
-    ```
+``` cs
+stream.Timeseries.Buffer
+    .AddTimestamp(DateTime.UtcNow)
+    .AddTag("vehicle-plate", "SL96 XCX")
+    .AddTag("driver-id", "Peter")
+    .AddValue("Speed", 53)
+    .AddValue("Gear", 4)
+    .Publish();
+```
 
 The following example of **bad tagging practice** will lead to excessive cardinality as there will be a large number of different values for the specified tag, Speed:
 
-=== "C\#"
-    
-    ``` cs
-    stream.Timeseries.Buffer
-        .AddTimestamp(DateTime.UtcNow)
-        .AddTag("Speed", 53)
-        .AddValue("Gear", 4)
-        .Publish();
-    ```
+``` cs
+stream.Timeseries.Buffer
+    .AddTimestamp(DateTime.UtcNow)
+    .AddTag("Speed", 53)
+    .AddValue("Gear", 4)
+    .Publish();
+```
 
 ## Minimal example
 
 This is a minimal code example you can use to publish data to a topic using Quix Streams:
 
-=== "C\#"
-    
-    ``` cs
-    using System;
-    using System.Threading;
-    
-    namespace WriteHelloWorld
+
+``` cs
+using System;
+using System.Threading;
+
+namespace WriteHelloWorld
+{
+    class Program
     {
-        class Program
+        /// <summary>
+        /// Main will be invoked when you run the application
+        /// </summary>
+        static void Main()
         {
-            /// <summary>
-            /// Main will be invoked when you run the application
-            /// </summary>
-            static void Main()
+            // Create a client which holds generic details for creating input and output topics
+            var client = new QuixStreams.Streaming.QuixStreamingClient();
+
+            using var topicProducer = client.GetTopicProducer(TOPIC_ID);
+
+            var stream = topicProducer.CreateStream();
+
+            stream.Properties.Name = "Hello World stream";
+
+            Console.WriteLine("Publishing values for 30 seconds");
+            for (var index = 0; index < 3000; index++)
             {
-                // Create a client which holds generic details for creating input and output topics
-                var client = new QuixStreams.Streaming.QuixStreamingClient();
-    
-                using var topicProducer = client.GetTopicProducer(TOPIC_ID);
-    
-                var stream = topicProducer.CreateStream();
-    
-                stream.Properties.Name = "Hello World stream";
-    
-                Console.WriteLine("Publishing values for 30 seconds");
-                for (var index = 0; index < 3000; index++)
-                {
-                    stream.Timeseries.Buffer
-                        .AddTimestamp(DateTime.UtcNow)
-                        .AddValue("ParameterA", index)
-                        .Publish();
-    
-                    Thread.Sleep(10);
-                }
-    
-                Console.WriteLine("Closing stream");
-                stream.Close();
-                Console.WriteLine("Done!");
+                stream.Timeseries.Buffer
+                    .AddTimestamp(DateTime.UtcNow)
+                    .AddValue("ParameterA", index)
+                    .Publish();
+
+                Thread.Sleep(10);
             }
+
+            Console.WriteLine("Closing stream");
+            stream.Close();
+            Console.WriteLine("Done!");
         }
     }
-    ```
+}
+```
 
 ## Publish raw Kafka messages
 
@@ -594,21 +534,19 @@ For this, Quix Streams provides a way to [publish](publish.md#publish-raw-kafka-
 
 You can publish messages with or without a key. The following example demonstrates how to publish two messages to Kafka, one message with a key, and one without:
 
-=== "C\#"
-    
-    ``` cs
-    using var producer = client.GetRawTopicProducer(TOPIC_ID);
-    
-    var data = new byte[]{1,3,5,7,1,43};
-    
-    //Publish value with KEY to kafka
-    producer.Publish(new Streaming.Raw.RawMessage(
-        MESSAGE_KEY,
-        data
-    ));
-    
-    //Publish value withhout key to kafka
-    producer.Publish(new Streaming.Raw.RawMessage(
-        data
-    )); 
-    ```
+``` cs
+using var producer = client.GetRawTopicProducer(TOPIC_ID);
+
+var data = new byte[]{1,3,5,7,1,43};
+
+//Publish value with KEY to kafka
+producer.Publish(new Streaming.Raw.RawMessage(
+    MESSAGE_KEY,
+    data
+));
+
+//Publish value withhout key to kafka
+producer.Publish(new Streaming.Raw.RawMessage(
+    data
+)); 
+```
