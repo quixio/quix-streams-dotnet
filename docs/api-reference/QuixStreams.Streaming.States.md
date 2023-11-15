@@ -17,3 +17,4 @@
 | Delegates | |
 | :--- | :--- |
 | [StreamStateDefaultValueDelegate&lt;T&gt;(string)](StreamStateDefaultValueDelegate_T_(string).md 'QuixStreams.Streaming.States.StreamStateDefaultValueDelegate<T>(string)') | Represents a method that returns the default value for a given key. |
+| [StreamStateScalarDefaultValueDelegate&lt;T&gt;()](StreamStateScalarDefaultValueDelegate_T_().md 'QuixStreams.Streaming.States.StreamStateScalarDefaultValueDelegate<T>()') | Represents a method that returns the default value for a scalar state. |
