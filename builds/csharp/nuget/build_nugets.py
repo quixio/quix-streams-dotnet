@@ -47,7 +47,7 @@ def run_command(cmd: List[str]) -> int:
 
 def get_csharp_root_path():
     file_folder = os.path.abspath(os.path.dirname(__file__))
-    relative_path_root = "../src"
+    relative_path_root = "../../../src"
     abs_path_root = os.path.abspath(os.path.join(file_folder, relative_path_root))
 
     # Check if the path exists
