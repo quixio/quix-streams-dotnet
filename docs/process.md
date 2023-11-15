@@ -6,7 +6,7 @@ The typical pattern for creating a service is to [subscribe](subscribe.md) to da
 
 The following examples show how to process data in the Pandas data frame format, the format defined by the `TimeseriesData` class, and the event data format:
 
-``` cs
+``` csharp
 streamConsumer.timeseries.OnDataReceived += (stream, args) =>
 {
     var outputData = new TimeseriesData();

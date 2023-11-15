@@ -6,7 +6,7 @@ Quix Streams enables you to subscribe to the data in your topics in real time. T
 
 To subscribe to data from your Kafka topics, you need an instance of `KafkaStreamingClient`. To create an instance, use the following code:
 
-``` cs
+``` csharp
 var client = new QuixStreams.Streaming.KafkaStreamingClient("127.0.0.1:9092");
 ```
 
@@ -17,7 +17,7 @@ You can read about other ways to connect to your message broker in the [Connecti
 Topics are central to stream processing operations. To subscribe to data in a topic you need an instance of `TopicConsumer`. This instance enables you to receive all the incoming streams on the specified topic. You can create an instance using the client’s `get_topic_consumer` method, passing the `TOPIC` as the parameter.
 
 
-``` cs
+``` csharp
 var topicConsumer = client.GetTopicConsumer(TOPIC);
 ```
 
@@ -25,7 +25,7 @@ var topicConsumer = client.GetTopicConsumer(TOPIC);
 
 The [Consumer group](kafka.md#consumer-group) is a concept used when you want to [scale horizontally](features/horizontal-scaling.md). Each consumer group is identified using an ID, which you set optionally when opening a connection to the topic for reading:
 
-``` cs
+``` csharp
 var topicConsumer = client.GetTopicConsumer("{topic}","{your-consumer-group-id}");
 ```
 
@@ -39,7 +39,7 @@ This indicates to the message broker that all the replicas of your process will 
 
 Once you have the `TopicConsumer` instance you can start consuming streams. For each stream received by the specified topic, `TopicConsumer` will execute the event `OnStreamReceived`. You can attach a callback to this event to execute code that reacts when you receive a new stream. For example, the following code prints the `StreamId` for each stream received by that Topic:
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (topic, newStream) =>
 {
     Console.WriteLine($"New stream read: {newStream.StreamId}");
@@ -71,7 +71,7 @@ The following table shows an example:
 
 You can subscribe to time-series data from streams using the `OnDataReceived` event of the `StreamConsumer` instance. For instance, in the following example we consume and print the first timestamp and value of the parameter `ParameterA` received in the [TimeseriesData](#timeseriesdata-format) packet:
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (topic, streamConsumer) =>
 {
     streamConsumer.Timeseries.OnDataReceived += (sender, args) =>
@@ -99,7 +99,7 @@ Quix Streams supports numeric, string, and binary value types. You should use th
 
 This is a simple example showing how to consume `Speed` values of the `TimeseriesData` used in the previous example:
 
-``` cs
+``` csharp
 foreach (var timestamp in data.Timestamps)
 {
         var timestamp = timestamp.TimestampNanoseconds;
@@ -121,7 +121,7 @@ Speed - 6: 110
 
 In addition to the `TimeseriesData`, there is also the raw data format. You use the raw format when you want to maximize performance. You can use the `OnRawReceived` event to handle this data format, as demonstrated in the following code.
 
-``` cs
+``` csharp
 receivedStream.Timeseries.OnRawReceived += (sender, args) =>
 {
     streamWriter.Timeseries.Publish(args.Data);
@@ -137,19 +137,19 @@ Quix Streams provides you with an optional programmable buffer which you can con
 
 You can use the `Buffer` property embedded in the `Timeseries` property of your `stream`, or create a separate instance of that buffer using the `CreateBuffer` method:
 
-``` cs
+``` csharp
 var buffer = newStream.Timeseries.CreateBuffer();
 ```
 
 You can configure a buffer’s input requirements using built-in properties. For example, the following configuration means that the Buffer will release a packet when the time span between first and last timestamp inside the buffer reaches 100 milliseconds:
 
-``` cs
+``` csharp
 buffer.TimeSpanInMilliseconds = 100;
 ```
 
 Consuming data from that buffer is achieved by subscribing to events. The buffer uses the same events as when consuming without the buffer. For example, the following code prints the `ParameterA` value of the first timestamp of each packet released from the buffer:
 
-``` cs
+``` csharp
 buffer.OnDataReleased += (sender, args) =>
 {
     var timestamp = ags.Data.Timestamps[0].Timestamp;
@@ -172,14 +172,14 @@ You can configure multiple conditions to determine when the buffer has to releas
 
 The following buffer configuration sends data every 100ms or, if no data is buffered in the 1 second timeout period, it will empty the buffer and send the pending data anyway:
 
-``` cs
+``` csharp
 stream.Timeseries.Buffer.PacketSize = 100;
 stream.Timeseries.Buffer.BufferTimeout = 1000;
 ```
 
 The following buffer configuration sends data every 100ms window, or if critical data arrives:
 
-``` cs
+``` csharp
 stream.Timeseries.Buffer.TimeSpanInMilliseconds = 100;
 stream.Timeseries.Buffer.CustomTrigger = data => data.Timestamps[0].Tags["is_critical"] == "True";
 ```
@@ -207,7 +207,7 @@ You can imagine a list of `EventData` instances as a table of three columns wher
 
 Consuming events from a stream is similar to consuming timeseries data. In this case, the library does not use a buffer, but the way you consume Event Data from a stream is similar:
 
-``` cs
+``` csharp
 newStream.Events.OnDataReceived += (stream, args) =>
 {
     Console.WriteLine($"Event received for stream. Event Id: {args.Data.Id}");
@@ -229,7 +229,7 @@ If the properties of a stream are changed, the consumer can detect this and hand
 
 You can write the handler as follows:
 
-``` cs
+``` csharp
 streamConsumer.Properties.OnChanged += (sender, args) =>
 {
     Console.WriteLine($"Properties changed for stream: {streamConsumer.StreamId}");	
@@ -238,7 +238,7 @@ streamConsumer.Properties.OnChanged += (sender, args) =>
 
 Then register the properties change event handler:
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (topic, streamConsumer) =>
 {
     streamConsumer.Timeseries.OnDataReceived += (sender, args) =>
@@ -262,7 +262,7 @@ You can keep a copy of the properties if you need to find out which properties h
 
 It is possible to handle changes in [parameter definitions](./publish.md#parameter-definitions). Parameter definitions are metadata attached to data in a stream. The `on_definitions_changed` event is linked to an appropriate event handler, as shown in the following example code:
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (topic, streamConsumer) =>
 {
     streamConsumer.Events.OnDataReceived += (sender, args) =>
@@ -296,7 +296,7 @@ By default, Quix Streams automatically commits processed messages at a regular d
 
 If you need to use different automatic commit intervals, use the following code:
 
-``` cs
+``` csharp
 var topicConsumer = client.GetTopicConsumer(topic, consumerGroup, new CommitOptions()
 {
         CommitEvery = 100,
@@ -311,13 +311,13 @@ The code above commits every 100 processed messages or 500 ms, whichever is soon
 
 Some use cases need manual committing to mark completion of work, for example when you wish to batch process data, so the frequency of commit depends on the data. This can be achieved by first enabling manual commit for the topic:
 
-``` cs
+``` csharp
 client.GetTopicConsumer(topic, consumerGroup, CommitMode.Manual);
 ```
 
 Then, whenever your commit condition is fulfilled, call:
 
-``` cs
+``` csharp
 topicConsumer.Commit();
 ```
 
@@ -327,7 +327,7 @@ The previous code commits parameters, events, or metadata that is consumed and s
 
 Whenever a commit completes, an event is raised that can be connected to a handler. This event is raised for both manual and automatic commits. You can subscribe to this event using the following code:
 
-``` cs
+``` csharp
 topicConsumer.OnCommitted += (sender, args) =>
 {
     //... your code …
@@ -350,7 +350,7 @@ When setting the `AutoOffsetReset` you can specify one of three options:
 
 The default option is `Latest`.
 
-``` cs
+``` csharp
 var topicConsumer = client.GetTopicConsumer("MyTopic", autoOffset: AutoOffsetReset.Latest);
 or
 var topicConsumer = client.GetTopicConsumer("MyTopic", autoOffset: AutoOffsetReset.Earliest);
@@ -370,7 +370,7 @@ When working with a broker, you have a certain number of topic streams assigned 
 
 One or more streams are about to be revoked from your client, but you have a limited time frame, according to your broker configuration, to react to this and optionally commit to the broker:
 
-``` cs
+``` csharp
 topicConsumer.OnRevoking += (sender, args) =>
     {
         // ... your code ...
@@ -381,7 +381,7 @@ topicConsumer.OnRevoking += (sender, args) =>
 
 One or more streams are revoked from your client. You can no longer commit to these streams, you can only handle the revocation in your client:
 
-``` cs
+``` csharp
 topicConsumer.OnStreamsRevoked += (sender, revokedStreams) =>
     {
         // revoked streams are provided to the handler
@@ -392,7 +392,7 @@ topicConsumer.OnStreamsRevoked += (sender, revokedStreams) =>
 
 You can detect stream closure with the stream closed event which has the sender and the `StreamEndType` to help determine the closure reason if required.
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (topic, streamConsumer) =>
 {
         streamConsumer.OnStreamClosed += (reader, args) =>
@@ -414,7 +414,7 @@ The `StreamEndType` can be one of:
 
 This is a minimal code example you can use to receive data from a topic using Quix Streams:
 
-``` cs
+``` csharp
 using System;
 using System.Linq;
 using System.Threading;
@@ -465,7 +465,7 @@ namespace ReadHelloWorld
 
 Quix Streams uses an internal protocol which is both data and speed optimized, but you do need to use the library for both the producer and consumer. Custom formats need to be handled manually. To enable this, the library provides the ability to [publish](publish.md#publish-raw-kafka-messages) and [subscribe](subscribe.md#subscribe-raw-kafka-messages) to the raw, unformatted messages, and to work with them as bytes. This gives you the means to implement the protocol as needed and convert between formats.
 
-``` cs
+``` csharp
 var rawConsumer = client.GetRawTopicConsumer(TOPIC_ID)
 
 rawConsumer.OnMessageRead += (sender, message) =>

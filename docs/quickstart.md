@@ -45,7 +45,7 @@ To create a simple consumer, follow these steps:
 
 2. Update your Program.cs to the following code
 
-    ``` cs
+    ``` csharp
     using QuixStreams.Streaming;
 
     // Client connecting to Kafka instance locally without authentication. 
@@ -80,7 +80,7 @@ To create a simple producer follow these steps:
 
 2. Update your Program.cs to the following code
 
-    ``` cs
+    ``` csharp
     using System.Text;
     using QuixStreams.Streaming;
 
@@ -134,7 +134,7 @@ Typically a transform block in Quix will receive some data on an input topic, pe
 
 2. Update your Program.cs to the following code
 
-    ``` cs
+    ``` csharp
     using QuixStreams.Streaming;
 
     // Client connecting to Kafka instance locally without authentication. 
@@ -194,7 +194,7 @@ To connect to the Quix Platform using Quix Streams, you will need to provide a t
 
 The following code snippet shows you how to connect to the Quix Platform:
 
-``` cs
+``` csharp
 // Client connecting to kafka using Quix Streaming client to retrieve authentication details
 var client = new QuixStreamingClient("<your-token>"); // token can be obtained from UI (either PAT or streaming token)
 ```
@@ -203,7 +203,7 @@ This connects to the Quix Platform, rather than your local Kafka installation, w
 
 A further example is to rewrite the consumer-producer program you created earlier in this Quickstart, to work with Quix Platform:
 
-``` cs
+``` csharp
 using QuixStreams.Streaming;
 
 // Client connecting to kafka using Quix Streaming client to retrieve authentication details

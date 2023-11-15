@@ -19,7 +19,7 @@ The library provides automatic state management which handles application lifecy
 ## Reading and writing
 
 
-``` cs
+``` csharp
 // ... context where stream consumer is available such as OnStreamReceived, OnDataReceived handlers ...
 
 // This will return a state where type is 'int'
@@ -38,7 +38,7 @@ myLastValueState["someParam"]["Mean"] = 37
 
 You can query the existing states several ways. All states can be iterated through starting from App, Topic or Stream.
 
-``` cs
+``` csharp
 // From app level
 var appStateManager = App.GetStateManager();
 var topicStateManager = appStateManager.GetTopicStateManager("my_topic");  // note, with Quix Manager broker, this would be topic id
@@ -63,7 +63,7 @@ var streamStateValue = streamState["my_key"];
 
 You can delete any or all state using the state manager of a specific level. See [Querying](#querying) section for how to acquire specific managers.
 
-``` cs
+``` csharp
 // From app level
 var appStateManager = App.GetStateManager();
 appStateManager.DeleteTopicState("specific_topic"); // note, with Quix Manager broker, this would be topic id
@@ -83,7 +83,7 @@ streamStateManager.DeleteStates(); // deletes all
 ## Scalar state type
 In addition to the dictionary state type, we also have the scalar state type. It functions similarly, but holds just a single value, making it simpler to use. Below is an example:
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (sender, consumer) =>
 {
 
@@ -107,7 +107,7 @@ Any state storage is supported as long as as it implements IStateStorage. These 
 
 The storage type must be specified at app level using the following code, but by default LocalFileStorage is used at the moment.
 
-``` cs
+``` csharp
 var storage = new InMemoryStorage();
 App.SetStateStorage(storage); // this mostly makes sense for testing until other storage types are implemented
 ```
@@ -125,7 +125,7 @@ C\# supports two ways to call the Storage API.
 The Synchronous API. During a call to these synchronous methods, the
 program thread execution is blocked.
 
-``` cs
+``` csharp
 var storage = new LocalFileStorage();
 
 //clear storage ( remove all keys )
@@ -154,7 +154,7 @@ await storage.GetAllKeys();
 
 The asynchronous API in which methods do contain Async suffix. These methods use the Task-Based Asynchronous Pattern (TAP) and returnTasks. TAP enables Quix to use async / await and avoid blocking the main thread on longer-running operations. In this case internal I/O.
 
-``` cs
+``` csharp
 var storage = new LocalFileStorage();
 
 //clear storage ( remove all keys )

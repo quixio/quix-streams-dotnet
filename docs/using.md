@@ -23,7 +23,7 @@ If you had only one replica, it would need to process all streams in that topic.
 
 When you create the consumer you specify the consumer group as follows:
 
-``` cs
+``` csharp
 var topicConsumer = client.GetTopicConsumer("my-topic",
     consumerGroup: "my-service-consumergroup", // the unique consumer group for the service
     autoOffset: AutoOffsetReset.Earliest); // instruction to consume from beginning if no existing offset is found. Latest by default
@@ -59,7 +59,7 @@ In the following sections of this documentation you'll learn about these formats
 
 When it comes to registering your event handlers, the first step is to register a stream eventhandler that is invoked when the first message is received for a stream.
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (sender, consumer) =>
 {
     // .. handler logic ..
@@ -92,7 +92,7 @@ The following table documents which handlers to register, depending on the type 
 
 The following code sample demonstrates how to register a callback to handle data in the data frame format: 
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (sender, newStreamConsumer) =>
 {
     newStreamConsumer.Timeseries.OnDataReceived += (o, args) =>
@@ -118,7 +118,7 @@ This processor receives (consumes) data, processes it (transforms), and then pub
 
 The example code demonstrates this:
 
-``` cs
+``` csharp
 using QuixStreams.Streaming;
 using QuixStreams.Telemetry.Kafka;
 
@@ -167,7 +167,7 @@ There are problems with using global variables in your code to track state. The 
 
 For example, consider the following **problematic** code:
 
-``` cs
+``` csharp
 ...
 
 topicConsumer.OnStreamReceived += (sender, consumer) =>
@@ -208,7 +208,7 @@ One issue you may run into is that in-memory data is not persisted across instan
 
 The following example code demonstrates a simple use of state to **persist data across system restarts and crashes**:
 
-``` cs
+``` csharp
 ...
 topicConsumer.OnStreamReceived += (sender, consumer) =>
 {

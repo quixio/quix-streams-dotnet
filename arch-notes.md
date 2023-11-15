@@ -5,19 +5,19 @@ The C# Quix Streams library is organized in 3 main layers:
 ```
 
    ┌───────────────────────────┐
-   │      Streaming layer      │    /CSharp/QuixStreams.Streaming
+   │      Streaming layer      │    /QuixStreams.Streaming
    └─────────────┬─────────────┘
                  │
                  │
    ┌─────────────▼─────────────┐
-   │      Telemetry layer      │    /CSharp/QuixStreams.Telemetry
+   │      Telemetry layer      │    /QuixStreams.Telemetry
    └─────────────┬─────────────┘
                  │
                  │
    ┌─────────────▼─────────────┐
-   │   Kafka Transport layer   │    /CSharp/QuixStreams.Kafka.Transport
+   │   Kafka Transport layer   │    /QuixStreams.Kafka.Transport
    ├───────────────────────────┤
-   │    Kafka wrapper layer    │    /CSharp/QuixStreams.Kafka
+   │    Kafka wrapper layer    │    /QuixStreams.Kafka
    └───────────────────────────┘
 
 ```

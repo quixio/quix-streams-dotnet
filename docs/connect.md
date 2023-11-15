@@ -10,7 +10,7 @@ You can connect to Kafka using the `KafkaStreamingClient` class provided by the 
 
 When your broker requires no authentication, you can use the following code to create a client to connect to it:
 
-``` cs
+``` csharp
 var client = new QuixStreams.Streaming.KafkaStreamingClient("127.0.0.1:9092");
 ```
 
@@ -18,7 +18,7 @@ If your broker is secured, the library provides easy authentication when using u
 
 The following code shows you how to set up the `SecurityOptions` for your connection, and how to create a `KafkaStreamingClient` instance to [subscribe](subscribe.md) to topics and [publish](publish.md) data:
 
-``` cs
+``` csharp
 var security = new SecurityOptions(CERTIFICATES_FOLDER, QUIX_USER, QUIX_PASSWORD);
 var client = new QuixStreams.Streaming.KafkaStreamingClient("127.0.0.1:9093", security);
 ```
@@ -33,7 +33,7 @@ Quix Streams comes with a streaming client that enables you to connect to Quix P
 
 When you’re running the app in the Quix Portal, the following code connects to Quix:
 
-``` cs
+``` csharp
 var client = new QuixStreams.Streaming.QuixStreamingClient();
 ```
 
@@ -43,7 +43,7 @@ If you wish to connect to Quix with your code running locally, you’ll have to 
 
 Once you have [obtained the token](https://quix.io/docs/platform/how-to/streaming-token.html) you will have to provide it as an argument to `QuixStreamingClient` or set the `Quix__Sdk__Token` environment variable. This is shown in the following code:
 
-``` cs
+``` csharp
 var client = new QuixStreams.Streaming.QuixStreamingClient("your_token");
 ```
 

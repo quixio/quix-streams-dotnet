@@ -14,7 +14,7 @@ When the purple replica crashes, "stream 4" is assigned automatically to the blu
 
 This situation triggers an event on the topic consumer in the blue replica indicating that "stream 4" has been received:
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (topic, newStream) =>
 {
     Console.WriteLine($"New stream received: {newStream.StreamId}");
@@ -33,7 +33,7 @@ When the purple replica restarts and becomes available again, it signals to the 
 
 This will trigger two events, one in the blue replica indicating that "stream 4" has been revoked, and one in the purple replica indicating that "stream 4" has been assigned again:
 
-``` cs
+``` csharp
 topicConsumer.OnStreamReceived += (topic, newStream) =>
 {
     Console.WriteLine($"New stream received: {newStream.StreamId}");

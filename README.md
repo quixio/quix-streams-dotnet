@@ -75,7 +75,7 @@ However, the following examples will give you a basic idea of how to produce and
 
 Here's an example of how to <b>produce</b> time-series data into a Kafka Topic.
 
-``` cs
+``` csharp
 // Open the topic producer which will be used to send data to a topic
 using var topicProducer = client.GetTopicProducer("mytesttopic");
 
@@ -108,7 +108,7 @@ stream.Close();
 
 Here's an example of how to <b>consume</b> time-series data from a Kafka Topic:
 
-``` cs
+``` csharp
 // Connect to your kafka client
 var client = new KafkaStreamingClient("127.0.0.1:9092");
 
@@ -148,7 +148,7 @@ Streaming contexts allow you to bundle data from one data source into the same s
 
 * In the following sample, the `CreateStream` function is used to create a stream called _bus-123AAAV_ which gets assigned to one particular consumer and will receive messages in the correct order: 
 
-``` cs
+``` csharp
 var topicProducer = client.GetTopicProducer("data");
 var stream = topicProducer.CreateStream("bus-123AAAV");
 
@@ -176,7 +176,7 @@ Quix Streams serializes and deserializes time-series data using different codecs
 
 * The following example shows data being appended to as stream with the `add_value` method.<br><br>
 
-``` cs
+``` csharp
 // Open the producer topic where the data should be published.
 var topicProducer = client.GetTopicProducer("data");
 // Create a new stream for each device.
@@ -200,7 +200,7 @@ If you’re sending data at <b>high frequency</b>, processing each message can b
 
 * For example, you can configure the library to release values from the buffer whenever 100 timestamps are collected or when a certain number of milliseconds in data have elapsed (note that this is using time in the data, not the consumer clock).
 
-``` cs
+``` csharp
 // subscribe to new streams received
 topicConsumer.OnStreamReceived += (sender, consumer) =>
 {
@@ -233,7 +233,7 @@ This library allows you to produce and consume different types of mixed data in 
 
     Often, you’ll want to combine time series data with binary data. In the following example, we combine bus's onboard camera with telemetry from its ECU unit so we can analyze the onboard camera feed with context.
 
-    ``` cs 
+    ``` csharp 
     // Open the producer topic where to publish data.
     using var topicProducer = client.GetTopicProducer("mytesttopic");
 
@@ -249,7 +249,7 @@ This library allows you to produce and consume different types of mixed data in 
 
 * You can also produce events that include payloads:<br><br>For example, you might need to listen for changes in time-series or binary streams and produce an event (such as "speed limit exceeded"). These  might require some kind of document to send along with the event message (e.g. transaction invoices, or a speeding ticket with photographic proof). Here's an example for a speeding camera:
   
-``` cs
+``` csharp
 consumer.OnStreamReceived += (sender, streamConsumer) =>
 {
     streamConsumer.Timeseries.OnDataReceived += (o, args) =>
@@ -285,7 +285,7 @@ consumer.OnStreamReceived += (sender, streamConsumer) =>
 Quix Streams includes a state management feature that let's you store intermediate steps in complex calculations. Out of box you are provided with a RocksDB backed state. To use it, you can create an instance of `LocalFileStorage` or use one of our helper classes to manage the state such as `InMemoryStorage`. 
 Here's an example of a stateful operation sum for a selected column in data.
 
-``` cs
+``` csharp
 consumer.OnStreamReceived += (sender, streamConsumer) =>
 {
     // Create a dictionary for rolling sums, starting with 0
