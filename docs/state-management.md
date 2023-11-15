@@ -20,18 +20,18 @@ The library provides automatic state management which handles application lifecy
 
 
 ``` cs
-    # ... context where stream consumer is available such as OnStreamReceived, OnDataReceived handlers ...
+// ... context where stream consumer is available such as OnStreamReceived, OnDataReceived handlers ...
 
-    # This will return a state where type is 'int'
-    var myIntState = streamConsumer.GetDictionaryState<int>("RollingSum");   
-    myIntState["my_key"] = 42
-    myIntState["my_key"] += 13
+// This will return a state where type is 'int'
+var myIntState = streamConsumer.GetDictionaryState<int>("RollingSum");   
+myIntState["my_key"] = 42
+myIntState["my_key"] += 13
 
-    # this will return a state where type is a specific dictionary type, with default value
-    var myLastValueState = streamConsumer.GetDictionaryState("LastValue", (missingKey) => new Dictionary<string, double>());
-    myLastValueState["someParam"]["RollingAverage"] = 37.872
-    myLastValueState["someParam"]["LastValue"] = 6
-    myLastValueState["someParam"]["Mean"] = 37
+// this will return a state where type is a specific dictionary type, with default value
+var myLastValueState = streamConsumer.GetDictionaryState("LastValue", (missingKey) => new Dictionary<string, double>());
+myLastValueState["someParam"]["RollingAverage"] = 37.872
+myLastValueState["someParam"]["LastValue"] = 6
+myLastValueState["someParam"]["Mean"] = 37
 ```
 
 ## Querying
@@ -39,24 +39,24 @@ The library provides automatic state management which handles application lifecy
 You can query the existing states several ways. All states can be iterated through starting from App, Topic or Stream.
 
 ``` cs
-    // From app level
-    var appStateManager = App.GetStateManager();
-    var topicStateManager = appStateManager.GetTopicStateManager("my_topic");  // note, with Quix Manager broker, this would be topic id
-    var streamStateManager = topicStateManager.GetStreamStateManager("my_stream_id");
-    var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
-    var streamStateValue = streamState["my_key"];
+// From app level
+var appStateManager = App.GetStateManager();
+var topicStateManager = appStateManager.GetTopicStateManager("my_topic");  // note, with Quix Manager broker, this would be topic id
+var streamStateManager = topicStateManager.GetStreamStateManager("my_stream_id");
+var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
+var streamStateValue = streamState["my_key"];
 
-    // when topic consumer is available
-    var topicStateManager = topicConsumer.GetStateManager();
-    var streamStateManager = topicStateManager.GetStreamStateManager("my_stream_id");
-    var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
-    var streamStateValue = streamState["my_key"];
+// when topic consumer is available
+var topicStateManager = topicConsumer.GetStateManager();
+var streamStateManager = topicStateManager.GetStreamStateManager("my_stream_id");
+var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
+var streamStateValue = streamState["my_key"];
 
-    // when stream consumer is available
-    var streamStateManager = streamConsumer.GetStateManager();
-    // note, you can directly use streamConsumer.GetDictionaryState<int>("some_state") instead if don't need other management API access
-    var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
-    var streamStateValue = streamState["my_key"];
+// when stream consumer is available
+var streamStateManager = streamConsumer.GetStateManager();
+// note, you can directly use streamConsumer.GetDictionaryState<int>("some_state") instead if don't need other management API access
+var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
+var streamStateValue = streamState["my_key"];
 ```
 
 ## Deleting
@@ -64,41 +64,41 @@ You can query the existing states several ways. All states can be iterated throu
 You can delete any or all state using the state manager of a specific level. See [Querying](#querying) section for how to acquire specific managers.
 
 ``` cs
-    // From app level
-    var appStateManager = App.GetStateManager();
-    appStateManager.DeleteTopicState("specific_topic"); // note, with Quix Manager broker, this would be topic id
-    appStateManager.DeleteTopicStates();
+// From app level
+var appStateManager = App.GetStateManager();
+appStateManager.DeleteTopicState("specific_topic"); // note, with Quix Manager broker, this would be topic id
+appStateManager.DeleteTopicStates();
 
-    // when topic consumer is available
-    var topicStateManager = topicConsumer.GetStateManager();
-    topicStateManager.DeleteStreamState("stream_id");
-    topicStateManager.DeleteStreamStates(); // deletes all
+// when topic consumer is available
+var topicStateManager = topicConsumer.GetStateManager();
+topicStateManager.DeleteStreamState("stream_id");
+topicStateManager.DeleteStreamStates(); // deletes all
 
-    // when stream consumer is available
-    var streamStateManager = streamConsumer.GetStateManager();
-    streamStateManager.DeleteState("some_state");
-    streamStateManager.DeleteStates(); // deletes all
+// when stream consumer is available
+var streamStateManager = streamConsumer.GetStateManager();
+streamStateManager.DeleteState("some_state");
+streamStateManager.DeleteStates(); // deletes all
 ```
 
 ## Scalar state type
 In addition to the dictionary state type, we also have the scalar state type. It functions similarly, but holds just a single value, making it simpler to use. Below is an example:
 
 ``` cs
-    topicConsumer.OnStreamReceived += (sender, consumer) =>
+topicConsumer.OnStreamReceived += (sender, consumer) =>
+{
+
+    var totalRpm = consumer.GetStateManager().GetScalarState("total_rpm", (key) => 0d);
+
+    consumer.Timeseries.OnDataReceived += (o, args) =>
     {
-
-        var totalRpm = consumer.GetStateManager().GetScalarState("total_rpm", (key) => 0d);
-
-        consumer.Timeseries.OnDataReceived += (o, args) =>
+        foreach (var timestamp in args.Data.Timestamps)
         {
-            foreach (var timestamp in args.Data.Timestamps)
-            {
-                var rpm = timestamp.Parameters["EngineRPM"].NumericValue;
-                totalRpm.Value += rpm ?? 0;
-                timestamp.AddValue("TotalEngineRPM", totalRpm.Value);
-            }
-        };
+            var rpm = timestamp.Parameters["EngineRPM"].NumericValue;
+            totalRpm.Value += rpm ?? 0;
+            timestamp.AddValue("TotalEngineRPM", totalRpm.Value);
+        }
     };
+};
 ```
 
 ## Storage types
@@ -108,8 +108,8 @@ Any state storage is supported as long as as it implements IStateStorage. These 
 The storage type must be specified at app level using the following code, but by default LocalFileStorage is used at the moment.
 
 ``` cs
-    var storage = new InMemoryStorage();
-    App.SetStateStorage(storage); // this mostly makes sense for testing until other storage types are implemented
+var storage = new InMemoryStorage();
+App.SetStateStorage(storage); // this mostly makes sense for testing until other storage types are implemented
 ```
 
 ## Using State storage directly

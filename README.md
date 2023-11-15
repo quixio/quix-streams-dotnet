@@ -200,27 +200,27 @@ If you’re sending data at <b>high frequency</b>, processing each message can b
 
 * For example, you can configure the library to release values from the buffer whenever 100 timestamps are collected or when a certain number of milliseconds in data have elapsed (note that this is using time in the data, not the consumer clock).
 
-    ``` cs
-    // subscribe to new streams received
-    topicConsumer.OnStreamReceived += (sender, consumer) =>
+``` cs
+// subscribe to new streams received
+topicConsumer.OnStreamReceived += (sender, consumer) =>
+{
+    // create buffer
+    var buffer = consumer.Timeseries.CreateBuffer(new TimeseriesBufferConfiguration()
     {
-        // create buffer
-        var buffer = consumer.Timeseries.CreateBuffer(new TimeseriesBufferConfiguration()
+        PacketSize = 100,
+        TimeSpanInMilliseconds = 100
+    });
+    // subscribe to incoming timeseries
+    buffer.OnDataReleased += (o, args) =>
+    {
+        foreach (var timestamp in args.Data.Timestamps)
         {
-            PacketSize = 100,
-            TimeSpanInMilliseconds = 100
-        });
-        // subscribe to incoming timeseries
-        buffer.OnDataReleased += (o, args) =>
-        {
-            foreach (var timestamp in args.Data.Timestamps)
-            {
-                // Example read of a numeric value
-                var rpm = timestamp.Parameters["EngineRPM"].NumericValue;
-            }
-        };
+            // Example read of a numeric value
+            var rpm = timestamp.Parameters["EngineRPM"].NumericValue;
+        }
     };
-    ```
+};
+```
 
 
 For a detailed overview of built-in buffers, [visit our documentation](https://quix.io/docs/client-library/features/builtin-buffers.html).
@@ -249,72 +249,72 @@ This library allows you to produce and consume different types of mixed data in 
 
 * You can also produce events that include payloads:<br><br>For example, you might need to listen for changes in time-series or binary streams and produce an event (such as "speed limit exceeded"). These  might require some kind of document to send along with the event message (e.g. transaction invoices, or a speeding ticket with photographic proof). Here's an example for a speeding camera:
   
-    ``` cs
-    consumer.OnStreamReceived += (sender, streamConsumer) =>
+``` cs
+consumer.OnStreamReceived += (sender, streamConsumer) =>
+{
+    streamConsumer.Timeseries.OnDataReceived += (o, args) =>
     {
-        streamConsumer.Timeseries.OnDataReceived += (o, args) =>
+        foreach (var timestamp in args.Data.Timestamps)
         {
-            foreach (var timestamp in args.Data.Timestamps)
+            var speed = timestamp.Parameters["speed"].NumericValue;
+            if (speed > 130)
             {
-                var speed = timestamp.Parameters["speed"].NumericValue;
-                if (speed > 130)
+                // create a document that will be consumed by the ticket service.
+                var ticket = new
                 {
-                    // create a document that will be consumed by the ticket service.
-                    var ticket = new
-                    {
-                        speed = speed,
-                        fine = (speed - 130) * 100,
-                        photo_proof = timestamp.Parameters["camera_frame"].BinaryValue
-                    };
+                    speed = speed,
+                    fine = (speed - 130) * 100,
+                    photo_proof = timestamp.Parameters["camera_frame"].BinaryValue
+                };
 
-                    producer.GetOrCreateStream(streamConsumer.StreamId)
-                        .Events
-                        .AddTimestamp(timestamp.Timestamp)
-                        .AddValue("ticket", JsonSerializer.Serialize(ticket));
+                producer.GetOrCreateStream(streamConsumer.StreamId)
+                    .Events
+                    .AddTimestamp(timestamp.Timestamp)
+                    .AddValue("ticket", JsonSerializer.Serialize(ticket));
 
-                    // preferably some logic to avoid ticketing more than once per certain period
-                    // would be better user experience but is out of the scope of this sample
-                }
+                // preferably some logic to avoid ticketing more than once per certain period
+                // would be better user experience but is out of the scope of this sample
             }
-        };
+        }
     };
-    ```
+};
+```
 
 ### Support for stateful processing 
 
 Quix Streams includes a state management feature that let's you store intermediate steps in complex calculations. Out of box you are provided with a RocksDB backed state. To use it, you can create an instance of `LocalFileStorage` or use one of our helper classes to manage the state such as `InMemoryStorage`. 
 Here's an example of a stateful operation sum for a selected column in data.
 
-    ``` cs
-    consumer.OnStreamReceived += (sender, streamConsumer) =>
+``` cs
+consumer.OnStreamReceived += (sender, streamConsumer) =>
+{
+    // Create a dictionary for rolling sums, starting with 0
+    // This would allow us to have any number of rolling sums for the stream
+    // rather than just one
+    var rollingSums = streamConsumer.GetDictionaryState("rolling_sums", (key) => 0d);
+    
+    // Scalar state when you do not need a dictionary
+    var gforceMax = streamConsumer.GetScalarState("gforce_max", () => 0d);
+    
+    streamConsumer.Timeseries.OnDataReceived += (o, args) =>
     {
-        // Create a dictionary for rolling sums, starting with 0
-        // This would allow us to have any number of rolling sums for the stream
-        // rather than just one
-        var rollingSums = streamConsumer.GetDictionaryState("rolling_sums", (key) => 0d);
-        
-        // Scalar state when you do not need a dictionary
-        var gforceMax = streamConsumer.GetScalarState("gforce_max", () => 0d);
-        
-        streamConsumer.Timeseries.OnDataReceived += (o, args) =>
+        foreach (var timestamp in args.Data.Timestamps)
         {
-            foreach (var timestamp in args.Data.Timestamps)
+            var gforce = timestamp.Parameters["gforce"].NumericValue;
+            if (gforce > gforceMax.Value)
             {
-                var gforce = timestamp.Parameters["gforce"].NumericValue;
-                if (gforce > gforceMax.Value)
-                {
-                    gforceMax.Value = gforce.Value;
-                }
-
-                rollingSums["gforce"] += gforce ?? 0;
+                gforceMax.Value = gforce.Value;
             }
-        };
-    };
 
-    // App.SetStateStorageType(StateStorageTypes.InMemory);
-    // App.SetStateStorageType(StateStorageTypes.RocksDb); // The default
-    // App.SetStateStorageRootDir("./another_folder"); // the default is ./state
-    ```
+            rollingSums["gforce"] += gforce ?? 0;
+        }
+    };
+};
+
+// App.SetStateStorageType(StateStorageTypes.InMemory);
+// App.SetStateStorageType(StateStorageTypes.RocksDb); // The default
+// App.SetStateStorageRootDir("./another_folder"); // the default is ./state
+```
 
 ## Performance and Usability Enhancements
 
