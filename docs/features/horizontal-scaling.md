@@ -14,23 +14,12 @@ When the purple replica crashes, "stream 4" is assigned automatically to the blu
 
 This situation triggers an event on the topic consumer in the blue replica indicating that "stream 4" has been received:
 
-=== "Python"
-    
-    ``` python
-    def on_stream_received_handler(topic_consumer: TopicConsumer, stream_received: StreamConsumer):
-        print("Stream received:" + stream_received.stream_id)
-    
-    topic_consumer.on_stream_received = on_stream_received_handler
-    ```
-
-=== "C\#"
-    
-    ``` cs
-    topicConsumer.OnStreamReceived += (topic, newStream) =>
-    {
-        Console.WriteLine($"New stream received: {newStream.StreamId}");
-    };
-    ```
+``` csharp
+topicConsumer.OnStreamReceived += (topic, newStream) =>
+{
+    Console.WriteLine($"New stream received: {newStream.StreamId}");
+};
+```
 
 This would result in the following output on blue replica:
 
@@ -44,36 +33,20 @@ When the purple replica restarts and becomes available again, it signals to the 
 
 This will trigger two events, one in the blue replica indicating that "stream 4" has been revoked, and one in the purple replica indicating that "stream 4" has been assigned again:
 
-=== "Python"
-    
-    ``` python
-    def on_stream_received_handler(stream_received: StreamConsumer):
-        print("Stream received:" + stream_received.stream_id)
-    
-    def on_streams_revoked_handler(topic_consumer: TopicConsumer, streams_revoked: [StreamConsumer]):
-        for stream in streams_revoked:
-            print("Stream revoked:" + stream.stream_id)
-    
-    topic_consumer.on_stream_received = on_stream_received_handler
-    topic_consumer.on_streams_revoked = on_streams_revoked_handler
-    ```
+``` csharp
+topicConsumer.OnStreamReceived += (topic, newStream) =>
+{
+    Console.WriteLine($"New stream received: {newStream.StreamId}");
+};
 
-=== "C\#"
-    
-    ``` cs
-    topicConsumer.OnStreamReceived += (topic, newStream) =>
+topicConsumer.OnStreamsRevoked += (topic, streamsRevoked) =>
+{
+    foreach (var stream in streamsRevoked)
     {
-        Console.WriteLine($"New stream received: {newStream.StreamId}");
-    };
-    
-    topicConsumer.OnStreamsRevoked += (topic, streamsRevoked) =>
-    {
-        foreach (var stream in streamsRevoked)
-        {
-            Console.WriteLine($"Stream revoked: {stream.StreamId}");
-        }
-    };
-    ```
+        Console.WriteLine($"Stream revoked: {stream.StreamId}");
+    }
+};
+```
 
 Results in the following output on the blue replica:
 

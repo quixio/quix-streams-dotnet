@@ -20,11 +20,5 @@ Message codec type can be changes like so (with C#):
 CodecSettings.SetGlobalCodecType(CodecType.Protobuf);
 ```
 
-It can be done in Python as well:
-
-```python
-CodecSettings.set_global_codec_type(CodecType.Protobuf)
-```
-
 After this, all messages will be encoded and decoded using Protocol Buffers.
 Please note, this setting is global, so it will affect all messages encoded or decoded by your application after you make this call.

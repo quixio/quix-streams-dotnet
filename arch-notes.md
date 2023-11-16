@@ -1,59 +1,23 @@
 ## Library architecture notes
 
-### Interoperability wrappers
-
-Quix Streams base library is developed in C#. We use Interoperability wrappers around <b>C# AoT (Ahead of Time) compiled code</b> to implement support for other languages such as <b>Python</b>. These Interop wrappers are auto-generated using a project called `InteropGenerator` included in the same repository. Ahead-of-time native compilation was a feature introduced officially on .NET 7. Learn more [here](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/).
-
-You can generate these Wrappers again using the `shell scripts` provided for each platform inside the language-specific client. For instance for Python:
-
-- `/src/builds/python/windows/build_native.bat`: Generates Python Interop wrappers for Windows platform.
-- `/src/builds/python/linux/build_native.bat`: Generates Python Interop wrappers for Linux platform.
-- `/src/builds/python/mac/build_native.bat`: Generates Python Interop wrappers for Mac platform.
-
-These scripts compile the C# base library and then use the `InteropGenerator` project to generate the AoT compiled version of the library and the Interop wrappers around that. The result is a structure like this:
+The C# Quix Streams library is organized in 3 main layers:
 
 ```
 
    ┌───────────────────────────┐
-   │   Python client library   │    /Python/lib/quixstreams
+   │      Streaming layer      │    /QuixStreams.Streaming
    └─────────────┬─────────────┘
                  │
                  │
    ┌─────────────▼─────────────┐
-   │  Python Interop wrapper   │    /Python/lib/quixstreams/native/Python  (auto-generated)
+   │      Telemetry layer      │    /QuixStreams.Telemetry
    └─────────────┬─────────────┘
                  │
                  │
    ┌─────────────▼─────────────┐
-   │  C# AoT compiled library  │    /Python/lib/quixstreams/native/win64   (auto-generated)
-   └───────────────────────────┘
-
-```
-
-The non auto-generated `Python client library` still needs to be maintained manually, but this is expected because each language has its own language-specific features and naming conventions that we want to keep aligned with the language user expectations. If you want to add a new feature of the library that is common to all the languages, you should implement that feature in the C# base library first, re-generate the Interop wrappers, and then modify the Python client library to wire up the new feature of the base library.
-
-### Base library
-
-Quix Streams base library is implemented in C#, therefore if your target language is C#, you will use that base library without any [Interoperability wrapper](#interoperability-wrappers) involved on the execution. 
-
-This base library is organized in 3 main layers:
-
-```
-
-   ┌───────────────────────────┐
-   │      Streaming layer      │    /CSharp/QuixStreams.Streaming
-   └─────────────┬─────────────┘
-                 │
-                 │
-   ┌─────────────▼─────────────┐
-   │      Telemetry layer      │    /CSharp/QuixStreams.Telemetry
-   └─────────────┬─────────────┘
-                 │
-                 │
-   ┌─────────────▼─────────────┐
-   │   Kafka Transport layer   │    /CSharp/QuixStreams.Kafka.Transport
+   │   Kafka Transport layer   │    /QuixStreams.Kafka.Transport
    ├───────────────────────────┤
-   │    Kafka wrapper layer    │    /CSharp/QuixStreams.Kafka
+   │    Kafka wrapper layer    │    /QuixStreams.Kafka
    └───────────────────────────┘
 
 ```

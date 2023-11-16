@@ -23,15 +23,17 @@ If you had only one replica, it would need to process all streams in that topic.
 
 When you create the consumer you specify the consumer group as follows:
 
-```python
-topic_consumer = client.get_topic_consumer(os.environ["input"], consumer_group = "empty-transformation")
+``` csharp
+var topicConsumer = client.GetTopicConsumer("my-topic",
+    consumerGroup: "my-service-consumergroup", // the unique consumer group for the service
+    autoOffset: AutoOffsetReset.Earliest); // instruction to consume from beginning if no existing offset is found. Latest by default
 ```
 
-Best practice is to make sure the consumer group name matches the name of the service.
+Best practice is to make sure the consumer group name matches the name of the service to avoid overlaps when reading from same topic.
 
 !!! warning
 
-    If you don't specify a consumer group, then all messages in all streams in a topic will be processed by all replicas in the microservice deployment.
+    If you don't specify a consumer group, then all messages in a topic will be processed by all replicas in the microservice deployment.
 
 For further information read about how [Quix Streams works with Kafka](kafka.md).
 
@@ -46,71 +48,63 @@ Event data refers to data that is independent, whereas time-series data is a var
 
 Time-series data is a variable that is tracked over time, such as temperature from a sensor, or the g-forces in a racing car.
 
-Time-series data has three different representations in Quix Streams, to serve different use cases and developers. The underlying data that these three models represent is the same however. The three representations of that data are:
+Time-series data has two different representations in Quix Streams, to serve different use cases and developers. The underlying data that these models represent is the same however. These are:
 
-1. Data (represented by the `qx.TimeseriesData` class)
-2. Pandas Data Frame (represented by the `pd.DataFrame` class)
-3. DataRaw (represented by the `qx.TimeseriesDataRaw` class)
+1. TimeseriesData: a row based approach to accessing data with significant number of sanity and safety checks
+3. TimeseriesDataRaw: column based approach to accessing data without much sanity or safety checks. Intended for performance critical workloads.
 
 In the following sections of this documentation you'll learn about these formats.
 
 ## Registering a callback for stream data
 
-When it comes to registering your callbacks, the first step is to register a stream callback that is invoked when data is first received on a stream. 
+When it comes to registering your event handlers, the first step is to register a stream eventhandler that is invoked when the first message is received for a stream.
 
-```python
-topic_consumer.on_stream_received = on_stream_received_handler
+``` csharp
+topicConsumer.OnStreamReceived += (sender, consumer) =>
+{
+    // .. handler logic ..
+}
 ```
 
-The `on_stream_received_handler` is typically written to handle a specific data format on that stream. This is explained in the next section.
+The `OnStreamReceived` is typically written to handle a specific data format on that stream. This is explained in the next section.
 
 !!! note
 
-    This callback is invoked for each stream in a topic. This means you will have multiple instances of this callback invoked, if there are multiple streams. 
+    This handler is invoked for each stream in a topic. This means you will have multiple instances of this callback invoked, if there are multiple streams. 
 
-## Registering callbacks to handle data formats
+## Registering handlers to deal with data formats
 
-Specific callbacks are registered to handle each type of stream data.
+Specific handlers are registered to work with each type of stream data.
 
-The following table documents which callbacks to register, depending on the type of stream data you need to handle:
+The following table documents which handlers to register, depending on the type of stream data you need to handle:
 
 | Stream data format | Callback to register |
 |----|----|
-| Event data | `stream_consumer.events.on_data_received = on_event_data_received_handler` |
-| Time-series data | `stream_consumer.timeseries.on_data_received = on_data_received_handler` |
-| Time-series raw data | `stream_consumer.timeseries.on_raw_received = on_raw_received_handler` |
-| Time-series data frame | `stream_consumer.timeseries.on_dataframe_received = on_dataframe_received_handler` |
+| Event data | `consumer.Events.OnDataReceived += ...` |
+| Time-series data | `consumer.Timeseries.OnDataReceived += ...` |
+| Time-series raw data | `consumer.Timeseries.OnRawReceived +=  ...` |
 
 !!! note
 
-    You can have multiple callbacks registered at the same time, but usually you would work with the data format most suited to your use case. For example, if the source was providing only event data, it only makes sense to register the event data callback.
+    You can have multiple handlers registered at the same time, but usually you would work with the data format most suited to your use case. For example, if the source was providing only event data, it only makes sense to register the event data callback.
 
-### Example of callback registration
+### Example of handler registration
 
 The following code sample demonstrates how to register a callback to handle data in the data frame format: 
 
-```python
-def on_stream_received_handler(stream_consumer: qx.StreamConsumer):
-    stream_consumer.timeseries.on_dataframe_received = on_dataframe_received_handler
-
-# subscribe to new streams being received. 
-# callback will only be registered for an active stream
-topic_consumer.on_stream_received = on_stream_received_handler
+``` csharp
+topicConsumer.OnStreamReceived += (sender, newStreamConsumer) =>
+{
+    newStreamConsumer.Timeseries.OnDataReceived += (o, args) =>
+    {
+        // do things
+    };
+};
 ```
-
-In this example, when a stream becomes active, it registers a callback to handle time-series data in the data frame format.
 
 !!! note
 
-    The callback is registered *only* for the specified stream, and only if that stream is active.
-
-## Converting time-series data
-
-Sometimes you need to convert time-series data into Panda data frames format for processing. That can be done using `to_dataframe`:
-
-```python
-df = ts.to_dataframe()
-```
+    The handler is registered *only* for the specified stream.
 
 ## Stateless processing
 
@@ -124,38 +118,42 @@ This processor receives (consumes) data, processes it (transforms), and then pub
 
 The example code demonstrates this:
 
-```python
-import quixstreams as qx
-import pandas as pd
+``` csharp
+using QuixStreams.Streaming;
+using QuixStreams.Telemetry.Kafka;
 
-client = qx.KafkaStreamingClient('127.0.0.1:9092')
+var client = new KafkaStreamingClient("127.0.0.1:9092");
 
-print("Opening consumer and producer topics")
-topic_consumer = client.get_topic_consumer("quickstart-topic")
-topic_producer = client.get_topic_producer("output-topic")
+var topicConsumer = client.GetTopicConsumer("input-topic",
+    consumerGroup: "my-service-consumer-group",
+    autoOffset: AutoOffsetReset.Earliest);
+var topicProducer = client.GetTopicProducer("output-topic");
 
-def on_dataframe_received_handler(stream_consumer: qx.StreamConsumer, df: pd.DataFrame):
-    print(df)
-    # Calculate gForceTotal, the sum of vector absolute values 
-    df["gForceTotal"] = df["gForceX"].abs() + df["gForceY"].abs() + df["gForceZ"].abs() 
-    # write result data to output topic
-    topic_producer.get_or_create_stream(stream_consumer.stream_id).timeseries.publish(df)
 
-# read streams
-def on_stream_received_handler(stream_consumer: qx.StreamConsumer):
-    stream_consumer.timeseries.on_dataframe_received = on_dataframe_received_handler
+topicConsumer.OnStreamReceived += (sender, consumer) =>
+{
+    var producerStream = topicProducer.GetOrCreateStream(consumer.StreamId);
+    consumer.Timeseries.OnDataReceived += (o, args) =>
+    {
+        // optionally you can also clone it if you prefer over modifying original payload
+        // var cloned = args.Data.Clone();
+        foreach (var timestamp in args.Data.Timestamps)
+        {
+            var total = Math.Abs(timestamp.Parameters["gforce_x"].NumericValue!.Value) +
+                        Math.Abs(timestamp.Parameters["gforce_y"].NumericValue!.Value) +
+                        Math.Abs(timestamp.Parameters["gforce_z"].NumericValue!.Value);
+            timestamp.AddValue("gforce_total", total);
+        }
+        
+        producerStream.Timeseries.Publish(args.Data);
+    };
+};
 
-topic_consumer.on_stream_received = on_stream_received_handler
-
-# Hook up to termination signal (for docker image) and CTRL-C
-print("Listening to streams. Press CTRL-C to exit.")
-# Handle graceful exit
-qx.App.run()
+Console.WriteLine("Listening to streams. Press CTRL-C to exit.");
+// Handle graceful exit
+App.Run();
 ```
-
-In this example the stream data is inbound in Pandas `DataFrame` [format](https://pandas.pydata.org/docs/reference/frame.html){target=_blank}. 
-
-Note that all information required to calculate `gForceTotal` is contained in the inbound data frame (the X, Y, and Z components of g-force). This is an example of stateless, or "one message at a time", processing: no state needs to be preserved between messages. 
+Note that all information required to calculate `gForceTotal` is contained in the inbound data (the X, Y, and Z components of g-force). This is an example of stateless, or "one message at a time", processing: no state needs to be preserved between messages. 
 
 Further, if multiple replicas were used here, it would require no changes to your code, as each replica, running its own instance of the callback for the target stream, would simply calculate a value for `gForceTotal` based on the data in the data frame it received.
 
@@ -169,29 +167,34 @@ There are problems with using global variables in your code to track state. The 
 
 For example, consider the following **problematic** code:
 
-```python
+``` csharp
 ...
 
-gForceRunningTotal = 0.0
-
-def on_dataframe_received_handler(stream_consumer: qx.StreamConsumer, df: pd.DataFrame):
-    print(df)
-    # Calculate gForceTotal, the sum of vector absolute values 
-    df["gForceTotal"] = df["gForceX"].abs() + df["gForceY"].abs() + df["gForceZ"].abs() 
-    
-    # Track running total of all g-forces
-    global gForceRunningTotal
-    gForceRunningTotal += df["gForceTotal"]
-
-    # write result data to output topic
-    topic_producer.get_or_create_stream(stream_consumer.stream_id).timeseries.publish(df)
+topicConsumer.OnStreamReceived += (sender, consumer) =>
+{
+    var gForceRunningTotal = 0.0;
+    var producerStream = topicProducer.GetOrCreateStream(consumer.StreamId);
+    consumer.Timeseries.OnDataReceived += (o, args) =>
+    {
+        foreach (var timestamp in args.Data.Timestamps)
+        {
+            var total = Math.Abs(timestamp.Parameters["gforce_x"].NumericValue!.Value) +
+                        Math.Abs(timestamp.Parameters["gforce_y"].NumericValue!.Value) +
+                        Math.Abs(timestamp.Parameters["gforce_z"].NumericValue!.Value);
+            timestamp.AddValue("gforce_total", total);
+            gForceRunningTotal = +total;
+        }
+        
+        producerStream.Timeseries.Publish(args.Data);
+    };
+};
 ...
 ```
 
 !!! warning
     With the previous example code, all streams modify the global variable.
 
-You might think this would give you the running total for a stream, but because the callback is registered for each stream, you'd actually get all streams modifying the global.
+You will quickly realise this will give you the total across all streams, rather than individually. You could move the definition of `gForceRunningTotal` within the `OnStreamReceived` callback, but there are use cases where a total across all streams might be what you want.
 
 If you were running across multiple replicas, you'd get a running total for each replica, because each replica would have its own instance of the global variable. Again, the results would not be as you might expect.
 
@@ -199,100 +202,50 @@ Let's say there were three streams and two replicas, you'd get the running total
 
 In most practical scenarios you'd want to track a running total per stream (say, total g-forces per race car), or perhaps for some variables a running total across all streams. Each of these scenarios is described in the followng sections.
 
-## Tracking running totals per stream
-
-Sometimes you might want to calculate a running total of a variable for a stream. For example, the total g-force a racing car is exposed to. If you use a global variable you'll lose the stream context. All streams will add to the value potentially, and each replica will also have its own instance of the global, further confusing matters.
-
-The solution is to use the stream context to preserve a running total for that stream only. To do this you can use the `stream_id` of a stream to identify its data. Consider the following example:
-
-```python
-...
-g_running_total_per_stream = {}
-
-def callback_handler (stream_consumer: qx.StreamConsumer, data: qx.TimeseriesData):
-
-    if stream_consumer.stream_id not in g_running_total_per_stream:
-        g_running_total_per_stream[stream_consumer.stream_id] = 0
-    
-    ...
-
-    g_running_total_per_stream[stream_consumer.stream_id] += some_value
-
-...
-```
-
-!!! warning
-    With the previous example code, you should note that the running total will not be preserved in the event of system crashes or restarts.
-
-The key point here is that data is tracked per stream context. You keep running totals on a per-stream basis by using the stream ID, `stream_consumer.stream_id` to index a dictionary containing running totals for each stream.
-
-!!! note
-
-    A stream will only ever be processed by one replica.
-
 ## Handling system restarts and crashes
 
-One issue you may run into is that in-memory data is not persisted across instance restarts, shutdowns, and instance crashes. This can be mitigated by using the Quix Streams `LocalFileStorage` facility. This will ensure that specified variables are persisted on permanent storage, and this data is preserved across restarts, shutdowns, and system crashes.
+One issue you may run into is that in-memory data is not persisted across instance restarts, shutdowns, and instance crashes. This can be mitigated by using the Quix Streams state facility. This will ensure that specified variables are persisted on permanent storage, and this data is preserved across restarts, shutdowns, and system crashes.
 
-The following example code demonstrates a simple use of `LocalFileStorage` to **persist data across system restarts and crashes**:
+The following example code demonstrates a simple use of state to **persist data across system restarts and crashes**:
 
-```python
+``` csharp
 ...
-g_running_total_per_stream = qx.InMemoryStorage(qx.LocalFileStorage())
-
-def callback_handler (stream_consumer: qx.StreamConsumer, data: qx.TimeseriesData):
-
-    if stream_consumer.stream_id not in g_running_total_per_stream:
-        g_running_total_per_stream[stream_consumer.stream_id] = 0
-    
-    ...
-
-    g_running_total_per_stream[stream_consumer.stream_id] += some_value
-
-# read streams
-def on_stream_received_handler(stream_consumer: qx.StreamConsumer):
-    stream_consumer.timeseries.on_data_received = callback_handler
-
-topic_consumer.on_stream_received = on_stream_received_handler
-topic_consumer.on_committed = g_running_total_per_stream.flush
+topicConsumer.OnStreamReceived += (sender, consumer) =>
+{
+    var producerStream = topicProducer.GetOrCreateStream(consumer.StreamId);
+    var stateManager = consumer.GetStateManager();
+    var runningTotal = stateManager.GetScalarState("gforce_total", () => 0.0);
+    consumer.Timeseries.OnDataReceived += (o, args) =>
+    {
+        foreach (var timestamp in args.Data.Timestamps)
+        {
+            var total = Math.Abs(timestamp.Parameters["gforce_x"].NumericValue!.Value) +
+                        Math.Abs(timestamp.Parameters["gforce_y"].NumericValue!.Value) +
+                        Math.Abs(timestamp.Parameters["gforce_z"].NumericValue!.Value);
+            timestamp.AddValue("gforce_total", total);
+            runningTotal.Value += total;
+            timestamp.AddValue("gforce_running_total", runningTotal.Value);
+        }
+        
+        producerStream.Timeseries.Publish(args.Data);
+    };
+};
 ...
 ```
 
-This ensures that the variable `g_running_total_per_stream` is persisted, as periodically (default is 20 seconds) it is flushed to local file storage.
+This ensures that the variable `gforce_running_total` is persisted when the offset you read is committed.
 
-If the system crashes (or is restarted), Kafka resumes message processing from the last committed message. This facility is built into Kafka.
+If the system crashes (or is restarted), Kafka resumes message processing from the last committed offset. This facility is built into Kafka.
 
 !!! tip
 
     For this facility to work in Quix Platform you need to enable the State Management feature. You can enable it in the `Deployment` dialog, where you can also specify the size of storage required. When using Quix Streams with a third-party broker such as Kafka, no configuration is required, and data is automatically stored on the local file system.
 
-## Tracking running totals across multiple streams
+## Tracking computed values across multiple streams
 
-Sometimes you want to track a running total across all streams in a topic. The problem is that when you scale using replicas, there is no way to share data between all replicas in a consumer group. 
+Sometimes you want to track a computed value across all streams in a topic such as running total in the previous example. The problem is that when you scale using replicas, there is no way simple way to share data between all replicas in a consumer group. Each replica will only consume a segment of the overall data and calculate the running average on it.
 
-The solution is to write the running total per stream (with stream ID) to an output topic. You can then have another processor in the pipeline to calculate total values from inbound messages. The following code demonstrates how to do this:
-
-```python
-...
-g_running_total_per_stream = qx.InMemoryStorage(qx.LocalFileStorage())
-
-def callback_handler (stream_consumer: qx.StreamConsumer, data: qx.TimeseriesData):
-
-    if stream_consumer.stream_id not in g_running_total_per_stream:
-        g_running_total_per_stream[stream_consumer.stream_id] = 0
-    
-    ...
-
-    g_running_total_per_stream[stream_consumer.stream_id] += some_value
-    data.add_value("RunningTotal", g_running_total_per_stream[stream_consumer.stream_id])
-
-    topic_producer.get_or_create_stream(stream_consumer.stream_id).timeseries.publish(data)
-...
-```
-
-In this case the running total is published to its own stream in the output topic. The next service in the data processing pipeline would be able to sum all running totals across all streams in the output topic.
-
-Also, in this example, the running total is persisted in file storage, and so is preserved in the event of service restarts and system crashes.
+The solution is to write the computed value to a different topic, then consume that with single a downstream application. Preferably this would not be a computation heavy task as that should be done in the service with scaling capability.
 
 ## Conclusion
 

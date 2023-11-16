@@ -12,17 +12,13 @@
 
 # Quix Streams
 
-Quix Streams is a cloud-native library for processing data in Kafka using pure Python. It’s designed to give you the power of a distributed system in a lightweight library by combining the low-level scalability and resiliency features of Kafka and Kubernetes in a highly abstracted and easy to use Python interface.
+Quix Streams is a cloud-native library for processing data in Kafka. It’s designed to give you the power of a distributed system in a lightweight library by combining the low-level scalability and resiliency features of Kafka and Kubernetes in a highly abstracted and easy to use interface.
 
 Quix Streams has the following benefits:
 
- - No JVM, no orchestrator, no server-side engine.
-
- - Pure Python (no DSL’s!) providing native support for the entire Python ecosystem (Pandas, scikit-learn, TensorFlow, PyTorch etc).
+ - No orchestrator, no server-side engine.
 
  - Simplified [state management](https://quix.io/docs/client-library/state-management.html) backed by Kubernetes PVC for enhanced resiliency.
-
- - [DataFrames](#support-for-dataframes) and buffers provide a powerful processing environment where a Python data scientist can use their existing batch skills to process streaming data.
 
  - Resilient horizontal scaling using [Streaming Context](https://quix.io/docs/client-library/features/streaming-context.html).
 
@@ -40,11 +36,7 @@ Use Quix Streams if you’re building machine learning/AI and physics-based appl
 
 ### Install Quix Streams
 
-Install Quix streams with the following command: 
-
-```shell
-python3 -m pip install quixstreams
-```
+Install Quix streams using [nuget](https://www.nuget.org/packages/QuixStreams.Streaming).
 
 ### Install Kafka
 
@@ -81,79 +73,66 @@ However, the following examples will give you a basic idea of how to produce and
 
 ### Producing time-series data
 
-Here's an example of how to <b>produce</b> time-series data into a Kafka Topic with Python.
+Here's an example of how to <b>produce</b> time-series data into a Kafka Topic.
 
-```python
-import quixstreams as qx
-import time
-import datetime
-import math
+``` csharp
+// Open the topic producer which will be used to send data to a topic
+using var topicProducer = client.GetTopicProducer("mytesttopic");
 
+// Set stream ID or leave parameters empty to get stream ID generated.
+var stream = topicProducer.CreateStream();
+stream.Properties.Name = "Hello World stream";
 
-# Connect to your kafka client
-client = qx.KafkaStreamingClient('127.0.0.1:9092')
+// Add metadata about time series data you are about to send. 
+stream.Timeseries.AddDefinition("ParameterA").SetRange(-1.2, 1.2);
+stream.Timeseries.Buffer.TimeSpanInMilliseconds = 100;
 
-# Open the output topic which is where data will be streamed out to
-topic_producer = client.get_topic_producer(topic_id_or_name = "mytesttopic")
+Console.WriteLine("Sending values for 30 seconds.");
 
-# Set stream ID or leave parameters empty to get stream ID generated.
-stream = topic_producer.create_stream()
-stream.properties.name = "Hello World Python stream"
+for (var index = 0; index < 3000; index++)
+{
+    stream.Timeseries
+        .Buffer
+        .AddTimestamp(DateTime.UtcNow)
+        .AddValue("ParameterA", Math.Sin(index / 100.0) + Math.Sin(index) / 5.0)
+        .Publish();
+    
+    Thread.Sleep(10);
+}
 
-# Add metadata about time series data you are about to send. 
-stream.timeseries.add_definition("ParameterA").set_range(-1.2, 1.2)
-stream.timeseries.buffer.time_span_in_milliseconds = 100
-
-print("Sending values for 30 seconds.")
-
-for index in range(0, 3000):
-    stream.timeseries \
-        .buffer \
-        .add_timestamp(datetime.datetime.utcnow()) \
-        .add_value("ParameterA", math.sin(index / 200.0) + math.sin(index) / 5.0) \
-        .publish()
-    time.sleep(0.01)
-
-print("Closing stream")
-stream.close()
+Console.WriteLine("Closing stream");
+stream.Close();
 ```
 
 ### Consuming time-series data
 
-Here's an example of how to <b>consume</b> time-series data from a Kafka Topic with Python:
+Here's an example of how to <b>consume</b> time-series data from a Kafka Topic:
 
-```python
-import quixstreams as qx
-import pandas as pd
+``` csharp
+// Connect to your kafka client
+var client = new KafkaStreamingClient("127.0.0.1:9092");
 
+// get the topic consumer for a specific consumer group
+var topicConsumer = client.GetTopicConsumer("TestTopic", "myConsumer", autoOffset: AutoOffsetReset.Latest);
 
-# Connect to your kafka client
-client = qx.KafkaStreamingClient('127.0.0.1:9092')
+// subscribe to new streams received
+topicConsumer.OnStreamReceived += (sender, consumer) =>
+{
+    // subscribe to incoming timeseries
+    consumer.Timeseries.OnDataReceived += (o, args) =>
+    {
+        foreach (var timestamp in args.Data.Timestamps)
+        {
+            // Example read of a numeric value
+            var rpm = timestamp.Parameters["EngineRPM"].NumericValue;
+        }
+    };
+};
 
-# get the topic consumer for a specific consumer group
-topic_consumer = client.get_topic_consumer(topic_id_or_name = "mytesttopic",
-                                           consumer_group = "empty-destination")
+Console.WriteLine("Listening to streams. Press CTRL-C to exit.");
 
-
-def on_dataframe_received_handler(stream_consumer: qx.StreamConsumer, df: pd.DataFrame):
-    # do something with the data here
-    print(df)
-
-
-def on_stream_received_handler(stream_consumer: qx.StreamConsumer):
-    # subscribe to new DataFrames being received
-    # if you aren't familiar with DataFrames there are other callbacks available
-    # refer to the docs here: https://docs.quix.io/client-library/subscribe.html
-    stream_consumer.timeseries.on_dataframe_received = on_dataframe_received_handler
-
-
-# subscribe to new streams being received
-topic_consumer.on_stream_received = on_stream_received_handler
-
-print("Listening to streams. Press CTRL-C to exit.")
-
-# Handle termination signals and provide a graceful exit
-qx.App.run()
+// Handle termination signals and provide a graceful exit
+App.Run();
 ```
 
 Quix Streams allows multiple configurations to leverage resources while consuming and producing data from a Topic depending on the use case, frequency, language, and data types. 
@@ -167,31 +146,29 @@ The following features are designed to address common issues faced when developi
 ### Streaming contexts
 Streaming contexts allow you to bundle data from one data source into the same scope with supplementary metadata—thus enabling workloads to be horizontally scaled with multiple replicas.
 
-* In the following sample, the `create_stream` function is used to create a stream called _bus-123AAAV_ which gets assigned to one particular consumer and will receive messages in the correct order: 
+* In the following sample, the `CreateStream` function is used to create a stream called _bus-123AAAV_ which gets assigned to one particular consumer and will receive messages in the correct order: 
 
-    ```python
-    topic_producer = client.get_topic_producer("data")
+``` csharp
+var topicProducer = client.GetTopicProducer("data");
+var stream = topicProducer.CreateStream("bus-123AAAV");
 
-    stream = topic_producer.create_stream("bus-123AAAV")
-    # Message 1 sent (the stream context)
+// Message 1 sent (the stream context)
+stream.Properties.Name = "BUS 123 AAAV";
+// Message 2 sent (the human-readable identifier the bus)
+stream.Timeseries
+    .Buffer
+    .AddTimestamp(DateTime.UtcNow)
+    .AddValue("Lat", 1.23)
+    .AddValue("Long", 4.56)
+    .Publish();
+// Message 3 sent (the time-series telemetry data from the bus)
 
-    stream.properties.name = "BUS 123 AAAV"
-    # Message 2 sent (the human-readable identifier the bus)
-
-    stream.timeseries\
-        .buffer \
-        .add_timestamp(datetime.datetime.utcnow()) \
-        .add_value("Lat", math.sin(index / 100.0) + math.sin(index) / 5.0) \
-        .add_value("Long", math.sin(index / 200.0) + math.sin(index) / 5.0) \
-        .publish()
-    # Message 3 sent (the time-series telemetry data from the bus)
-
-    stream.events \
-            .add_timestamp_in_nanoseconds(time.time_ns()) \
-            .add_value("driver_bell", "Doors 3 bell activated by passenger") \
-            .publish()
-    # Message 4 sent (an event related to something that happened on the bus)
-    ```
+stream.Events
+    .AddTimestampNanoseconds(DateTime.UtcNow.ToUnixNanoseconds())
+    .AddValue("driver_bell", "Doors 3 bell activated by passenger")
+    .Publish();
+// Message 4 sent (an event related to something that happened on the bus)
+```
 
 ### Time-series data serialization and deserialization
 
@@ -199,61 +176,54 @@ Quix Streams serializes and deserializes time-series data using different codecs
 
 * The following example shows data being appended to as stream with the `add_value` method.<br><br>
 
-    ```python
-    # Open the producer topic where the data should be published.
-    topic_producer = client.get_topic_producer("data")
-    # Create a new stream for each device.
-    stream = topic_producer.create_stream("bus-123AAAV")
-    print("Sending values for 30 seconds.")
+``` csharp
+// Open the producer topic where the data should be published.
+var topicProducer = client.GetTopicProducer("data");
+// Create a new stream for each device.
+var stream = topicProducer.CreateStream("bus-123AAAV");
+Console.WriteLine("Sending values for 30 seconds.")
 
-    for index in range(0, 3000):
-        
-        stream.timeseries \
-            .buffer \
-            .add_timestamp(datetime.datetime.utcnow()) \
-            .add_value("Lat", math.sin(index / 100.0) + math.sin(index) / 5.0) \
-            .add_value("Long", math.sin(index / 200.0) + math.sin(index) / 5.0) \
-            .publish()
-    ```
+for (var index = 0; index < 30; index++)
+{
+    stream.Timeseries
+        .Buffer
+        .AddTimestamp(DateTime.UtcNow)
+        .AddValue("Lat", Math.Sin(index / 100.0) + Math.Sin(index) / 5.0)
+        .AddValue("Long", Math.Sin(index / 200.0) + Math.Sin(index) / 5.0)
+        .Publish();
+}
+```
 
 ### Built-in time-series buffers
 
-If you’re sending data at <b>high frequency</b>, processing each message can be costly. The library provides built-in time-series buffers for producing and consuming, allowing several configurations for balancing between latency and cost.
+If you’re sending data at <b>high frequency</b>, processing each message can be costly. Alternatively your business logic may be best executed using a certain volume of data. The library provides built-in time-series buffers for producing and consuming, allowing several configurations for balancing between latency and cost.
 
-* For example, you can configure the library to release a packet from the buffer whenever 100 items of timestamped data are collected or when a certain number of milliseconds in data have elapsed (note that this is using time in the data, not the consumer clock).
+* For example, you can configure the library to release values from the buffer whenever 100 timestamps are collected or when a certain number of milliseconds in data have elapsed (note that this is using time in the data, not the consumer clock).
 
-    ```
-    buffer.packet_size = 100
-    buffer.time_span_in_milliseconds = 100
-    ```
-
-* You can then consume from the buffer and process it with the `on_read_dataframe` function.
-
-    ```python
-    def on_read_dataframe(stream: StreamConsumer, df: pd.DataFrame):
-        df["total"] = df["price"] * df["items_count"]
-
-        topic_producer.get_or_create_stream(stream.stream_id).timeseries_data.write(df)
-
-    buffer.on_dataframe_released = on_read_dataframe_handler
-    ```
+``` csharp
+// subscribe to new streams received
+topicConsumer.OnStreamReceived += (sender, consumer) =>
+{
+    // create buffer
+    var buffer = consumer.Timeseries.CreateBuffer(new TimeseriesBufferConfiguration()
+    {
+        PacketSize = 100,
+        TimeSpanInMilliseconds = 100
+    });
+    // subscribe to incoming timeseries
+    buffer.OnDataReleased += (o, args) =>
+    {
+        foreach (var timestamp in args.Data.Timestamps)
+        {
+            // Example read of a numeric value
+            var rpm = timestamp.Parameters["EngineRPM"].NumericValue;
+        }
+    };
+};
+```
 
 
 For a detailed overview of built-in buffers, [visit our documentation](https://quix.io/docs/client-library/features/builtin-buffers.html).
-
-### Support for DataFrames
-
-Time-series parameters are emitted at the same time, so they share one timestamp. Handling this data independently is wasteful. The library uses a tabular system that can work for instance with <b>Pandas DataFrames</b> natively. Each row has a timestamp and <b>user-defined tags</b> as indexes.
-
-```python
-# Callback triggered for each new data frame
-def on_timeseries_data_handler(stream: StreamConsumer, df: pd.DataFrame):
-    
-    # If the braking force applied is more than 50%, we mark HardBraking with True
-    df["HardBraking"] = df.apply(lambda row: "True" if row.Brake > 0.5 else "False", axis=1)
-
-    stream_producer.timeseries.publish(df)  # Send data back to the stream
-```
 
 ### Multiple data types
 
@@ -263,93 +233,87 @@ This library allows you to produce and consume different types of mixed data in 
 
     Often, you’ll want to combine time series data with binary data. In the following example, we combine bus's onboard camera with telemetry from its ECU unit so we can analyze the onboard camera feed with context.
 
-    ```python 
-    # Open the producer topic where to publish data.
-    topic_producer = client.get_topic_producer("data")
+    ``` csharp 
+    // Open the producer topic where to publish data.
+    using var topicProducer = client.GetTopicProducer("mytesttopic");
 
-    # Create a new stream for each device.
-    stream = topic_producer.create_stream("bus-123AAAV")
+    // Create new stream for each device
+    var stream = topicProducer.CreateStream("bus-123AAAV");
 
-    telemetry = BusVehicle.get_vehicle_telemetry("bus-123AAAV")
-
-    def on_new_camera_frame(frame_bytes):
-        
-        stream.timeseries\
-            .buffer \
-            .add_timestamp(datetime.datetime.utcnow()) \
-            .add_value("camera_frame", frame_bytes) \
-            .add_value("speed", telemetry.get_speed()) \
-            .publish()
-        
-    telemetry.on_new_camera_frame = on_new_camera_frame
+    stream.Timeseries.Buffer
+        .AddTimestamp(DateTime.UtcNow)
+        .AddValue("numeric", 123.432)
+        .AddValue("string", "green")
+        .AddValue("binary", Encoding.UTF8.GetBytes("binary"));
     ```
 
 * You can also produce events that include payloads:<br><br>For example, you might need to listen for changes in time-series or binary streams and produce an event (such as "speed limit exceeded"). These  might require some kind of document to send along with the event message (e.g. transaction invoices, or a speeding ticket with photographic proof). Here's an example for a speeding camera:
   
-    ```python
-    # Callback triggered for each new data frame.
-    def on_data_frame_handler(stream: StreamConsumer, df: pd.DataFrame):
-            
-        # We filter rows where the driver was speeding.
-        above_speed_limit = df[df["speed"] > 130]
+``` csharp
+consumer.OnStreamReceived += (sender, streamConsumer) =>
+{
+    streamConsumer.Timeseries.OnDataReceived += (o, args) =>
+    {
+        foreach (var timestamp in args.Data.Timestamps)
+        {
+            var speed = timestamp.Parameters["speed"].NumericValue;
+            if (speed > 130)
+            {
+                // create a document that will be consumed by the ticket service.
+                var ticket = new
+                {
+                    speed = speed,
+                    fine = (speed - 130) * 100,
+                    photo_proof = timestamp.Parameters["camera_frame"].BinaryValue
+                };
 
-        # If there is a record of speeding, we sent a ticket.
-        if df.shape[0] > O:
+                producer.GetOrCreateStream(streamConsumer.StreamId)
+                    .Events
+                    .AddTimestamp(timestamp.Timestamp)
+                    .AddValue("ticket", JsonSerializer.Serialize(ticket));
 
-            # We find the moment with the highest speed.
-            max_speed_moment = df['speed'].idxmax()
-            speed = df.loc[max_speed_moment]
-            time = df.loc[max_speed_moment]["time"]
-
-            # We create a document that will be consumed by the ticket service.
-            speeding_ticket = {
-                'vehicle': stream.stream_id,
-                        'time': time,
-                        'speed': speed,
-                        'fine': (speed - 130) * 100,
-                        'photo_proof': df.loc[max_speed_moment]["camera_frame"]
-                    }
-
-            topic_producer.get_or_create_stream(stream.stream_id) \
-                .events \
-                .add_timestamp_in_nanoseconds(time) \
-                .add_value("ticket", json.dumps(speeding_ticket)) \
-                .publish()
-    ```
+                // preferably some logic to avoid ticketing more than once per certain period
+                // would be better user experience but is out of the scope of this sample
+            }
+        }
+    };
+};
+```
 
 ### Support for stateful processing 
 
-Quix Streams includes a state management feature that let's you store intermediate steps in complex calculations. To use it, you can create an instance of `LocalFileStorage` or use one of our helper classes to manage the state such as `InMemoryStorage`. 
+Quix Streams includes a state management feature that let's you store intermediate steps in complex calculations. Out of box you are provided with a RocksDB backed state. To use it, you can create an instance of `LocalFileStorage` or use one of our helper classes to manage the state such as `InMemoryStorage`. 
 Here's an example of a stateful operation sum for a selected column in data.
 
-```python
-state = InMemoryStorage(LocalFileStorage())
+``` csharp
+consumer.OnStreamReceived += (sender, streamConsumer) =>
+{
+    // Create a dictionary for rolling sums, starting with 0
+    // This would allow us to have any number of rolling sums for the stream
+    // rather than just one
+    var rollingSums = streamConsumer.GetDictionaryState("rolling_sums", (key) => 0d);
+    
+    // Scalar state when you do not need a dictionary
+    var gforceMax = streamConsumer.GetScalarState("gforce_max", () => 0d);
+    
+    streamConsumer.Timeseries.OnDataReceived += (o, args) =>
+    {
+        foreach (var timestamp in args.Data.Timestamps)
+        {
+            var gforce = timestamp.Parameters["gforce"].NumericValue;
+            if (gforce > gforceMax.Value)
+            {
+                gforceMax.Value = gforce.Value;
+            }
 
-def on_g_force(stream_consumer: StreamConsumer, data: TimeseriesData):
+            rollingSums["gforce"] += gforce ?? 0;
+        }
+    };
+};
 
-    for row in data.timestamps:
-		# Append G-Force sensor value to accumulated state (SUM).
-        state[stream_consumer.stream_id] += abs(row.parameters["gForceX"].numeric_value)
-				
-		# Attach new column with aggregated values.
-        row.add_value("gForceX_sum", state[stream_consumer.stream_id])
-
-	# Send updated rows to the producer topic.
-    topic_producer.get_or_create_stream(stream_consumer.stream_id).timeseries.publish(data)
-
-
-# read streams
-def read_stream(stream_consumer: StreamConsumer):
-        # If there is no record for this stream, create a default value.
-		if stream_consumer.stream_id not in state:
-            state[stream_consumer.stream_id] = 0
-		
-	# We subscribe to gForceX column.
-    stream_consumer.timeseries.create_buffer("gForceX").on_read = on_g_force
-
-
-topic_consumer.on_stream_received = read_stream
-topic_consumer.on_committed = state.flush
+// App.SetStateStorageType(StateStorageTypes.InMemory);
+// App.SetStateStorageType(StateStorageTypes.RocksDb); // The default
+// App.SetStateStorageRootDir("./another_folder"); // the default is ./state
 ```
 
 ## Performance and Usability Enhancements

@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <DocumentationFile>bin\$(OutputDir)\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>AnyCPU</Platforms>
+
+    <TargetFrameworks>net7.0;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>QuixStreams.Telemetry</PackageId>
+    <Version>0.6.0.0</Version>
+    <AssemblyVersion>0.6.0.0</AssemblyVersion>
+    <FileVersion>0.6.0.0</FileVersion>
+    <InformationalVersion>0.6.0.0-dev1</InformationalVersion>
+    <Company>Quix Analytics Ltd</Company>
+    <Authors>devs@quix.io</Authors>
+    <Product>QuixStreams.Telemetry</Product>
+    <Description>Library introducing basic models for telemetry data using QuixStreams.Transport</Description>
+    <Copyright>Copyright © Quix Analytics Ltd 2020</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.22.1" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>QuixStreams.Telemetry.UnitTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QuixStreams.Kafka\QuixStreams.Kafka.csproj" />
+    <ProjectReference Include="..\QuixStreams.Kafka.Transport\QuixStreams.Kafka.Transport.csproj" />
+  </ItemGroup>
+
+</Project>
