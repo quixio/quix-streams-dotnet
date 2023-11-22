@@ -8,13 +8,13 @@ Your code may get restarted multiple times. A user intervention (like manually s
 
 Due to the code being run in memory, each time a deployment restarts, internal variables will be reset. For example, if you were to calculate the count of the elements in the stream, this counter would get reset on each restart. The counter would then start at the default value not knowing what was the last known value in the state of the previous run before program terminated.
 
-Quix Streams has state management built in to enable values to be used and persisted across restarts of a given deployment. Quix Streams persists your state using your filesystem at the moment.
+Quix Streams has state management built in to enable values to be used and persisted across restarts of a given deployment. Quix Streams has options to persists the state using RocksDB or to keep in memory.
 
 !!! note
 
 	When using the Quix Platform, the platform provides your replicas with a shared state store when enabled.
 
-The library provides automatic state management which handles application lifecycle automatically, such as commits and revocation to ensure the state reflects the processed and committed messages only. There are two types of state available: dictionary state and scalar state. The stream state managed is available on stream consumer and not the producer currently.
+The library provides automatic state management which handles application lifecycle automatically, such as commits and revocation to ensure the state reflects the processed and committed messages only. There are two types of state available: Dictionary state and Scalar state. The stream state management is available on the stream consumer and not the producer currently.
 
 ## Reading and writing
 
@@ -36,44 +36,26 @@ myLastValueState["someParam"]["Mean"] = 37
 
 ## Querying
 
-You can query the existing states several ways. All states can be iterated through starting from App, Topic or Stream.
+You can query the existing states several ways through StreamStateManager class. You can access it in several ways through a topic or stream consumer.
 
 ``` csharp
-// From app level
-var appStateManager = App.GetStateManager();
-var topicStateManager = appStateManager.GetTopicStateManager("my_topic");  // note, with Quix Manager broker, this would be topic id
-var streamStateManager = topicStateManager.GetStreamStateManager("my_stream_id");
-var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
+// From topic consumer
+var manager = topicConsumer.GetStreamStateManager("my_stream_id");
+var streamState = manager.GetDictionaryState<int>("some_state");
 var streamStateValue = streamState["my_key"];
 
-// when topic consumer is available
-var topicStateManager = topicConsumer.GetStateManager();
-var streamStateManager = topicStateManager.GetStreamStateManager("my_stream_id");
-var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
-var streamStateValue = streamState["my_key"];
-
-// when stream consumer is available
-var streamStateManager = streamConsumer.GetStateManager();
-// note, you can directly use streamConsumer.GetDictionaryState<int>("some_state") instead if don't need other management API access
-var streamState = streamStateManager.GetDictionaryState<int>("some_state"); // work same as in other samples
+// Or from stream consumer
+var manager = streamConsumer.GetStateManager();
+// note, it also possible to directly use streamConsumer.GetDictionaryState<int>("some_state") instead, if other management APIs are not needed
+var streamState = manager.GetDictionaryState<int>("some_state");
 var streamStateValue = streamState["my_key"];
 ```
 
 ## Deleting
 
-You can delete any or all state using the state manager of a specific level. See [Querying](#querying) section for how to acquire specific managers.
+You can delete any or all state using the state manager. See [Querying](#querying) section for how to acquire the state manager class in different ways.
 
 ``` csharp
-// From app level
-var appStateManager = App.GetStateManager();
-appStateManager.DeleteTopicState("specific_topic"); // note, with Quix Manager broker, this would be topic id
-appStateManager.DeleteTopicStates();
-
-// when topic consumer is available
-var topicStateManager = topicConsumer.GetStateManager();
-topicStateManager.DeleteStreamState("stream_id");
-topicStateManager.DeleteStreamStates(); // deletes all
-
 // when stream consumer is available
 var streamStateManager = streamConsumer.GetStateManager();
 streamStateManager.DeleteState("some_state");
@@ -103,9 +85,9 @@ topicConsumer.OnStreamReceived += (sender, consumer) =>
 
 ## Storage types
 
-Any state storage is supported as long as as it implements IStateStorage. These are currently LocalFileStorage and InMemoryStorage.
+Any state storage is supported as long as as it implements IStateStorage. These are currently RocksDbStorage and InMemoryStorage.
 
-The storage type must be specified at app level using the following code, but by default LocalFileStorage is used at the moment.
+The storage type must be specified at app level using the following code. The default option is RocksDbStorage.
 
 ``` csharp
 var storage = new InMemoryStorage();
@@ -114,7 +96,7 @@ App.SetStateStorage(storage); // this mostly makes sense for testing until other
 
 ## Using State storage directly
 
-To use the library’s state management feature, create an instance of `LocalFileStorage` or `InMemoryStorage`, and then use the available methods on the instance to manipulate the state as needed. For example:
+To use the library’s state management feature, create an instance of `RocksDbStorage` or `InMemoryStorage`, and then use the available methods on the instance to manipulate the state as needed. For example:
 
 C\# supports two ways to call the Storage API.
 
@@ -126,7 +108,7 @@ The Synchronous API. During a call to these synchronous methods, the
 program thread execution is blocked.
 
 ``` csharp
-var storage = new LocalFileStorage();
+var storage = new RocksDbStorage();
 
 //clear storage ( remove all keys )
 await storage.Clear();
@@ -155,7 +137,7 @@ await storage.GetAllKeys();
 The asynchronous API in which methods do contain Async suffix. These methods use the Task-Based Asynchronous Pattern (TAP) and returnTasks. TAP enables Quix to use async / await and avoid blocking the main thread on longer-running operations. In this case internal I/O.
 
 ``` csharp
-var storage = new LocalFileStorage();
+var storage = new RocksDbStorage();
 
 //clear storage ( remove all keys )
 await storage.ClearAsync();
@@ -185,3 +167,7 @@ await storage.GetAllKeysAsync();
 
 In Quix Cloud, when state management is enabled for a deployment, Quix Streams uses a `state` folder to store data and files. If running Quix Streams locally, the `state` folder is automatically created for you. You can read more about enabling state, and using the `state` folder, in the [state management documentation](https://quix.io/docs/platform/how-to/state-management.html).
 
+Inside that folder, the structure goes like this:
+```
+{consumer_group}/{topic}/{partition_number}/
+```
