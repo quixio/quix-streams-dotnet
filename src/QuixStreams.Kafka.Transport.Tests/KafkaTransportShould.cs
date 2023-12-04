@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using QuixStreams.Kafka.Transport.SerDes;
+using QuixStreams.Kafka.Transport.TestHelpers;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
 using Xunit;
 

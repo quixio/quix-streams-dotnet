@@ -8,9 +8,8 @@ using ConsoleTables;
 using FluentAssertions.Extensions;
 using MathNet.Numerics.Statistics;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Kafka.Transport.SerDes;
-using QuixStreams.Streaming.UnitTests.Helpers;
+using QuixStreams.Streaming.TestHelpers;
 using QuixStreams.Telemetry.Models;
 
 namespace QuixStreams.ThroughputTest

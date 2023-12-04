@@ -5,6 +5,7 @@ using QuixStreams;
 using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.SerDes.Codecs;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
+using QuixStreams.Kafka.Transport.TestHelpers;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
 using QuixStreams.Telemetry.Kafka;
 using QuixStreams.Telemetry.Models;

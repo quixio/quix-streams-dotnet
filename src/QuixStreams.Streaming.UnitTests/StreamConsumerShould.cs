@@ -1,6 +1,6 @@
 using FluentAssertions;
 using QuixStreams.Streaming.Models;
-using QuixStreams.Streaming.UnitTests.Helpers;
+using QuixStreams.Streaming.TestHelpers;
 using QuixStreams.Telemetry.Models;
 using Xunit;
 

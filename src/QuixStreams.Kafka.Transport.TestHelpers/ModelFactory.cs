@@ -1,15 +1,15 @@
 using QuixStreams.Kafka.Transport.SerDes.Codecs;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
 
-namespace QuixStreams.Kafka.Transport.Tests.Helpers
+namespace QuixStreams.Kafka.Transport.TestHelpers
 {
     public class ModelFactory
     {
         private static TestBroker Producer = new TestBroker();
         
-        public static KafkaMessage CreateKafkaMessage(string key, object value)
+        public static KafkaMessage CreateKafkaMessage<T>(string key, T value)
         {
-            CodecRegistry.RegisterCodec(new ModelKey(typeof(object)), DefaultJsonCodec.Instance);
+            CodecRegistry.RegisterCodec(new ModelKey(typeof(T)), DefaultJsonCodec.Instance);
             KafkaMessage result = null;
             Producer.OnMessageReceived = async message => result = message;  
             var tProducer = new KafkaTransportProducer(Producer);

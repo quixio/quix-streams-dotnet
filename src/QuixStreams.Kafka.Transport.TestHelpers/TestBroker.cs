@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 
-namespace QuixStreams.Kafka.Transport.Tests.Helpers
+namespace QuixStreams.Kafka.Transport.TestHelpers
 {
     public class TestBroker : IKafkaConsumer, IKafkaProducer
     {

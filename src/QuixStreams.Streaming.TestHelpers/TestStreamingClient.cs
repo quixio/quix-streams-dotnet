@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using QuixStreams.Kafka.Transport;
-using QuixStreams.Kafka.Transport.SerDes;
-using QuixStreams.Kafka.Transport.Tests.Helpers;
+using QuixStreams.Kafka.Transport.TestHelpers;
 using QuixStreams.Streaming.Raw;
 using QuixStreams.Streaming.Utils;
 using QuixStreams.Telemetry.Kafka;
 using QuixStreams.Telemetry.Models;
 
-namespace QuixStreams.Streaming.UnitTests.Helpers
+namespace QuixStreams.Streaming.TestHelpers
 {
     public class TestStreamingClient : IQuixStreamingClient, IKafkaStreamingClient
     {

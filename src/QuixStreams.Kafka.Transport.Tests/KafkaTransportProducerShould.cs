@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using QuixStreams.Kafka.Transport.TestHelpers;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
 using Xunit;
 

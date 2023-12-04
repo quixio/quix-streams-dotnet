@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using FluentAssertions;
 using Quix.TestBase.Extensions;
+using QuixStreams.Kafka.Transport.TestHelpers;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
