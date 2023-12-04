@@ -15,7 +15,7 @@ namespace QuixStreams.Streaming.UnitTests.test
         public FileStreamingClientTests(ITestOutputHelper output)
         {
             this.output = output;
-            Logging.Factory = output.CreateLoggerFactory(); // FOR DEBUGGING!
+            //Logging.Factory = output.CreateLoggerFactory(); // FOR DEBUGGING!
         }
         
         [Fact]
