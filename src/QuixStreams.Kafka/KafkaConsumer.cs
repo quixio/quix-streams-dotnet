@@ -612,7 +612,7 @@ namespace QuixStreams.Kafka
                 return;
             }
             
-            if (exception.Message.Contains("Receive failed") && exception.Message.Contains("Connection timed out (after "))
+            if (exception.Message.Contains("Receive failed") && exception.Message.Contains("timed out (after "))
             {
                 var match = Constants.ExceptionMsRegex.Match(exception.Message);
                 if (match.Success)
