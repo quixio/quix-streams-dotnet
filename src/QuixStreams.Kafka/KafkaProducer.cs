@@ -194,7 +194,7 @@ namespace QuixStreams.Kafka
             }
             catch (Exception ex)
             {
-                this.logger.LogWarning(ex,
+                this.logger.LogDebug(ex,
                     "[{0}] Failed to get maximum message size from topic, will default to 1MB", this.configId);
                 producerConfiguration.MessageMaxBytes = DefaultMaxMessageSize;
             }
