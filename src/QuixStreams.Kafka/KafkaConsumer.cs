@@ -244,7 +244,11 @@ namespace QuixStreams.Kafka
                                 if (adminClient == null)
                                 {
                                     this.logger.LogTrace("[{0}] Creating admin client to retrieve metadata", this.configId);
-                                    adminClient = new AdminClientBuilder(this.config).Build();
+                                    void NullLoggerForAdminLogs(IAdminClient adminClient, LogMessage logMessage)
+                                    {
+                                        // Log nothing
+                                    }
+                                    adminClient = new AdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build();
                                 }
                                 var metadata = adminClient.GetMetadata(partition.Topic, TimeSpan.FromSeconds(10));
                                 if (metadata == null)
@@ -608,7 +612,7 @@ namespace QuixStreams.Kafka
                 return;
             }
             
-            if (exception.Message.Contains("Receive failed") && exception.Message.Contains("Connection timed out (after "))
+            if (exception.Message.Contains("Receive failed") && exception.Message.Contains("timed out (after "))
             {
                 var match = Constants.ExceptionMsRegex.Match(exception.Message);
                 if (match.Success)

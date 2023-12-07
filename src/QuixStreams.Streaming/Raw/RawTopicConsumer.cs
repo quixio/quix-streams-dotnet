@@ -15,7 +15,7 @@ namespace QuixStreams.Streaming.Raw
     public class RawTopicConsumer: IRawTopicConsumer, IDisposable
     {
         private readonly string topicName;
-        private KafkaConsumer kafkaConsumer;
+        private IKafkaConsumer kafkaConsumer;
         private bool connectionStarted = false;
 
         EventHandler<Exception> _errorHandler;
@@ -79,6 +79,18 @@ namespace QuixStreams.Streaming.Raw
             var topicConfiguration = new ConsumerTopicConfiguration(topicName);
             this.kafkaConsumer = new KafkaConsumer(consConfig, topicConfiguration);
         }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="RawTopicConsumer"/>
+        /// </summary>
+        /// <param name="kafkaConsumer">The kafka consumer to use</param>
+        /// <param name="topicName">The optional topic name to use</param>
+        public RawTopicConsumer(IKafkaConsumer kafkaConsumer, string topicName = null)
+        {
+            this.topicName = topicName ?? "Unknown";
+            this.kafkaConsumer = kafkaConsumer;
+        }
+        
 
         /// <inheritdoc />
         public void Subscribe()

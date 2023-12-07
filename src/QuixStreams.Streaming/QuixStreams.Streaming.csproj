@@ -14,7 +14,7 @@
     <Version>0.6.0.0</Version>
     <AssemblyVersion>0.6.0.0</AssemblyVersion>
     <FileVersion>0.6.0.0</FileVersion>
-    <InformationalVersion>0.6.0.0-dev1</InformationalVersion>
+    <InformationalVersion>0.6.0.0</InformationalVersion>
     <Company>Quix Analytics Ltd</Company>
     <Authors>devs@quix.io</Authors>
     <Product>QuixStreams.Streaming</Product>

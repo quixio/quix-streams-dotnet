@@ -36,6 +36,17 @@ namespace QuixStreams.Streaming.Raw
 
             this.kafkaProducer = new KafkaProducer(publisherConfiguration, topicConfiguration);
         }
+        
+        /// <summary>
+        /// Initializes a new instance of <see cref="RawTopicProducer"/>
+        /// </summary>
+        /// <param name="kafkaProducer">The kafka producer to use</param>
+        /// <param name="topicName">The optional topic name to use</param>
+        public RawTopicProducer(IKafkaProducer kafkaProducer, string topicName = null)
+        {
+            this.topicName = topicName ?? "Unknown";
+            this.kafkaProducer = kafkaProducer;
+        }
 
         /// <inheritdoc />
         public void Publish(KafkaMessage message)
