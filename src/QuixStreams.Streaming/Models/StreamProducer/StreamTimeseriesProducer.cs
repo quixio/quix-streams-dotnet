@@ -12,7 +12,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
     /// <summary>
     /// Helper class for producing <see cref="ParameterDefinition"/> and <see cref="TimeseriesData"/>
     /// </summary>
-    public class StreamTimeseriesProducer : IDisposable
+    public class StreamTimeseriesProducer : IStreamTimeseriesProducer
     {
         private readonly IStreamProducerInternal streamProducer;
 
@@ -45,15 +45,10 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.DefaultLocation = "/";
         }
 
-        /// <summary>
-        /// Gets the buffer for producing timeseries data
-        /// </summary>
+        /// <inheritdoc/>
         public TimeseriesBufferProducer Buffer { get;  }
 
-        /// <summary>
-        /// Publish data to stream without any buffering
-        /// </summary>
-        /// <param name="data">Timeseries data to publish</param>
+        /// <inheritdoc/>
         public void Publish(TimeseriesData data)
         {
             if (isDisposed)
@@ -75,10 +70,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.streamProducer.Publish(data.ConvertToTimeseriesDataRaw());
         }
         
-        /// <summary>
-        /// Publish data in TimeseriesDataRaw format without any buffering
-        /// </summary>
-        /// <param name="data">Timeseries data to publish</param>
+        /// <inheritdoc/>
         public void Publish(QuixStreams.Telemetry.Models.TimeseriesDataRaw data)
         {
             if (isDisposed)
@@ -113,10 +105,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.streamProducer.Publish(newData);
         }
 
-        /// <summary>
-        /// Publish single timestamp to stream without any buffering
-        /// </summary>
-        /// <param name="timestamp">Timeseries timestamp to publish</param>
+        /// <inheritdoc/>
         public void Publish(TimeseriesDataTimestamp timestamp)
         {
             if (isDisposed)
@@ -133,11 +122,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.streamProducer.Publish(timestamp.ConvertToTimeseriesDataRaw());
         }
         
-        /// <summary>
-        /// Default Location of the parameters. Parameter definitions added with <see cref="AddDefinition"/> will be inserted at this location.
-        /// See <see cref="AddLocation"/> for adding definitions at a different location without changing default.
-        /// Example: "/Group1/SubGroup2"
-        /// </summary>
+        /// <inheritdoc/>
         public string DefaultLocation
         {
             get
@@ -154,10 +139,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             }
         }
 
-        /// <summary>
-        /// Adds a list of definitions to the <see cref="StreamTimeseriesProducer"/>. Configure it with the builder methods.
-        /// </summary>
-        /// <param name="definitions">List of definitions</param>
+        /// <inheritdoc/>
         public void AddDefinitions(List<ParameterDefinition> definitions)
         {
             if (isDisposed)
@@ -169,13 +151,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.ResetFlushDefinitionsTimer();
         }
 
-        /// <summary>
-        /// Adds a new parameter definition to the <see cref="StreamTimeseriesProducer"/>. Configure it with the builder methods.
-        /// </summary>
-        /// <param name="parameterId">The id of the parameter. Must match the parameter id used to send data.</param>
-        /// <param name="name">The human friendly display name of the parameter</param>
-        /// <param name="description">The description of the parameter</param>
-        /// <returns>Parameter definition builder to define the parameter properties</returns>
+        /// <inheritdoc/>
         public ParameterDefinitionBuilder AddDefinition(string parameterId, string name = null, string description = null)
         {
             if (isDisposed)
@@ -189,11 +165,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             return builder;
         }
 
-        /// <summary>
-        /// Adds a new location in the parameters groups hierarchy
-        /// </summary>
-        /// <param name="location">The group location</param>
-        /// <returns>Parameter definition builder to define the parameters under the specified location</returns>
+        /// <inheritdoc/>
         public ParameterDefinitionBuilder AddLocation(string location)
         {
             if (isDisposed)
@@ -227,29 +199,19 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             return parameterDefinition;
         }
 
-        /// <summary>
-        /// Immediately publish timeseries data and definitions from the buffer without waiting for buffer condition to fulfill for either
-        /// </summary>
+        /// <inheritdoc/>
         public void Flush()
         {
             this.Flush(false);
         }
 
-        /// <summary>
-        /// Creates a new <see cref="LeadingEdgeBuffer"/> using this producer where tags form part of the row's key
-        /// and can't be modified after initial values
-        /// </summary>
-        /// <param name="leadingEdgeDelayMs">Leading edge delay configuration in Milliseconds</param>
+        /// <inheritdoc/>
         public LeadingEdgeBuffer CreateLeadingEdgeBuffer(int leadingEdgeDelayMs)
         {
             return new LeadingEdgeBuffer(this, leadingEdgeDelayMs);
         }
-        
-        /// <summary>
-        /// Creates a new <see cref="LeadingEdgeTimeBuffer"/> using this producer where tags do not form part of the row's key
-        /// and can be freely modified after initial values
-        /// </summary>
-        /// <param name="leadingEdgeDelayMs">Leading edge delay configuration in Milliseconds</param>
+
+        /// <inheritdoc/>
         public LeadingEdgeTimeBuffer CreateLeadingEdgeTimeBuffer(int leadingEdgeDelayMs)
         {
             return new LeadingEdgeTimeBuffer(this, leadingEdgeDelayMs);
@@ -312,9 +274,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.streamProducer.Publish(definitions);
         }
 
-        /// <summary>
-        /// Flushes internal buffers and disposes
-        /// </summary>
+        /// <inheritdoc/>
         public void Dispose()
         {
             if (this.isDisposed) return;

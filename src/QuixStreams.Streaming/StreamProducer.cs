@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -86,14 +86,13 @@ namespace QuixStreams.Streaming
         }
 
         /// <inheritdoc />
-        public StreamPropertiesProducer Properties => streamPropertiesProducer;
+        public IStreamPropertiesProducer Properties => streamPropertiesProducer;
 
         /// <inheritdoc />
-        public StreamTimeseriesProducer Timeseries => streamTimeseriesProducer;
+        public IStreamTimeseriesProducer Timeseries => streamTimeseriesProducer;
 
         /// <inheritdoc />
-        public StreamEventsProducer Events => streamEventsProducer;
-
+        public IStreamEventsProducer Events => streamEventsProducer;
 
         /// <inheritdoc />
         public void Publish(QuixStreams.Telemetry.Models.StreamProperties properties)

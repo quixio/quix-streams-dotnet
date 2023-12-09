@@ -8,7 +8,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
     /// Represents properties and metadata of the stream.
     /// All changes to these properties are automatically populated to this class.
     /// </summary>
-    public class StreamPropertiesConsumer : IDisposable
+    public class StreamPropertiesConsumer : IStreamPropertiesConsumer
     {
         private readonly ITopicConsumer topicConsumer;
         private readonly IStreamConsumerInternal streamConsumer;
@@ -40,34 +40,22 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
             this.OnChanged?.Invoke(this, new StreamPropertiesChangedEventArgs(this.topicConsumer, sender));
         }
 
-        /// <summary>
-        /// Raised when the stream properties change
-        /// </summary>
+        /// <inheritdoc/>
         public event EventHandler<StreamPropertiesChangedEventArgs> OnChanged;
 
-        /// <summary>
-        /// Gets the name of the stream
-        /// </summary>
+        /// <inheritdoc/>
         public string Name { get; private set; }
 
-        /// <summary>
-        /// Gets the location of the stream
-        /// </summary>
+        /// <inheritdoc/>
         public string Location { get; private set; }
 
-        /// <summary>
-        /// Gets the datetime of the recording
-        /// </summary>
+        /// <inheritdoc/>
         public DateTime? TimeOfRecording { get; private set; }
 
-        /// <summary>
-        /// Gets the metadata of the stream
-        /// </summary>
+        /// <inheritdoc/>
         public Dictionary<string, string> Metadata { get; private set; }
 
-        /// <summary>
-        /// Gets the list of Stream IDs for the parent streams
-        /// </summary>
+        /// <inheritdoc/>
         public List<string> Parents { get; private set; }
 
         /// <inheritdoc/>

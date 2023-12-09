@@ -13,7 +13,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
     /// Represents properties and metadata of the stream.
     /// All changes to these properties are automatically published to the underlying stream.
     /// </summary>
-    public class StreamPropertiesProducer : IDisposable
+    public class StreamPropertiesProducer : IStreamPropertiesProducer
     {
         private readonly IStreamProducerInternal streamProducer;
         private string name;
@@ -31,9 +31,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         private int heartbeatRebroadcastFlushInterval = 30*1000;
         private readonly ILogger<StreamTimeseriesProducer> logger = QuixStreams.Logging.CreateLogger<StreamTimeseriesProducer>();
 
-        /// <summary>
-        /// Automatic flush interval of the properties metadata into the channel [ in milliseconds ]
-        /// </summary>
+        /// <inheritdoc/>
         public int FlushInterval
         {
             get
@@ -98,9 +96,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             }, null, Timeout.Infinite, Timeout.Infinite);
         }
 
-        /// <summary>
-        /// Name of the stream.
-        /// </summary>
+        /// <inheritdoc/>
         public string Name
         {
             get => name; set
@@ -114,10 +110,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             }
         }
 
-        /// <summary>
-        /// Specify location of the stream in data catalogue. 
-        /// For example: /cars/ai/carA/.
-        /// </summary>
+        /// <inheritdoc/>
         public string Location
         {
             get => location; set
@@ -131,9 +124,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             }
         }
 
-        /// <summary>
-        /// Date Time of stream recording. Commonly set to Datetime.UtcNow.
-        /// </summary>
+        /// <inheritdoc/>
         public DateTime? TimeOfRecording
         {
             get => timeOfRecording; set
@@ -156,20 +147,13 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             }
         }
 
-        /// <summary>
-        /// Metadata of the stream.
-        /// </summary>
+        /// <inheritdoc/>
         public ObservableDictionary<string, string> Metadata { get; }
 
-        /// <summary>
-        /// List of Stream Ids of the Parent streams
-        /// </summary>
+        /// <inheritdoc/>
         public ObservableCollection<string> Parents { get; }
 
-        /// <summary>
-        /// Adds a parent stream.
-        /// </summary>
-        /// <param name="parentStreamId">Stream Id of the parent</param>
+        /// <inheritdoc/>
         public void AddParent(string parentStreamId)
         {
             if (isDisposed)
@@ -180,10 +164,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.Parents.Add(parentStreamId);
         }
 
-        /// <summary>
-        /// Removes a parent stream
-        /// </summary>
-        /// <param name="parentStreamId">Stream Id of the parent</param>
+        /// <inheritdoc/>
         public void RemoveParent(string parentStreamId)
         {
             if (isDisposed)
@@ -194,9 +175,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.Parents.Remove(parentStreamId);
         }
 
-        /// <summary>
-        /// Immediately writes the properties yet to be sent instead of waiting for the flush timer (20ms)
-        /// </summary>
+        /// <inheritdoc/>
         public void Flush()
         {
             this.Flush(false);
@@ -288,9 +267,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.flushTimer.Change(PropertyChangedFlushInterval, Timeout.Infinite);
         }
 
-        /// <summary>
-        /// Flushes internal buffers and disposes
-        /// </summary>
+        /// <inheritdoc/>
         public void Dispose()
         {
             if (this.isDisposed) return;

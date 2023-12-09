@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using QuixStreams.Kafka.Transport;
-using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
 using QuixStreams.Streaming.Raw;
 using QuixStreams.Streaming.Utils;
@@ -104,6 +103,30 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
         ITopicProducer IQuixStreamingClient.GetTopicProducer(string topicIdOrName)
         {
             return GetTopicProducer(topicIdOrName);
+        }
+
+        Task<ITopicConsumer> IQuixStreamingClientAsync.GetTopicConsumerAsync(
+            string topicIdOrName,
+            string consumerGroup,
+            CommitOptions options,
+            AutoOffsetReset autoOffset)
+        {
+            return Task.FromResult(((IQuixStreamingClient)this).GetTopicConsumer(topicIdOrName, consumerGroup, options, autoOffset));
+        }
+
+        Task<IRawTopicConsumer> IQuixStreamingClientAsync.GetRawTopicConsumerAsync(string topicIdOrName, string consumerGroup, AutoOffsetReset? autoOffset)
+        {
+            return Task.FromResult(((IQuixStreamingClient)this).GetRawTopicConsumer(topicIdOrName, consumerGroup, autoOffset));
+        }
+
+        Task<IRawTopicProducer> IQuixStreamingClientAsync.GetRawTopicProducerAsync(string topicIdOrName)
+        {
+            return Task.FromResult(((IQuixStreamingClient)this).GetRawTopicProducer(topicIdOrName));
+        }
+
+        Task<ITopicProducer> IQuixStreamingClientAsync.GetTopicProducerAsync(string topicIdOrName)
+        {
+            return Task.FromResult(((IQuixStreamingClient)this).GetTopicProducer(topicIdOrName));
         }
     }
 }

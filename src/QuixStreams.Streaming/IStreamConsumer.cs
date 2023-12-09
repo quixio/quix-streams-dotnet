@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using QuixStreams.Streaming.Models;
 using QuixStreams.Streaming.Models.StreamConsumer;
 using QuixStreams.Streaming.States;
@@ -25,17 +25,17 @@ namespace QuixStreams.Streaming
         /// <summary>
         /// Gets the consumer for accessing the properties and metadata of the stream.
         /// </summary>
-        StreamPropertiesConsumer Properties { get; }
+        IStreamPropertiesConsumer Properties { get; }
 
         /// <summary>
         /// Gets the consumer for accessing timeseries related information of the stream such as parameter definitions and values.
         /// </summary>
-        StreamTimeseriesConsumer Timeseries { get; }
+        IStreamTimeseriesConsumer Timeseries { get; }
 
         /// <summary>
         /// Gets the consumer for accessing event related information of the stream such as event definitions and values.
         /// </summary>
-        StreamEventsConsumer Events { get; }
+        IStreamEventsConsumer Events { get; }
 
         /// <summary>
         /// Event raised when a stream package has been received.

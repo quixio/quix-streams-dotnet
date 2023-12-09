@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Streaming.Exceptions;
 using QuixStreams.Telemetry.Managers;
 using QuixStreams.Telemetry.Models;
@@ -14,7 +13,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
     /// <summary>
     /// Helper class for producing <see cref="EventDefinitions"/> and <see cref="EventData"/>
     /// </summary>
-    public class StreamEventsProducer : IDisposable
+    public class StreamEventsProducer : IStreamEventsProducer
     {
         private readonly ILogger logger = QuixStreams.Logging.CreateLogger<StreamEventsProducer>();
         private readonly IStreamProducerInternal streamProducer;
@@ -44,16 +43,10 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.DefaultLocation = "/";
         }
 
-        /// <summary>
-        /// Default Tags injected to all Event Values sent by the producer.
-        /// </summary>
+        /// <inheritdoc/>
         public Dictionary<string, string> DefaultTags { get; set; } = new Dictionary<string, string>();
 
-        /// <summary>
-        /// Default Location of the events. Event definitions added with <see cref="AddDefinition"/> will be inserted at this location.
-        /// See <see cref="AddLocation"/> for adding definitions at a different location without changing default.
-        /// Example: "/Group1/SubGroup2"
-        /// </summary>
+        /// <inheritdoc/>
         public string DefaultLocation
         {
             get
@@ -70,9 +63,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             }
         }
 
-        /// <summary>
-        /// Default epoch used for Timestamp event values. Datetime added on top of all the Timestamps.
-        /// </summary>
+        /// <inheritdoc/>
         public DateTime Epoch
         {
             get
@@ -89,33 +80,16 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             }
         }
 
-        /// <summary>
-        /// Starts adding a new set of event values at the given timestamp.
-        /// Note, <see cref="Epoch"/> is not used when invoking with <see cref="DateTime"/>
-        /// </summary>
-        /// <param name="dateTime">The datetime to use for adding new event values</param>
-        /// <returns>Event data builder to add event values at the provided time</returns>
+        /// <inheritdoc/>
         public EventDataBuilder AddTimestamp(DateTime dateTime) => this.AddTimestampNanoseconds(dateTime.ToUnixNanoseconds(), 0);
 
-        /// <summary>
-        /// Starts adding a new set of event values at the given timestamp.
-        /// </summary>
-        /// <param name="timeSpan">The time since the default <see cref="Epoch"/> to add the event values at</param>
-        /// <returns>Event data builder to add event values at the provided time</returns>
+        /// <inheritdoc/>
         public EventDataBuilder AddTimestamp(TimeSpan timeSpan) => this.AddTimestampNanoseconds(timeSpan.ToNanoseconds());
 
-        /// <summary>
-        /// Starts adding a new set of event values at the given timestamp.
-        /// </summary>
-        /// <param name="timeMilliseconds">The time in milliseconds since the default <see cref="Epoch"/> to add the event values at</param>
-        /// <returns>Event data builder to add event values at the provided time</returns>
+        /// <inheritdoc/>
         public EventDataBuilder AddTimestampMilliseconds(long timeMilliseconds) => this.AddTimestampNanoseconds(timeMilliseconds * (long) 1e6);
 
-        /// <summary>
-        /// Starts adding a new set of event values at the given timestamp.
-        /// </summary>
-        /// <param name="timeNanoseconds">The time in nanoseconds since the default <see cref="Epoch"/> to add the event values at</param>
-        /// <returns>Event data builder to add event values at the provided time</returns>
+        /// <inheritdoc/>
         public EventDataBuilder AddTimestampNanoseconds(long timeNanoseconds)
         {
             if (isDisposed)
@@ -134,10 +108,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             return new EventDataBuilder(this, epoch + timeNanoseconds);
         }
 
-        /// <summary>
-        /// Adds a list of definitions to the <see cref="StreamEventsProducer"/>. Configure it with the builder methods.
-        /// </summary>
-        /// <param name="definitions">List of definitions</param>
+        /// <inheritdoc/>
         public void AddDefinitions(List<EventDefinition> definitions)
         {
             if (isDisposed)
@@ -149,13 +120,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.ResetFlushDefinitionsTimer();
         }
 
-        /// <summary>
-        /// Add new Event definition to define properties like Name or Level, among others.
-        /// </summary>
-        /// <param name="eventId">Event Id. This must match the event id you use to Event values</param>
-        /// <param name="name">Human friendly display name of the event</param>
-        /// <param name="description">Description of the event</param>
-        /// <returns>Event definition builder to define the event properties</returns>
+        /// <inheritdoc/>
         public EventDefinitionBuilder AddDefinition(string eventId, string name = null, string description = null)
         {
             if (isDisposed)
@@ -169,10 +134,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             return builder;
         }
 
-        /// <summary>
-        /// Adds a new Location in the event groups hierarchy.
-        /// </summary>
-        /// <param name="location">The group location</param>
+        /// <inheritdoc/>
         public EventDefinitionBuilder AddLocation(string location)
         {
             if (isDisposed)
@@ -206,10 +168,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             return eventDefinition;
         }
 
-
-        /// <summary>
-        /// Immediately writes the event definitions from the buffer without waiting for buffer condition to fulfill (200ms timeout)
-        /// </summary>
+        /// <inheritdoc/>
         public void Flush()
         {
             this.Flush(false);
@@ -234,10 +193,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             }
         }
 
-        /// <summary>
-        /// Publish an event into the stream.
-        /// </summary>
-        /// <param name="data">Event to publish</param>
+        /// <inheritdoc/>
         public void Publish(EventData data)
         {
             if (isDisposed)
@@ -262,10 +218,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.logger.Log(LogLevel.Trace, "event '{0}' sent.", data.Id);
         }
 
-        /// <summary>
-        /// Publish events into the stream.
-        /// </summary>
-        /// <param name="events">Events to publish</param>
+        /// <inheritdoc/>
         public void Publish(ICollection<EventData> events)
         {
             if (isDisposed)
@@ -335,9 +288,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.streamProducer.Publish(definitions);
         }
 
-        /// <summary>
-        /// Flushes internal buffers and disposes
-        /// </summary>
+        /// <inheritdoc/>
         public void Dispose()
         {
             if (this.isDisposed) return;

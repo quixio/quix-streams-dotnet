@@ -8,7 +8,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
     /// <summary>
     /// Consumer for streams, which raises <see cref="EventData"/> and <see cref="EventDefinitions"/> related messages
     /// </summary>
-    public class StreamEventsConsumer : IDisposable
+    public class StreamEventsConsumer : IStreamEventsConsumer
     {
         private readonly ITopicConsumer topicConsumer;
         private readonly IStreamConsumerInternal streamConsumer;
@@ -42,20 +42,13 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
             this.OnDefinitionsChanged?.Invoke(this, new EventDefinitionsChangedEventArgs(this.topicConsumer, this.streamConsumer));
         }
 
-        /// <summary>
-        /// Raised when an events data package is received for the stream
-        /// </summary>
+        /// <inheritdoc/>
         public event EventHandler<EventDataReadEventArgs> OnDataReceived;
 
-        /// <summary>
-        /// Raised when the event definitions have changed for the stream.
-        /// See <see cref="Definitions"/> for the latest set of event definitions
-        /// </summary>
+        /// <inheritdoc/>
         public event EventHandler<EventDefinitionsChangedEventArgs> OnDefinitionsChanged;
 
-        /// <summary>
-        /// Gets the latest set of event definitions
-        /// </summary>
+        /// <inheritdoc/>
         public IList<EventDefinition> Definitions { get; private set; } 
 
         private void LoadFromTelemetryDefinitions(QuixStreams.Telemetry.Models.EventDefinitions definitions)
