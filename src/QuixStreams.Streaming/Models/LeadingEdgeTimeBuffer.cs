@@ -9,13 +9,12 @@ namespace QuixStreams.Streaming.Models
     /// </summary>
     public class LeadingEdgeTimeBuffer
     {
-        
         /// <summary>
         /// Sorted dictionary of rows in the buffer
         /// </summary>
         private readonly SortedDictionary<long, LeadingEdgeTimeRow> rows;
 
-        private readonly StreamTimeseriesProducer producer;
+        private readonly IStreamTimeseriesProducer producer;
         private readonly long leadingEdgeDelayInNanoseconds;
 
         private long leadingEdgeInNanoseconds = long.MinValue;
@@ -41,13 +40,12 @@ namespace QuixStreams.Streaming.Models
         /// </summary>
         /// <param name="producer">Instance of <see cref="StreamTimeseriesProducer"/></param>
         /// <param name="leadingEdgeDelayMs">Leading edge delay configuration in Milliseconds</param>
-        internal LeadingEdgeTimeBuffer(StreamTimeseriesProducer producer, int leadingEdgeDelayMs)
+        internal LeadingEdgeTimeBuffer(IStreamTimeseriesProducer producer, int leadingEdgeDelayMs)
         {
             this.producer = producer;
             this.leadingEdgeDelayInNanoseconds = leadingEdgeDelayMs * (long)1e6;
             this.rows = new SortedDictionary<long, LeadingEdgeTimeRow>();
         }
-
 
         /// <summary>
         /// Gets an already buffered row based on timestamp and tags that can be modified or creates a new one if it doesn't exist.

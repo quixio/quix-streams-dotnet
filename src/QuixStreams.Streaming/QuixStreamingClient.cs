@@ -15,7 +15,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using QuixStreams;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Streaming.Configuration;
 using QuixStreams.Streaming.Exceptions;
@@ -29,7 +28,11 @@ using QuixStreams.Telemetry.Kafka;
 
 namespace QuixStreams.Streaming
 {
-    public interface IQuixStreamingClient
+    /// <summary>
+    /// Represents a streaming client for Kafka configured automatically using Environment Variables and Quix platform endpoints.
+    /// Use this Client when you use this library together with Quix platform.
+    /// </summary>
+    public interface IQuixStreamingClient : IQuixStreamingClientAsync
     {
         /// <summary>
         /// Gets a topic consumer capable of subscribing to receive incoming streams.
@@ -63,6 +66,46 @@ namespace QuixStreams.Streaming
         /// <param name="topicIdOrName">Id or name of the topic. If name is provided, workspace will be derived from environment variable or token, in that order</param>
         /// <returns>Instance of <see cref="ITopicProducer"/></returns>
         ITopicProducer GetTopicProducer(string topicIdOrName);
+    }
+
+    /// <summary>
+    /// Represents an asynchronous streaming client for Kafka configured automatically using Environment Variables and Quix platform endpoints.
+    /// Use this Client when you use this library together with Quix platform.
+    /// </summary>
+    public interface IQuixStreamingClientAsync
+    {
+        /// <summary>
+        /// Asynchronously gets a topic consumer capable of subscribing to receive incoming streams.
+        /// </summary>
+        /// <param name="topicIdOrName">Id or name of the topic. If name is provided, workspace will be derived from environment variable or token, in that order</param>
+        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
+        /// <param name="options">The settings to use for committing</param>
+        /// <param name="autoOffset">The offset to use when there is no saved offset for the consumer group.</param>
+        /// <returns>A task returning an instance of <see cref="ITopicConsumer"/></returns>
+        Task<ITopicConsumer> GetTopicConsumerAsync(string topicIdOrName, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest);
+
+        /// <summary>
+        /// Asynchronously gets a topic consumer capable of subscribing to receive non-quixstreams incoming messages.
+        /// </summary>
+        /// <param name="topicIdOrName">Id or name of the topic. If name is provided, workspace will be derived from environment variable or token, in that order</param>
+        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
+        /// <param name="autoOffset">The offset to use when there is no saved offset for the consumer group.</param>
+        /// <returns>A task returning an instance of <see cref="IRawTopicConsumer"/></returns>
+        Task<IRawTopicConsumer> GetRawTopicConsumerAsync(string topicIdOrName, string consumerGroup = null, AutoOffsetReset? autoOffset = null);
+
+        /// <summary>
+        /// Asynchronously gets a topic producer capable of publishing non-quixstreams messages.
+        /// </summary>
+        /// <param name="topicIdOrName">Id or name of the topic. If name is provided, workspace will be derived from environment variable or token, in that order</param>
+        /// <returns>A task returning an instance of <see cref="IRawTopicProducer"/></returns>
+        Task<IRawTopicProducer> GetRawTopicProducerAsync(string topicIdOrName);
+
+        /// <summary>
+        /// Asynchronously gets a topic producer capable of publishing stream messages.
+        /// </summary>
+        /// <param name="topicIdOrName">Id or name of the topic. If name is provided, workspace will be derived from environment variable or token, in that order</param>
+        /// <returns>A task returning an instance of <see cref="ITopicProducer"/></returns>
+        Task<ITopicProducer> GetTopicProducerAsync(string topicIdOrName);
     }
 
     /// <summary>
@@ -163,6 +206,17 @@ namespace QuixStreams.Streaming
             return client.GetTopicConsumer(topicId, consumerGroup, options, autoOffset);
         }
 
+        /// <inheritdoc/>
+        public async Task<ITopicConsumer> GetTopicConsumerAsync(string topicIdOrName, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest)
+        {
+            if (string.IsNullOrWhiteSpace(topicIdOrName)) throw new ArgumentNullException(nameof(topicIdOrName));
+
+            var (client, topicId, ws) = await this.ValidateTopicAndCreateClient(topicIdOrName).ConfigureAwait(false);
+            (consumerGroup, options) = await GetValidConsumerGroup(topicIdOrName, consumerGroup, options).ConfigureAwait(false);
+
+            return client.GetTopicConsumer(topicId, consumerGroup, options, autoOffset);
+        }
+
         /// <summary>
         /// Gets a topic consumer capable of subscribing to receive non-quixstreams incoming messages. 
         /// </summary>
@@ -180,6 +234,17 @@ namespace QuixStreams.Streaming
             return client.GetRawTopicConsumer(topicId, consumerGroup, autoOffset);
         }
 
+        /// <inheritdoc/>
+        public async Task<IRawTopicConsumer> GetRawTopicConsumerAsync(string topicIdOrName, string consumerGroup = null, AutoOffsetReset? autoOffset = null)
+        {
+            if (string.IsNullOrWhiteSpace(topicIdOrName)) throw new ArgumentNullException(nameof(topicIdOrName));
+
+            var (client, topicId, _) = await this.ValidateTopicAndCreateClient(topicIdOrName).ConfigureAwait(false);
+            (consumerGroup, _) = await GetValidConsumerGroup(topicIdOrName, consumerGroup, null).ConfigureAwait(false);
+
+            return client.GetRawTopicConsumer(topicId, consumerGroup, autoOffset);
+        }
+
         /// <summary>
         /// Gets a topic producer capable of publishing non-quixstreams messages. 
         /// </summary>
@@ -193,7 +258,17 @@ namespace QuixStreams.Streaming
 
             return client.GetRawTopicProducer(topicId);
         }
-        
+
+        /// <inheritdoc/>
+        public async Task<IRawTopicProducer> GetRawTopicProducerAsync(string topicIdOrName)
+        {
+            if (string.IsNullOrWhiteSpace(topicIdOrName)) throw new ArgumentNullException(nameof(topicIdOrName));
+
+            var (client, topicId, _) = await this.ValidateTopicAndCreateClient(topicIdOrName).ConfigureAwait(false);
+
+            return client.GetRawTopicProducer(topicId);
+        }
+
         /// <summary>
         /// Gets a topic producer capable of publishing stream messages.
         /// </summary>
@@ -208,6 +283,16 @@ namespace QuixStreams.Streaming
             return client.GetTopicProducer(topicId);
         }
 
+        /// <inheritdoc/>
+        public async Task<ITopicProducer> GetTopicProducerAsync(string topicIdOrName)
+        {
+            if (string.IsNullOrWhiteSpace(topicIdOrName)) throw new ArgumentNullException(nameof(topicIdOrName));
+
+            var (client, topicId, _) = await this.ValidateTopicAndCreateClient(topicIdOrName).ConfigureAwait(false);
+
+            return client.GetTopicProducer(topicId);
+        }
+
         private async Task<(string, CommitOptions)> GetValidConsumerGroup(string topicIdOrName, string originalConsumerGroup, CommitOptions commitOptions)
         {
             topicIdOrName = topicIdOrName.Trim();
@@ -215,7 +300,7 @@ namespace QuixStreams.Streaming
             var newCommitOptions = commitOptions;
             var consumerGroup = originalConsumerGroup;
             
-            var ws = await GetWorkspaceFromConfiguration(topicIdOrName);
+            var ws = await GetWorkspaceFromConfiguration(topicIdOrName).ConfigureAwait(false);
             if (originalConsumerGroup == null)
             {
                 if (commitOptions?.AutoCommitEnabled == true)
@@ -247,13 +332,13 @@ namespace QuixStreams.Streaming
             CheckToken(token);
             topicIdOrName = topicIdOrName.Trim();
             var sw = Stopwatch.StartNew();
-            var ws = await GetWorkspaceFromConfiguration(topicIdOrName);
-            var client = await this.CreateStreamingClientForWorkspace(ws);
+            var ws = await GetWorkspaceFromConfiguration(topicIdOrName).ConfigureAwait(false);
+            var client = await this.CreateStreamingClientForWorkspace(ws).ConfigureAwait(false);
             sw.Stop();
             this.logger.LogTrace("Created streaming client for workspace {0} in {1}.", ws.WorkspaceId, sw.Elapsed);
 
             sw = Stopwatch.StartNew();
-            var topicId = await this.ValidateTopicExistence(ws, topicIdOrName);
+            var topicId = await this.ValidateTopicExistence(ws, topicIdOrName).ConfigureAwait(false);
             sw.Stop();
             this.logger.LogTrace("Validated topic {0} in {1}.", topicIdOrName, sw.Elapsed);
             return (client, topicId, ws);
@@ -268,7 +353,7 @@ namespace QuixStreams.Streaming
         private async Task<string> ValidateTopicExistence(Workspace workspace, string topicIdOrName)
         {
             this.logger.LogTrace("Checking if topic {0} is already created.", topicIdOrName);
-            var topics = await this.GetTopics(workspace, true);
+            var topics = await this.GetTopics(workspace, true).ConfigureAwait(false);
             var existingTopic = topics.FirstOrDefault(y => y.Id.Equals(topicIdOrName, StringComparison.InvariantCulture)) ?? topics.FirstOrDefault(y=> y.Name.Equals(topicIdOrName, StringComparison.InvariantCulture)); // id prio
             var topicName = existingTopic?.Name;
             if (topicName == null)
@@ -290,7 +375,7 @@ namespace QuixStreams.Streaming
                     throw new InvalidConfigurationException($"Topic {topicIdOrName} does not exist and configuration is set to not automatically create.");
                 }
                 this.logger.LogInformation("Topic {0} is not yet created, creating in workspace {1} due to active settings.", topicName, workspace.WorkspaceId);
-                existingTopic = await CreateTopic(workspace, topicName);
+                existingTopic = await CreateTopic(workspace, topicName).ConfigureAwait(false);
                 this.logger.LogTrace("Created topic {0}.", topicName);
             }
             else
@@ -301,8 +386,8 @@ namespace QuixStreams.Streaming
             while (existingTopic.Status == TopicStatus.Creating)
             {
                 this.logger.LogInformation("Topic {0} is still creating.", topicName);
-                await Task.Delay(1000);
-                existingTopic = await this.GetTopic(workspace, topicName, false);
+                await Task.Delay(1000).ConfigureAwait(false);
+                existingTopic = await this.GetTopic(workspace, topicName, false).ConfigureAwait(false);
                 if (existingTopic.Status == TopicStatus.Ready) this.logger.LogInformation("Topic {0} created.", topicName); // will break out by itself
             }
 
@@ -323,7 +408,7 @@ namespace QuixStreams.Streaming
 
         private async Task<Workspace> GetWorkspaceFromConfiguration(string topicIdOrName)
         {
-            var workspaces = await this.GetWorkspaces();
+            var workspaces = await this.GetWorkspaces().ConfigureAwait(false);
             
             // Assume it is an ID
             if (topicToWorkspaceDict.TryGetValue(topicIdOrName, out var ws))
@@ -430,7 +515,7 @@ namespace QuixStreams.Streaming
             if (ws.Broker.SecurityMode == BrokerSecurityMode.Ssl || ws.Broker.SecurityMode == BrokerSecurityMode.SaslSsl)
             {
                 securityOptions.UseSsl = true;
-                securityOptions.SslCertificates = await GetWorkspaceCertificatePath(ws);
+                securityOptions.SslCertificates = await GetWorkspaceCertificatePath(ws).ConfigureAwait(false);
                 if (!brokerProperties.ContainsKey("ssl.endpoint.identification.algorithm"))
                 {
                     brokerProperties["ssl.endpoint.identification.algorithm"] = "none"; // default back to None
@@ -495,7 +580,7 @@ namespace QuixStreams.Streaming
                             if (!File.Exists(zipPath))
                             {
                                 this.logger.LogTrace("Downloading certificate for workspace {0}.", ws.Name);
-                                var response = await this.SendRequestToApi(HttpMethod.Get, new Uri(ApiUrl, $"workspaces/{ws.WorkspaceId}/certificates"));
+                                var response = await this.SendRequestToApi(HttpMethod.Get, new Uri(ApiUrl, $"workspaces/{ws.WorkspaceId}/certificates")).ConfigureAwait(false);
                                 if (response.StatusCode == HttpStatusCode.NoContent)
                                 {
                                     ws.Broker.HasCertificate = false;
@@ -503,7 +588,7 @@ namespace QuixStreams.Streaming
                                 }
 
                                 using var fs = File.Open(zipPath, FileMode.Create);
-                                await response.Content.CopyToAsync(fs);
+                                await response.Content.CopyToAsync(fs).ConfigureAwait(false);
                             }
 
                             var hasCert = false;
@@ -516,7 +601,7 @@ namespace QuixStreams.Streaming
                                     if (entry.Name != "ca.cert") continue;
                                     using var stream = entry.Open();
                                     using var fs = File.Open(certPath, FileMode.Create);
-                                    await stream.CopyToAsync(fs);
+                                    await stream.CopyToAsync(fs).ConfigureAwait(false);
                                     hasCert = true;
                                 }
                             }
@@ -544,7 +629,7 @@ namespace QuixStreams.Streaming
 
         private async Task<List<Workspace>> GetWorkspaces()
         {
-            var result = await GetModelFromApi<List<Workspace>>("workspaces", true, true);
+            var result = await GetModelFromApi<List<Workspace>>("workspaces", true, true).ConfigureAwait(false);
             if (result.Count == 0) throw new InvalidTokenException("Could not find any workspaces for this token.");
             return result;
         }
@@ -567,15 +652,15 @@ namespace QuixStreams.Streaming
             HttpResponseMessage response;
             try
             {
-                response = await SendRequestToApi(HttpMethod.Post, uri, new TopicCreateRequest() {Name = topicName});
+                response = await SendRequestToApi(HttpMethod.Post, uri, new TopicCreateRequest() {Name = topicName}).ConfigureAwait(false);
             }
             catch (QuixApiException ex) when (ex.Message.Contains("already exists"))
             {
                 this.logger.LogDebug("Another process created topic {0}, retrieving it from workspace.", topicName);
-                return await this.GetTopic(workspace, topicName, false);
+                return await this.GetTopic(workspace, topicName, false).ConfigureAwait(false);
             }
 
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             try
             {
                 var converted = JsonConvert.DeserializeObject<Topic>(content);
@@ -598,10 +683,10 @@ namespace QuixStreams.Streaming
             try
             {
                 var response =
-                    await this.httpClient.Value.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
+                    await this.httpClient.Value.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     this.logger.LogTrace("Request {0} had {1} response:{2}{3}", uri.AbsoluteUri, response.StatusCode,
                         Environment.NewLine, responseContent);
                     string msg;
@@ -634,7 +719,7 @@ namespace QuixStreams.Streaming
                 var prevClient = this.httpClient;
                 this.httpClient = new Lazy<HttpClient>(() => new HttpClient(this.handler));
                 prevClient.Value.Dispose();
-                return await SendRequestToApi(method, uri, bodyModel);
+                return await SendRequestToApi(method, uri, bodyModel).ConfigureAwait(false);
             }
         }
         
@@ -645,8 +730,8 @@ namespace QuixStreams.Streaming
             var uri = new Uri(ApiUrl, path);
             var cacheKey = $"API:GET:{uri.AbsolutePath}";
 
-            var response = await SendRequestToApi(HttpMethod.Get, uri);
-            var responseContent = await response.Content.ReadAsStringAsync();
+            var response = await SendRequestToApi(HttpMethod.Get, uri).ConfigureAwait(false);
+            var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             this.logger.LogTrace("Request {0} had {1} response:{2}{3}", uri.AbsolutePath, response.StatusCode, Environment.NewLine, responseContent);
             try
             {

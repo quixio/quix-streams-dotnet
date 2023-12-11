@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -54,13 +54,13 @@ namespace QuixStreams.Streaming
         public StreamConsumerId Id { get; }
         
         /// <inheritdoc />
-        public StreamPropertiesConsumer Properties => streamPropertiesConsumer;
+        public IStreamPropertiesConsumer Properties => streamPropertiesConsumer;
 
         /// <inheritdoc />
-        public StreamTimeseriesConsumer Timeseries => streamTimeseriesConsumer;
+        public IStreamTimeseriesConsumer Timeseries => streamTimeseriesConsumer;
 
         /// <inheritdoc />
-        public StreamEventsConsumer Events => streamEventsConsumer;
+        public IStreamEventsConsumer Events => streamEventsConsumer;
 
         /// <inheritdoc />
         public event EventHandler<PackageReceivedEventArgs> OnPackageReceived;
@@ -197,8 +197,8 @@ namespace QuixStreams.Streaming
             isClosed = true;
             this.logger.LogTrace("StreamConsumer: OnStreamEndReceived");
 
-            this.Timeseries.Buffers.ForEach(buffer => buffer.Dispose());
-            
+            this.streamTimeseriesConsumer.Buffers.ForEach(buffer => buffer.Dispose());
+
             this.OnStreamClosed?.Invoke(this, new StreamClosedEventArgs(this.topicConsumer, this, endType));
         }
 

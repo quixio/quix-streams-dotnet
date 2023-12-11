@@ -10,13 +10,12 @@ namespace QuixStreams.Streaming.Models
     /// </summary>
     public class LeadingEdgeBuffer
     {
-        
         /// <summary>
         /// Sorted dictionary of rows in the buffer
         /// </summary>
         private readonly SortedDictionary<LeadingEdgeRowKey, LeadingEdgeRow> rows;
 
-        private readonly StreamTimeseriesProducer producer;
+        private readonly IStreamTimeseriesProducer producer;
         private readonly long leadingEdgeDelayInNanoseconds;
 
         private long leadingEdgeInNanoseconds = long.MinValue;
@@ -42,7 +41,7 @@ namespace QuixStreams.Streaming.Models
         /// </summary>
         /// <param name="producer">Instance of <see cref="StreamTimeseriesProducer"/></param>
         /// <param name="leadingEdgeDelayMs">Leading edge delay configuration in Milliseconds</param>
-        internal LeadingEdgeBuffer(StreamTimeseriesProducer producer, int leadingEdgeDelayMs)
+        internal LeadingEdgeBuffer(IStreamTimeseriesProducer producer, int leadingEdgeDelayMs)
         {
             this.producer = producer;
             this.leadingEdgeDelayInNanoseconds = leadingEdgeDelayMs * (long)1e6;

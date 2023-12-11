@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using FluentAssertions;
 using NSubstitute;
 using Quix.TestBase.Extensions;
-using QuixStreams;
 using QuixStreams.Streaming.Models;
+using QuixStreams.Streaming.Models.StreamProducer;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
 using Xunit;
@@ -16,7 +16,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
     {
         public LeadingEdgeTimeBufferShould(ITestOutputHelper helper)
         {
-            QuixStreams.Logging.Factory = helper.CreateLoggerFactory();
+            Logging.Factory = helper.CreateLoggerFactory();
         }
         
         [Fact]
@@ -27,7 +27,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var streamProducer = Substitute.For<IStreamProducerInternal>();
             streamProducer.Epoch.Returns(DateTime.UnixEpoch);
 
-            var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
+            var timeseriesProducer = new StreamTimeseriesProducer(topicProducer, streamProducer);
 
             var buffer = timeseriesProducer.CreateLeadingEdgeTimeBuffer(5000);
             
@@ -58,7 +58,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var streamProducer = Substitute.For<IStreamProducerInternal>();
             streamProducer.Epoch.Returns(DateTime.UnixEpoch);
 
-            var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
+            var timeseriesProducer = new StreamTimeseriesProducer(topicProducer, streamProducer);
 
             var buffer = timeseriesProducer.CreateLeadingEdgeTimeBuffer(1000);
             
@@ -91,7 +91,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var streamProducer = Substitute.For<IStreamProducerInternal>();
             streamProducer.Epoch.Returns(DateTime.UnixEpoch);
 
-            var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
+            var timeseriesProducer = new StreamTimeseriesProducer(topicProducer, streamProducer);
 
             var buffer = timeseriesProducer.CreateLeadingEdgeTimeBuffer(1000);
             
@@ -140,7 +140,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var streamProducer = Substitute.For<IStreamProducerInternal>();
             streamProducer.Epoch.Returns(DateTime.UnixEpoch);
 
-            var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
+            var timeseriesProducer = new StreamTimeseriesProducer(topicProducer, streamProducer);
 
             var buffer = timeseriesProducer.CreateLeadingEdgeTimeBuffer(1000);
             
@@ -211,7 +211,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var streamProducer = Substitute.For<IStreamProducerInternal>();
             streamProducer.Epoch.Returns(DateTime.UnixEpoch);
             
-            var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
+            var timeseriesProducer = new StreamTimeseriesProducer(topicProducer, streamProducer);
 
             var buffer = timeseriesProducer.CreateLeadingEdgeTimeBuffer(1000);
             
@@ -245,7 +245,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var offsetTs = TimeSpan.FromSeconds(1);
             streamProducer.Epoch.Returns(DateTime.UnixEpoch + offsetTs);
             
-            var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
+            var timeseriesProducer = new StreamTimeseriesProducer(topicProducer, streamProducer);
 
             var buffer = timeseriesProducer.CreateLeadingEdgeTimeBuffer(1000);
             
@@ -278,7 +278,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var offsetTs = TimeSpan.FromSeconds(1);
             streamProducer.Epoch.Returns(DateTime.UnixEpoch.AddTicks(offsetTs.ToNanoseconds() * 10000 / 1000)); // this should be totally ignored
             
-            var timeseriesProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer(topicProducer, streamProducer);
+            var timeseriesProducer = new StreamTimeseriesProducer(topicProducer, streamProducer);
 
             var buffer = timeseriesProducer.CreateLeadingEdgeTimeBuffer(1000);
             buffer.Epoch = (int)(offsetTs.TotalMilliseconds * 1e6); // this should not be ignored

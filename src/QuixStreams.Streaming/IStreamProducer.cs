@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using QuixStreams.Streaming.Models.StreamProducer;
 
 namespace QuixStreams.Streaming
@@ -22,17 +22,17 @@ namespace QuixStreams.Streaming
         /// <summary>
         /// Properties of the stream. The changes will automatically be sent after a slight delay
         /// </summary>
-        StreamPropertiesProducer Properties { get; }
+        IStreamPropertiesProducer Properties { get; }
 
         /// <summary>
-        /// Gets the producer for publishing timeseries related information of the stream such as parameter definitions and values 
+        /// Gets the producer for publishing timeseries related information of the stream such as parameter definitions and values
         /// </summary>
-        StreamTimeseriesProducer Timeseries { get; }
+        IStreamTimeseriesProducer Timeseries { get; }
 
         /// <summary>
-        /// Gets the producer for publishing event related information of the stream such as event definitions and values  
+        /// Gets the producer for publishing event related information of the stream such as event definitions and values
         /// </summary>
-        StreamEventsProducer Events { get; }
+        IStreamEventsProducer Events { get; }
 
         /// <summary>
         /// Flush the pending data to stream.  
