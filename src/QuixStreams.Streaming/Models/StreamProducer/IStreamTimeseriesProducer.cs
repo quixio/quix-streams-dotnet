@@ -64,19 +64,5 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         /// Immediately publish timeseries data and definitions from the buffer without waiting for buffer condition to fulfill for either
         /// </summary>
         void Flush();
-
-        /// <summary>
-        /// Creates a new <see cref="LeadingEdgeBuffer"/> using this producer where tags form part of the row's key
-        /// and can't be modified after initial values
-        /// </summary>
-        /// <param name="leadingEdgeDelayMs">Leading edge delay configuration in Milliseconds</param>
-        LeadingEdgeBuffer CreateLeadingEdgeBuffer(int leadingEdgeDelayMs);
-
-        /// <summary>
-        /// Creates a new <see cref="LeadingEdgeTimeBuffer"/> using this producer where tags do not form part of the row's key
-        /// and can be freely modified after initial values
-        /// </summary>
-        /// <param name="leadingEdgeDelayMs">Leading edge delay configuration in Milliseconds</param>
-        LeadingEdgeTimeBuffer CreateLeadingEdgeTimeBuffer(int leadingEdgeDelayMs);
     }
 }

@@ -205,18 +205,6 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.Flush(false);
         }
 
-        /// <inheritdoc/>
-        public LeadingEdgeBuffer CreateLeadingEdgeBuffer(int leadingEdgeDelayMs)
-        {
-            return new LeadingEdgeBuffer(this, leadingEdgeDelayMs);
-        }
-
-        /// <inheritdoc/>
-        public LeadingEdgeTimeBuffer CreateLeadingEdgeTimeBuffer(int leadingEdgeDelayMs)
-        {
-            return new LeadingEdgeTimeBuffer(this, leadingEdgeDelayMs);
-        }
-
         private void Flush(bool force)
         {
             if (!force && isDisposed)
