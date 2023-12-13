@@ -250,7 +250,7 @@ namespace QuixStreams.Kafka
                                     }
                                     adminClient = new AdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build();
                                 }
-                                var metadata = adminClient.GetMetadata(partition.Topic, TimeSpan.FromSeconds(10));
+                                var metadata = adminClient.GetMetadata(partition.Topic, TimeSpan.FromSeconds(5));
                                 if (metadata == null)
                                 {
                                     throw new OperationCanceledException($"[{this.configId}] Topic '{partition.Topic}' with partition {partition.Partition} requires metadata retrieval, which timed out. Try again or specify partitions explicitly."); // Maybe a more specific exception ?

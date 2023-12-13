@@ -129,8 +129,10 @@ namespace QuixStreams.Kafka
                     try
                     {
                         var brokerConfig = adminClient.DescribeConfigsAsync(new ConfigResource[]
-                                { new ConfigResource() { Type = ResourceType.Broker, Name = "0" } }).GetAwaiter()
-                            .GetResult();
+                                { new ConfigResource() { Type = ResourceType.Broker, Name = "0" } }, new DescribeConfigsOptions()
+                        {
+                            RequestTimeout = TimeSpan.FromSeconds(5)
+                        }).GetAwaiter().GetResult();
 
                         if (brokerConfig.FirstOrDefault()?.Entries
                                 .TryGetValue("message.max.bytes", out var maxBrokerMessageBytes) == true &&
@@ -153,9 +155,13 @@ namespace QuixStreams.Kafka
                         // no necessary permissions?
                     }
 
+
                     var result = adminClient.DescribeConfigsAsync(new ConfigResource[]
-                            { new ConfigResource() { Type = ResourceType.Topic, Name = topicConfiguration.Topic } })
-                        .GetAwaiter().GetResult();
+                            { new ConfigResource() { Type = ResourceType.Topic, Name = topicConfiguration.Topic } },
+                        new DescribeConfigsOptions()
+                        {
+                            RequestTimeout = TimeSpan.FromSeconds(5)
+                        }).GetAwaiter().GetResult();
 
                     if (result.FirstOrDefault()?.Entries
                             .TryGetValue("max.message.bytes", out var maxTopicMessageBytes) != true ||
