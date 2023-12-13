@@ -124,48 +124,50 @@ namespace QuixStreams.Kafka
                 
                 using (var adminClient = new AdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build())
                 {
-                    var maxBrokerMessageBytesNumeric = int.MaxValue;
-                    try
-                    {
-                        var maxRequestTimeBroker = max - DateTime.UtcNow;
-                        var brokerConfig = await adminClient.DescribeConfigsAsync(new ConfigResource[]
-                                { new ConfigResource() { Type = ResourceType.Broker, Name = "0" } },
-                            new DescribeConfigsOptions()
-                            {
-                                RequestTimeout = maxRequestTimeBroker
-                            });
-
-                        if (brokerConfig.FirstOrDefault()?.Entries
-                                .TryGetValue("message.max.bytes", out var maxBrokerMessageBytes) == true &&
-                            int.TryParse(maxBrokerMessageBytes.Value, out maxBrokerMessageBytesNumeric))
-                        {
-                            if (maxBrokerMessageBytesNumeric > MaxMessageSizePadding * 2)
-                            {
-                                maxBrokerMessageBytesNumeric -= MaxMessageSizePadding;
-                            }
-                            else
-                            {
-                                // This is a hope that by halving, it'll be able to get packed, but no guarantee
-                                // removing more than this seem counter intuitive?
-                                maxBrokerMessageBytesNumeric = (int)Math.Ceiling(maxBrokerMessageBytesNumeric * 0.5);
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // no necessary permissions?
-                    }
-
-
                     var maxRequestTimeTopic = max - DateTime.UtcNow;
-                    var result = await adminClient.DescribeConfigsAsync(new ConfigResource[]
+                    var topicConfig = await adminClient.DescribeConfigsAsync(new ConfigResource[]
                             { new ConfigResource() { Type = ResourceType.Topic, Name = topicConfiguration.Topic } },
                         new DescribeConfigsOptions()
                         {
                             RequestTimeout = maxRequestTimeTopic
                         });
+                    
+                    var maxBrokerMessageBytesNumeric = int.MaxValue;
+                    try
+                    {
+                        var maxRequestTimeBroker = max - DateTime.UtcNow;
+                        if (maxRequestTimeBroker > TimeSpan.FromSeconds(0)) 
+                        {
+                            var brokerConfig = await adminClient.DescribeConfigsAsync(new ConfigResource[]
+                                    { new ConfigResource() { Type = ResourceType.Broker, Name = "0" } },
+                                new DescribeConfigsOptions()
+                                {
+                                    RequestTimeout = maxRequestTimeBroker
+                                });
 
-                    if (result.FirstOrDefault()?.Entries
+                            if (brokerConfig.FirstOrDefault()?.Entries
+                                    .TryGetValue("message.max.bytes", out var maxBrokerMessageBytes) == true &&
+                                int.TryParse(maxBrokerMessageBytes.Value, out maxBrokerMessageBytesNumeric))
+                            {
+                                if (maxBrokerMessageBytesNumeric > MaxMessageSizePadding * 2)
+                                {
+                                    maxBrokerMessageBytesNumeric -= MaxMessageSizePadding;
+                                }
+                                else
+                                {
+                                    // This is a hope that by halving, it'll be able to get packed, but no guarantee
+                                    // removing more than this seem counter intuitive?
+                                    maxBrokerMessageBytesNumeric = (int)Math.Ceiling(maxBrokerMessageBytesNumeric * 0.5);
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // no necessary permissions/timeout?
+                    }
+
+                    if (topicConfig.FirstOrDefault()?.Entries
                             .TryGetValue("max.message.bytes", out var maxTopicMessageBytes) != true ||
                         !int.TryParse(maxTopicMessageBytes.Value, out var maxTopicMessageBytesNumeric))
                     {
