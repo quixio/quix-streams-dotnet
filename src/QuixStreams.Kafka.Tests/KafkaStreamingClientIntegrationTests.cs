@@ -6,11 +6,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Confluent.Kafka.Admin;
 using FluentAssertions;
 using Quix.TestBase.Extensions;
 using QuixStreams.Kafka;
-using QuixStreams;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -197,8 +195,10 @@ namespace QuixStreams.Transport.Kafka.Tests
             await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
             using (var producer = new KafkaProducer(new ProducerConfiguration(this.kafkaDockerTestFixture.BrokerList), new ProducerTopicConfiguration(topic)))
             {
-                this.output.WriteLine("Max message size is {0}", producer.MaxMessageSizeBytes);
-                producer.MaxMessageSizeBytes.Should().BeGreaterThan(0);
+                var maxMessageSize = await producer.GetMaxMessageSizeBytes(TimeSpan.FromSeconds(5));
+                maxMessageSize.Should().BeGreaterThan(0);
+                this.output.WriteLine("Max message size is {0}", maxMessageSize);
+
             }
         }
     }

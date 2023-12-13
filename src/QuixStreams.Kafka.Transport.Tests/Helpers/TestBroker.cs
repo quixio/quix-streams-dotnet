@@ -79,7 +79,12 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
             // do nothing;
         }
 
-        public int MaxMessageSizeBytes { get; set; } = 1024 * 1024;
+        public Task<int> GetMaxMessageSizeBytes(TimeSpan maxWait)
+        {
+            return Task.FromResult(MaxMessageSizeBytes);
+        }
+
+        public int MaxMessageSizeBytes = 1024 * 1024;
 
         void IKafkaConsumer.Open()
         {

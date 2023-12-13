@@ -32,7 +32,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             var topicName = "streaming-raw-integration-test";
             await this.kafkaDockerTestFixture.EnsureTopic(topicName, 1);
 
-            var topicConsumer = client.GetRawTopicConsumer(topicName, "Default", AutoOffsetReset.Latest);
+            var topicConsumer = client.GetRawTopicConsumer(topicName, "Default", AutoOffsetReset.Earliest);
 
             var toSend = new byte[] { 1, 2, 0, 4, 6, 123, 54, 2 };
             var received = new List<byte[]>();
@@ -47,7 +47,6 @@ namespace QuixStreams.Streaming.IntegrationTests
 
             var topicProducer = client.GetRawTopicProducer(topicName);
             topicProducer.Publish(new KafkaMessage(null, toSend, null));
-
             SpinWait.SpinUntil(() => received.Count > 0, 10000);
 
             output.WriteLine($"received {received.Count} items");
@@ -69,7 +68,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             justCreateMeMyTopic.Dispose(); // should cause a flush
             Thread.Sleep(5000); // This is only necessary because the container we use for kafka and how a topic creation is handled for the unit test
 
-            var topicConsumer = client.GetRawTopicConsumer(topicName, "Default", AutoOffsetReset.Latest);
+            var topicConsumer = client.GetRawTopicConsumer(topicName, "Default", AutoOffsetReset.Earliest);
 
             var toSend = new byte[] { 1, 2, 0, 4, 6, 123, 54, 2 };
             var received = new List<byte[]>();

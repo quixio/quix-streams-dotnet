@@ -21,7 +21,7 @@ namespace QuixStreams.Kafka.Transport.Tests
             QuixStreams.Logging.Factory = helper.CreateLoggerFactory();
             this.helper = helper;
         }
-        
+         
         [Theory]
         [InlineData(1)]
         [InlineData(10)]

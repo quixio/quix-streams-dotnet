@@ -13,7 +13,7 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
             KafkaMessage result = null;
             Producer.OnMessageReceived = async message => result = message;  
             var tProducer = new KafkaTransportProducer(Producer);
-            tProducer.Publish(new TransportPackage<object>(key, value));
+            tProducer.Publish(new TransportPackage<object>(key, value)).ConfigureAwait(false).GetAwaiter().GetResult();
             return result;
         }
         
@@ -23,7 +23,7 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
             KafkaMessage result = null;
             Producer.OnMessageReceived = async message => result = message;  
             var tProducer = new KafkaTransportProducer(Producer);
-            tProducer.Publish(package);
+            tProducer.Publish(package).ConfigureAwait(false).GetAwaiter().GetResult(); 
             return result;
         }
         
@@ -33,7 +33,7 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
             KafkaMessage result = null;
             Producer.OnMessageReceived = async message => result = message;  
             var tProducer = new KafkaTransportProducer(Producer);
-            tProducer.Publish(package); 
+            tProducer.Publish(package).ConfigureAwait(false).GetAwaiter().GetResult(); 
             return new TransportPackage(package.Type, package.Key, package.Value, result);
         }
     }
