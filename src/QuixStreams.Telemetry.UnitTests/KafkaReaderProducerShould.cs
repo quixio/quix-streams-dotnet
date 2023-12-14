@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Quix.TestBase.Extensions;
 using QuixStreams;
 using QuixStreams.Kafka.Transport.SerDes;
@@ -22,7 +23,7 @@ namespace QuixStreams.Telemetry.UnitTests
         }
         
         [Fact]
-        public void KafkaConsumerProducer_AfterSendSeveralStreams_ShouldReadProperStreams()
+        public async Task KafkaConsumerProducer_AfterSendSeveralStreams_ShouldReadProperStreams()
         {
             RegisterTestCodecs();
 
@@ -70,10 +71,12 @@ namespace QuixStreams.Telemetry.UnitTests
                 .AddComponent(new TelemetryKafkaProducer(testBroker, "StreamId_3"));
 
             // ACT
-            stream1.Send(testModel1);
-            stream2.Send(testModel1);
-            stream2.Send(testModel2);
-            stream3.Send(testModel2);
+            Task.WaitAll(new [] {
+                stream1.Send(testModel1),
+                stream2.Send(testModel1),
+                stream2.Send(testModel2),
+                stream3.Send(testModel2)
+            });
 
             // ASSERT
             Assert.Equal(3, telemetryKafkaConsumer.ContextCache.GetAll().Count);
@@ -94,14 +97,14 @@ namespace QuixStreams.Telemetry.UnitTests
 
             // ACT
             var streamEnd = new StreamEnd();
-            stream1.Send(streamEnd);
+            await stream1.Send(streamEnd);
 
             // ASSERT
             Assert.Equal(2, telemetryKafkaConsumer.ContextCache.GetAll().Count);
 
             // ACT - RE-OPEN TEST
             streamStarted = false;
-            stream1.Send(testModel1);
+            await stream1.Send(testModel1);
 
             // ASSERT RE-OPEN TEST
             Assert.True(streamStarted);
@@ -141,7 +144,7 @@ namespace QuixStreams.Telemetry.UnitTests
         }
 
         [Fact]
-        public void KafkaConsumerProducer_WithErrorsOnSend_ShouldRaiseExceptions()
+        public async Task KafkaConsumerProducer_WithErrorsOnSend_ShouldRaiseExceptions()
         {
             RegisterTestCodecs();
 
@@ -166,7 +169,7 @@ namespace QuixStreams.Telemetry.UnitTests
             telemetryKafkaProducer.OnWriteException += (sender, e) => raised = true;
 
             // ACT
-            stream1.Send(testModel1);
+            await stream1.Send(testModel1);
 
             // ASSERT
             Assert.True(raised);

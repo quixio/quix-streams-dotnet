@@ -1,5 +1,7 @@
 ﻿﻿using System;
  using System.Threading;
+ using QuixStreams.Kafka;
+ using QuixStreams.Kafka.Transport;
  using QuixStreams.Kafka.Transport.SerDes;
  using QuixStreams.Kafka.Transport.SerDes.Legacy.MessageValue;
  using QuixStreams.Telemetry.Kafka;
@@ -39,13 +41,19 @@
             });
 
             telemetryKafkaConsumer.Start();
+            
+            var prodConfig = new ProducerConfiguration(Configuration.Config.BrokerList, Configuration.Config.Properties);
+            var topicConfig = new ProducerTopicConfiguration(Configuration.Config.Topic);
+
+            var kafkaProducer = new KafkaProducer(prodConfig, topicConfig);
+
 
             // Writing to Kafka (Random data)
             var randomDataReader = new RandomDataProducer();
             var stream = new StreamPipeline()
                 .AddComponent(randomDataReader)
                 //.AddComponent(new SimplyModifier(69))
-                .AddComponent(new TelemetryKafkaProducer(KafkaHelper.OpenKafkaInput(new KafkaProducerConfiguration(Configuration.Config.BrokerList, Configuration.Config.Properties), Configuration.Config.Topic), null));
+                .AddComponent(new TelemetryKafkaProducer(kafkaProducer));
             //.AddComponent(new ConsoleStreamWriter()); // This is here to show if msg got correctly sent
                 //.AddComponent(new TestKafkaProducer(testBroker));
 

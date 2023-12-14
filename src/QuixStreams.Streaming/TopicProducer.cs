@@ -37,7 +37,11 @@ namespace QuixStreams.Streaming
         public TopicProducer(KafkaProducerConfiguration config, string topic)
         {
             this.topic = topic;
-            this.kafkaProducer = KafkaHelper.OpenKafkaInput(config, topic);
+            
+            var prodConfig = new ProducerConfiguration(config.BrokerList, config.Properties);
+            var topicConfig = new ProducerTopicConfiguration(topic);
+            
+            this.kafkaProducer =  new KafkaProducer(prodConfig, topicConfig);
 
             createKafkaProducer = (string streamId) => new TelemetryKafkaProducer(this.kafkaProducer, streamId);
         }

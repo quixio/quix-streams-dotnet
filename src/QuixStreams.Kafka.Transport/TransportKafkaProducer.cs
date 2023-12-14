@@ -34,6 +34,7 @@ namespace QuixStreams.Kafka.Transport
         private IKafkaMessageSplitter kafkaMessageSplitter;
         private readonly IKafkaProducer producer;
         private Task lastPublishTask = null;
+        private object msgSplitLock = new object();
 
         /// <summary>
         /// Initializes a new instance of <see cref="KafkaTransportProducer"/> with the specified <see cref="IProducer{TKey,TValue}"/>
@@ -46,30 +47,41 @@ namespace QuixStreams.Kafka.Transport
             this.producer = producer ?? throw new ArgumentNullException(nameof(producer));
             this.packageSerializer = packageSerializer ?? new PackageSerializer();
             this.kafkaMessageSplitter = kafkaMessageSplitter;
-            if (this.kafkaMessageSplitter == null && PackageSerializationSettings.EnableMessageSplit)
-            {
-                this.kafkaMessageSplitter = new KafkaMessageSplitter(this.producer.MaxMessageSizeBytes);
-            }
         }
 
         /// <inheritdocs/>
         public Task Publish(TransportPackage transportPackage, CancellationToken cancellationToken = default)
         {
             // this -> serializer -?> byteSplitter -> producer
-            if (cancellationToken.IsCancellationRequested) return Task.FromCanceled(cancellationToken);
-            var serialized = this.packageSerializer.Serialize(transportPackage);
-            
-            if (PackageSerializationSettings.EnableMessageSplit && 
-                this.kafkaMessageSplitter != null &&
-                this.kafkaMessageSplitter.ShouldSplit(serialized))
+            if (cancellationToken.IsCancellationRequested)
             {
-                var splitMessages = this.kafkaMessageSplitter.Split(serialized);
-                this.lastPublishTask = this.producer.Publish(splitMessages, cancellationToken);
-                return this.lastPublishTask;
+                return Task.FromCanceled(cancellationToken);
             }
-            
-            this.lastPublishTask = this.producer.Publish(serialized, cancellationToken);
-            return this.lastPublishTask;
+            var serialized = this.packageSerializer.Serialize(transportPackage);
+
+            if (PackageSerializationSettings.EnableMessageSplit)
+            {
+                if (this.kafkaMessageSplitter == null)
+                {
+                    lock (this.msgSplitLock)
+                    {
+                        // attempts to make it proper async were in wain after several variants
+                        // ideas are welcome, any attempt so far resulted in intermittent test fails
+                        // but this worked
+                        var size = this.producer
+                            .GetMaxMessageSizeBytes(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                        this.kafkaMessageSplitter = new KafkaMessageSplitter(size);
+                    }
+                }
+                
+                if (this.kafkaMessageSplitter.ShouldSplit(serialized))
+                {
+                    var splitMessages = this.kafkaMessageSplitter.Split(serialized);
+                    return this.lastPublishTask = this.producer.Publish(splitMessages, cancellationToken);
+                }
+            }
+
+            return this.lastPublishTask = this.producer.Publish(serialized, cancellationToken);
         }
 
         

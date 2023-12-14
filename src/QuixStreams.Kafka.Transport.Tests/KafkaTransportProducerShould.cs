@@ -19,7 +19,7 @@ namespace QuixStreams.Kafka.Transport.Tests
             var sentValue = TestModel.Create();
             var sentPackage = new TransportPackage<TestModel>("someKey", sentValue);
 
-            Func<Task> action = () => transportProducer.Publish(sentPackage);
+            Action action = () => transportProducer.Publish(sentPackage).GetAwaiter().GetResult();
 
             // Assert
             action.Should().Throw<Exception>().WithMessage(exception.Message);

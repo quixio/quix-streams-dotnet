@@ -35,6 +35,8 @@ namespace QuixStreams.Kafka
         /// The maximum message size the producer can handle.
         /// Packages above this size will likely throw <see cref="ProduceException{TKey,TValue}"/> with "Message size too large" message
         /// </summary>
-        int MaxMessageSizeBytes { get; }
+        /// <param name="maxWait">The maximum time the request can spend on retrieving this from broker</param>
+        /// <returns>Returns the maximum message size allowed by the broker.</returns>
+        Task<int> GetMaxMessageSizeBytes(TimeSpan maxWait);
     }
 }

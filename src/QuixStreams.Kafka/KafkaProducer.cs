@@ -49,6 +49,7 @@ namespace QuixStreams.Kafka
         private long lastFlush = -1;
         private IProducer<byte[], byte[]> producer;
         private string configId;
+        private readonly ProducerConfiguration producerConfiguration;
 
         /// <summary>
         /// Initializes a new instance of <see cref="KafkaProducer"/>
@@ -59,6 +60,7 @@ namespace QuixStreams.Kafka
         {
             this.topicConfiguration = topicConfiguration;
             this.config = this.GetKafkaProducerConfig(producerConfiguration);
+            this.producerConfiguration = producerConfiguration;
             SetConfigId(topicConfiguration);
             if (topicConfiguration.Partition == Partition.Any)
             {
@@ -86,9 +88,7 @@ namespace QuixStreams.Kafka
                         Timestamp = (Timestamp)msg.Timestamp
                     }, handler);
             }
-
-            UpdateMaxMessageSize(producerConfiguration);
-            MaxMessageSizeBytes = producerConfiguration.MessageMaxBytes!.Value - 1;
+            
             Open();
         }
         
@@ -112,10 +112,9 @@ namespace QuixStreams.Kafka
             return config;
         }
 
-        private void UpdateMaxMessageSize(ProducerConfiguration producerConfiguration)
+        private async Task UpdateMaxMessageSize(TimeSpan maxWait)
         {
-            if (producerConfiguration.MessageMaxBytes != null) return;
-            
+            var max = DateTime.UtcNow.Add(maxWait);
             try
             {
                 void NullLoggerForAdminLogs(IAdminClient adminClient, LogMessage logMessage)
@@ -125,44 +124,54 @@ namespace QuixStreams.Kafka
                 
                 using (var adminClient = new AdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build())
                 {
+                    var maxRequestTimeTopic = max - DateTime.UtcNow;
+                    var topicConfig = await adminClient.DescribeConfigsAsync(new ConfigResource[]
+                            { new ConfigResource() { Type = ResourceType.Topic, Name = topicConfiguration.Topic } },
+                        new DescribeConfigsOptions()
+                        {
+                            RequestTimeout = maxRequestTimeTopic
+                        });
+                    
                     var maxBrokerMessageBytesNumeric = int.MaxValue;
                     try
                     {
-                        var brokerConfig = adminClient.DescribeConfigsAsync(new ConfigResource[]
-                                { new ConfigResource() { Type = ResourceType.Broker, Name = "0" } }).GetAwaiter()
-                            .GetResult();
-
-                        if (brokerConfig.FirstOrDefault()?.Entries
-                                .TryGetValue("message.max.bytes", out var maxBrokerMessageBytes) == true &&
-                            int.TryParse(maxBrokerMessageBytes.Value, out maxBrokerMessageBytesNumeric))
+                        var maxRequestTimeBroker = max - DateTime.UtcNow;
+                        if (maxRequestTimeBroker > TimeSpan.FromSeconds(0)) 
                         {
-                            if (maxBrokerMessageBytesNumeric > MaxMessageSizePadding * 2)
+                            var brokerConfig = await adminClient.DescribeConfigsAsync(new ConfigResource[]
+                                    { new ConfigResource() { Type = ResourceType.Broker, Name = "0" } },
+                                new DescribeConfigsOptions()
+                                {
+                                    RequestTimeout = maxRequestTimeBroker
+                                });
+
+                            if (brokerConfig.FirstOrDefault()?.Entries
+                                    .TryGetValue("message.max.bytes", out var maxBrokerMessageBytes) == true &&
+                                int.TryParse(maxBrokerMessageBytes.Value, out maxBrokerMessageBytesNumeric))
                             {
-                                maxBrokerMessageBytesNumeric -= MaxMessageSizePadding;
-                            }
-                            else
-                            {
-                                // This is a hope that by halving, it'll be able to get packed, but no guarantee
-                                // removing more than this seem counter intuitive?
-                                maxBrokerMessageBytesNumeric = (int)Math.Ceiling(maxBrokerMessageBytesNumeric * 0.5);
+                                if (maxBrokerMessageBytesNumeric > MaxMessageSizePadding * 2)
+                                {
+                                    maxBrokerMessageBytesNumeric -= MaxMessageSizePadding;
+                                }
+                                else
+                                {
+                                    // This is a hope that by halving, it'll be able to get packed, but no guarantee
+                                    // removing more than this seem counter intuitive?
+                                    maxBrokerMessageBytesNumeric = (int)Math.Ceiling(maxBrokerMessageBytesNumeric * 0.5);
+                                }
                             }
                         }
                     }
                     catch
                     {
-                        // no necessary permissions?
+                        // no necessary permissions/timeout?
                     }
 
-                    var result = adminClient.DescribeConfigsAsync(new ConfigResource[]
-                            { new ConfigResource() { Type = ResourceType.Topic, Name = topicConfiguration.Topic } })
-                        .GetAwaiter().GetResult();
-
-                    if (result.FirstOrDefault()?.Entries
+                    if (topicConfig.FirstOrDefault()?.Entries
                             .TryGetValue("max.message.bytes", out var maxTopicMessageBytes) != true ||
                         !int.TryParse(maxTopicMessageBytes.Value, out var maxTopicMessageBytesNumeric))
                     {
-                        producerConfiguration.MessageMaxBytes =
-                            Math.Min(DefaultMaxMessageSize, maxBrokerMessageBytesNumeric);
+                        producerConfiguration.MessageMaxBytes = Math.Min(DefaultMaxMessageSize, maxBrokerMessageBytesNumeric);
                     }
                     else
                     {
@@ -189,13 +198,11 @@ namespace QuixStreams.Kafka
                     }
                 }
 
-                this.logger.LogDebug("[{0}] Maximum message size for the topic is {1} bytes", this.configId,
-                    producerConfiguration.MessageMaxBytes);
+                this.logger.LogDebug("[{0}] Maximum message size for the topic is {1} bytes", this.configId, producerConfiguration.MessageMaxBytes);
             }
             catch (Exception ex)
             {
-                this.logger.LogDebug(ex,
-                    "[{0}] Failed to get maximum message size from topic, will default to 1MB", this.configId);
+                this.logger.LogDebug(ex, "[{0}] Failed to get maximum message size from topic, will default to 1MB", this.configId);
                 producerConfiguration.MessageMaxBytes = DefaultMaxMessageSize;
             }
         }
@@ -222,7 +229,24 @@ namespace QuixStreams.Kafka
         }
 
         /// <inheritdoc />
-        public int MaxMessageSizeBytes { get; }
+        public async Task<int> GetMaxMessageSizeBytes(TimeSpan maxWait)
+        {
+            if (this.producerConfiguration.MessageMaxBytes != null)
+            {
+                return producerConfiguration.MessageMaxBytes!.Value - 1;
+            };
+
+            lock (this.producerConfiguration)
+            {
+                if (this.producerConfiguration.MessageMaxBytes != null)
+                {
+                    return producerConfiguration.MessageMaxBytes!.Value - 1;
+                }
+            }
+
+            await this.UpdateMaxMessageSize(maxWait);
+            return this.producerConfiguration.MessageMaxBytes!.Value - 1;
+        }
 
         private void Open()
         {
