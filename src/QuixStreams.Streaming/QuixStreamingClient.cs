@@ -432,6 +432,14 @@ namespace QuixStreams.Streaming
             return existingTopic.Id;
         }
 
+        private void ValidateAgainstConfiguredWorkspace(string workspaceId)
+        {
+            if (string.IsNullOrWhiteSpace(this.workspaceId)) return;
+            if (string.Equals(this.workspaceId, workspaceId)) return;
+            throw new InvalidConfigurationException(
+                $"The client is configured to use '{this.workspaceId}' but topic or token points to '{workspaceId}'.");
+        }
+
         private async Task<Workspace> GetWorkspaceFromConfiguration(string topicIdOrName)
         {
             var workspaces = await this.GetWorkspaces().ConfigureAwait(false);
@@ -440,6 +448,7 @@ namespace QuixStreams.Streaming
             if (topicToWorkspaceDict.TryGetValue(topicIdOrName, out var ws))
             {
                 this.logger.LogTrace("Retrieving workspace for topic {0} from cache", topicIdOrName);
+                ValidateAgainstConfiguredWorkspace(ws.WorkspaceId);
                 return ws;
             }
 
@@ -448,7 +457,7 @@ namespace QuixStreams.Streaming
             if (matchingWorkspace != null)
             {
                 this.logger.LogTrace("Found workspace using topic id where topic {0} can be present, called {1}.", topicIdOrName, matchingWorkspace.Name);
-
+                ValidateAgainstConfiguredWorkspace(matchingWorkspace.WorkspaceId);
                 return topicToWorkspaceDict.GetOrAdd(topicIdOrName, matchingWorkspace);
             }
             
@@ -456,6 +465,7 @@ namespace QuixStreams.Streaming
             if (workspaces.Count == 1)
             {
                 matchingWorkspace = workspaces.First();
+                ValidateAgainstConfiguredWorkspace(matchingWorkspace.WorkspaceId);
                 this.logger.LogTrace("Found workspace using token where topic {0} can be present, called {1}.", topicIdOrName, matchingWorkspace.Name);
                 return topicToWorkspaceDict.GetOrAdd(topicIdOrName, matchingWorkspace);
             }
