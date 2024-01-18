@@ -10,8 +10,19 @@ using Xunit;
 namespace QuixStreams.Streaming.UnitTests
 {
 
-    public class StreamingClientShould
+    public class QuixStreamingClientShould
     {
+        [Fact]
+        public void SetApiUrlViaConstructor_ShouldConfigureAsExpected()
+        {
+            // Arrange
+            var apiUrl = new Uri("https://portal-api.test.quix.io");
+            var streamingClient = new QuixStreamingClient(token: "faketoken", apiUrl: apiUrl);
+
+            // Assert
+            streamingClient.ApiUrl.Should().Be(apiUrl);
+        }
+        
         [Theory]
         [InlineData("confluent-testTopic")]
         [InlineData("quixdev-secondTest")]

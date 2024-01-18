@@ -475,9 +475,9 @@ namespace QuixStreams.Streaming
                 var almostWorkspaceByEnv = workspaces.FirstOrDefault(y => y.WorkspaceId.GetLevenshteinDistance(envWs) < 2);
                 if (almostWorkspaceByEnv != null)
                 {
-                    throw new InvalidConfigurationException($"The workspace id specified ({envWs}) in environment variable {WorkspaceIdEnvironmentKey} is similar to {almostWorkspaceByEnv.WorkspaceId}, but not exact. Typo or token without access to it?");
+                    throw new InvalidConfigurationException($"The workspace id specified ({envWs}) provided (env var or constructor) is similar to {almostWorkspaceByEnv.WorkspaceId}, but not exact. Typo or token without access to it?");
                 }
-                throw new InvalidConfigurationException($"The workspace id specified ({envWs}) in environment variable {WorkspaceIdEnvironmentKey} is not available. Typo or token without access to it?");
+                throw new InvalidConfigurationException($"The workspace id specified ({envWs}) provided (env var or constructor) is not available. Typo or token without access to it?");
             }
             
             // Not able to find workspace, lets figure out what kind of exception we throw back. These exceptions are about topic id/name being similar/invalid, other methods have their exception above
@@ -512,7 +512,7 @@ namespace QuixStreams.Streaming
 
             }
 
-            throw new InvalidConfigurationException($"No workspace could be identified for topic {topicIdOrName}. Verify the topic id or name is correct. If name is provided then {WorkspaceIdEnvironmentKey} environment variable or token with access to 1 workspace only must be provided. Current token has access to {workspaces.Count} workspaces and env var is unset. Alternatively use {nameof(KafkaStreamingClient)} instead of {nameof(QuixStreamingClient)}.");
+            throw new InvalidConfigurationException($"No workspace could be identified for topic {topicIdOrName}. Verify the topic id or name is correct. If name is provided then {WorkspaceIdEnvironmentKey} environment variable, constructor variable or token with access to 1 workspace only must be provided. Current token has access to {workspaces.Count} workspaces and env var is unset. Alternatively use {nameof(KafkaStreamingClient)} instead of {nameof(QuixStreamingClient)}.");
         }
 
         private async Task<KafkaStreamingClient> CreateStreamingClientForWorkspace(Workspace ws)
