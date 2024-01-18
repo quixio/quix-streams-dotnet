@@ -17,6 +17,7 @@ Implements [IRawTopicConsumer](IRawTopicConsumer.md 'QuixStreams.Streaming.Raw.I
 
 | Constructors | |
 | :--- | :--- |
+| [RawTopicConsumer(IKafkaConsumer, string)](RawTopicConsumer.RawTopicConsumer(IKafkaConsumer,string).md 'QuixStreams.Streaming.Raw.RawTopicConsumer.RawTopicConsumer(QuixStreams.Kafka.IKafkaConsumer, string)') | Initializes a new instance of [RawTopicConsumer](RawTopicConsumer.md 'QuixStreams.Streaming.Raw.RawTopicConsumer') |
 | [RawTopicConsumer(string, string, string, Dictionary&lt;string,string&gt;, Nullable&lt;AutoOffsetReset&gt;)](RawTopicConsumer.RawTopicConsumer(string,string,string,Dictionary_string,string_,Nullable_AutoOffsetReset_).md 'QuixStreams.Streaming.Raw.RawTopicConsumer.RawTopicConsumer(string, string, string, System.Collections.Generic.Dictionary<string,string>, System.Nullable<QuixStreams.Telemetry.Kafka.AutoOffsetReset>)') | Initializes a new instance of [RawTopicConsumer](RawTopicConsumer.md 'QuixStreams.Streaming.Raw.RawTopicConsumer') |
 
 | Methods | |

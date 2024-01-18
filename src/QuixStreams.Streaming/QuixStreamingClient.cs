@@ -809,7 +809,7 @@ namespace QuixStreams.Streaming
             
             var expires = jwt.ValidTo;
             if (jwt.Payload != null
-                && jwt.Payload.TryGetValue("https://quix.ai/exp", out var customExpiry)
+                && jwt.Payload.TryGetValue("https://quix.io/exp", out var customExpiry)
                 && customExpiry is string value
                 && long.TryParse(value, out var customExpirySeconds))
             {

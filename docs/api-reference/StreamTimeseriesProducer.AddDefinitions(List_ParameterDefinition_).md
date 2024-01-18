@@ -15,3 +15,5 @@ public void AddDefinitions(System.Collections.Generic.List<QuixStreams.Streaming
 `definitions` [System.Collections.Generic.List&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1 'System.Collections.Generic.List`1')[ParameterDefinition](ParameterDefinition.md 'QuixStreams.Streaming.Models.ParameterDefinition')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1 'System.Collections.Generic.List`1')
 
 List of definitions
+
+Implements [AddDefinitions(List&lt;ParameterDefinition&gt;)](IStreamTimeseriesProducer.AddDefinitions(List_ParameterDefinition_).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer.AddDefinitions(System.Collections.Generic.List<QuixStreams.Streaming.Models.ParameterDefinition>)')

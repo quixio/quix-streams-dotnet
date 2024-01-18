@@ -16,6 +16,8 @@ public QuixStreams.Streaming.Models.StreamProducer.ParameterDefinitionBuilder Ad
 
 The group location
 
+Implements [AddLocation(string)](IStreamTimeseriesProducer.AddLocation(string).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer.AddLocation(string)')
+
 #### Returns
 [ParameterDefinitionBuilder](ParameterDefinitionBuilder.md 'QuixStreams.Streaming.Models.StreamProducer.ParameterDefinitionBuilder')  
 Parameter definition builder to define the parameters under the specified location

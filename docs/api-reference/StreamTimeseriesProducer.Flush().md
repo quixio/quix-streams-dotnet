@@ -8,3 +8,5 @@ Immediately publish timeseries data and definitions from the buffer without wait
 ```csharp
 public void Flush();
 ```
+
+Implements [Flush()](IStreamTimeseriesProducer.Flush().md 'QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer.Flush()')

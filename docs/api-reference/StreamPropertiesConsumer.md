@@ -8,12 +8,13 @@ All changes to these properties are automatically populated to this class.
 
 ```csharp
 public class StreamPropertiesConsumer :
+QuixStreams.Streaming.Models.StreamConsumer.IStreamPropertiesConsumer,
 System.IDisposable
 ```
 
 Inheritance [System.Object](https://docs.microsoft.com/en-us/dotnet/api/System.Object 'System.Object') &#129106; StreamPropertiesConsumer
 
-Implements [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
+Implements [IStreamPropertiesConsumer](IStreamPropertiesConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamPropertiesConsumer'), [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
 
 | Properties | |
 | :--- | :--- |

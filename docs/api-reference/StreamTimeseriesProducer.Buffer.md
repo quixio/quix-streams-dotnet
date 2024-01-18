@@ -9,5 +9,7 @@ Gets the buffer for producing timeseries data
 public QuixStreams.Streaming.Models.StreamProducer.TimeseriesBufferProducer Buffer { get; }
 ```
 
+Implements [Buffer](IStreamTimeseriesProducer.Buffer.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer.Buffer')
+
 #### Property Value
 [TimeseriesBufferProducer](TimeseriesBufferProducer.md 'QuixStreams.Streaming.Models.StreamProducer.TimeseriesBufferProducer')

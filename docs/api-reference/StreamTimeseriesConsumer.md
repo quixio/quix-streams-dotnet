@@ -7,12 +7,13 @@ Consumer for streams, which raises [TimeseriesData](TimeseriesData.md 'QuixStrea
 
 ```csharp
 public class StreamTimeseriesConsumer :
+QuixStreams.Streaming.Models.StreamConsumer.IStreamTimeseriesConsumer,
 System.IDisposable
 ```
 
 Inheritance [System.Object](https://docs.microsoft.com/en-us/dotnet/api/System.Object 'System.Object') &#129106; StreamTimeseriesConsumer
 
-Implements [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
+Implements [IStreamTimeseriesConsumer](IStreamTimeseriesConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamTimeseriesConsumer'), [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
 
 | Properties | |
 | :--- | :--- |

@@ -9,5 +9,7 @@ Default Tags injected to all Event Values sent by the producer.
 public System.Collections.Generic.Dictionary<string,string> DefaultTags { get; set; }
 ```
 
+Implements [DefaultTags](IStreamEventsProducer.DefaultTags.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.DefaultTags')
+
 #### Property Value
 [System.Collections.Generic.Dictionary&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.Dictionary-2 'System.Collections.Generic.Dictionary`2')[System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')[,](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.Dictionary-2 'System.Collections.Generic.Dictionary`2')[System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.Dictionary-2 'System.Collections.Generic.Dictionary`2')

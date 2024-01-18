@@ -9,5 +9,7 @@ Default epoch used for Timestamp event values. Datetime added on top of all the 
 public System.DateTime Epoch { get; set; }
 ```
 
+Implements [Epoch](IStreamEventsProducer.Epoch.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.Epoch')
+
 #### Property Value
 [System.DateTime](https://docs.microsoft.com/en-us/dotnet/api/System.DateTime 'System.DateTime')

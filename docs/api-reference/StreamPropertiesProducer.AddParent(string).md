@@ -15,3 +15,5 @@ public void AddParent(string parentStreamId);
 `parentStreamId` [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')
 
 Stream Id of the parent
+
+Implements [AddParent(string)](IStreamPropertiesProducer.AddParent(string).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer.AddParent(string)')

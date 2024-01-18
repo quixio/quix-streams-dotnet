@@ -6,8 +6,8 @@
 Gets the consumer for accessing the properties and metadata of the stream.
 
 ```csharp
-QuixStreams.Streaming.Models.StreamConsumer.StreamPropertiesConsumer Properties { get; }
+QuixStreams.Streaming.Models.StreamConsumer.IStreamPropertiesConsumer Properties { get; }
 ```
 
 #### Property Value
-[StreamPropertiesConsumer](StreamPropertiesConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.StreamPropertiesConsumer')
+[IStreamPropertiesConsumer](IStreamPropertiesConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamPropertiesConsumer')

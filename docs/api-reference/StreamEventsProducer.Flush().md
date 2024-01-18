@@ -8,3 +8,5 @@ Immediately writes the event definitions from the buffer without waiting for buf
 ```csharp
 public void Flush();
 ```
+
+Implements [Flush()](IStreamEventsProducer.Flush().md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.Flush()')

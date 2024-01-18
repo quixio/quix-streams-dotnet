@@ -10,5 +10,7 @@ See [Definitions](StreamTimeseriesConsumer.Definitions.md 'QuixStreams.Streaming
 public event EventHandler<ParameterDefinitionsChangedEventArgs> OnDefinitionsChanged;
 ```
 
+Implements [OnDefinitionsChanged](IStreamTimeseriesConsumer.OnDefinitionsChanged.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamTimeseriesConsumer.OnDefinitionsChanged')
+
 #### Event Type
 [System.EventHandler&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.EventHandler-1 'System.EventHandler`1')[QuixStreams.Streaming.Models.StreamConsumer.ParameterDefinitionsChangedEventArgs](https://docs.microsoft.com/en-us/dotnet/api/QuixStreams.Streaming.Models.StreamConsumer.ParameterDefinitionsChangedEventArgs 'QuixStreams.Streaming.Models.StreamConsumer.ParameterDefinitionsChangedEventArgs')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.EventHandler-1 'System.EventHandler`1')

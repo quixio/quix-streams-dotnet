@@ -15,3 +15,5 @@ public void Publish(QuixStreams.Streaming.Models.EventData data);
 `data` [EventData](EventData.md 'QuixStreams.Streaming.Models.EventData')
 
 Event to publish
+
+Implements [Publish(EventData)](IStreamEventsProducer.Publish(EventData).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.Publish(QuixStreams.Streaming.Models.EventData)')

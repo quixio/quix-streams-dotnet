@@ -9,5 +9,7 @@ List of Stream Ids of the Parent streams
 public System.Collections.ObjectModel.ObservableCollection<string> Parents { get; }
 ```
 
+Implements [Parents](IStreamPropertiesProducer.Parents.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer.Parents')
+
 #### Property Value
 [System.Collections.ObjectModel.ObservableCollection&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.ObjectModel.ObservableCollection-1 'System.Collections.ObjectModel.ObservableCollection`1')[System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.ObjectModel.ObservableCollection-1 'System.Collections.ObjectModel.ObservableCollection`1')

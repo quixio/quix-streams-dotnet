@@ -9,5 +9,7 @@ Raised when an events data package is received for the stream
 public event EventHandler<EventDataReadEventArgs> OnDataReceived;
 ```
 
+Implements [OnDataReceived](IStreamEventsConsumer.OnDataReceived.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamEventsConsumer.OnDataReceived')
+
 #### Event Type
 [System.EventHandler&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.EventHandler-1 'System.EventHandler`1')[QuixStreams.Streaming.Models.StreamConsumer.EventDataReadEventArgs](https://docs.microsoft.com/en-us/dotnet/api/QuixStreams.Streaming.Models.StreamConsumer.EventDataReadEventArgs 'QuixStreams.Streaming.Models.StreamConsumer.EventDataReadEventArgs')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.EventHandler-1 'System.EventHandler`1')

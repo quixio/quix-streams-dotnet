@@ -6,8 +6,8 @@
 Properties of the stream. The changes will automatically be sent after a slight delay
 
 ```csharp
-QuixStreams.Streaming.Models.StreamProducer.StreamPropertiesProducer Properties { get; }
+QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer Properties { get; }
 ```
 
 #### Property Value
-[StreamPropertiesProducer](StreamPropertiesProducer.md 'QuixStreams.Streaming.Models.StreamProducer.StreamPropertiesProducer')
+[IStreamPropertiesProducer](IStreamPropertiesProducer.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer')

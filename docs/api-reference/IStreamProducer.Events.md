@@ -6,8 +6,8 @@
 Gets the producer for publishing event related information of the stream such as event definitions and values
 
 ```csharp
-QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer Events { get; }
+QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer Events { get; }
 ```
 
 #### Property Value
-[StreamEventsProducer](StreamEventsProducer.md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer')
+[IStreamEventsProducer](IStreamEventsProducer.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer')

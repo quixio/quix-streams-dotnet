@@ -9,5 +9,7 @@ Automatic flush interval of the properties metadata into the channel [ in millis
 public int FlushInterval { get; set; }
 ```
 
+Implements [FlushInterval](IStreamPropertiesProducer.FlushInterval.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer.FlushInterval')
+
 #### Property Value
 [System.Int32](https://docs.microsoft.com/en-us/dotnet/api/System.Int32 'System.Int32')

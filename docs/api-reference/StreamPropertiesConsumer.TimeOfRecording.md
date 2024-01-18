@@ -9,5 +9,7 @@ Gets the datetime of the recording
 public System.Nullable<System.DateTime> TimeOfRecording { get; set; }
 ```
 
+Implements [TimeOfRecording](IStreamPropertiesConsumer.TimeOfRecording.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamPropertiesConsumer.TimeOfRecording')
+
 #### Property Value
 [System.Nullable&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.Nullable-1 'System.Nullable`1')[System.DateTime](https://docs.microsoft.com/en-us/dotnet/api/System.DateTime 'System.DateTime')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.Nullable-1 'System.Nullable`1')

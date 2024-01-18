@@ -3,12 +3,18 @@
 
 ## IQuixStreamingClient Interface
 
+Represents a streaming client for Kafka configured automatically using Environment Variables and Quix platform endpoints.  
+Use this Client when you use this library together with Quix platform.
+
 ```csharp
-public interface IQuixStreamingClient
+public interface IQuixStreamingClient :
+QuixStreams.Streaming.IQuixStreamingClientAsync
 ```
 
 Derived  
 &#8627; [QuixStreamingClient](QuixStreamingClient.md 'QuixStreams.Streaming.QuixStreamingClient')
+
+Implements [IQuixStreamingClientAsync](IQuixStreamingClientAsync.md 'QuixStreams.Streaming.IQuixStreamingClientAsync')
 
 | Methods | |
 | :--- | :--- |

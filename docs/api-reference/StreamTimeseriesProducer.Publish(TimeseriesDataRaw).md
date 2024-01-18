@@ -15,3 +15,5 @@ public void Publish(QuixStreams.Telemetry.Models.TimeseriesDataRaw data);
 `data` [QuixStreams.Telemetry.Models.TimeseriesDataRaw](https://docs.microsoft.com/en-us/dotnet/api/QuixStreams.Telemetry.Models.TimeseriesDataRaw 'QuixStreams.Telemetry.Models.TimeseriesDataRaw')
 
 Timeseries data to publish
+
+Implements [Publish(TimeseriesDataRaw)](IStreamTimeseriesProducer.Publish(TimeseriesDataRaw).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer.Publish(QuixStreams.Telemetry.Models.TimeseriesDataRaw)')

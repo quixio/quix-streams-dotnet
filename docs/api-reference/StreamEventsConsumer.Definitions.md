@@ -9,5 +9,7 @@ Gets the latest set of event definitions
 public System.Collections.Generic.IList<QuixStreams.Streaming.Models.EventDefinition> Definitions { get; set; }
 ```
 
+Implements [Definitions](IStreamEventsConsumer.Definitions.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamEventsConsumer.Definitions')
+
 #### Property Value
 [System.Collections.Generic.IList&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.IList-1 'System.Collections.Generic.IList`1')[EventDefinition](EventDefinition.md 'QuixStreams.Streaming.Models.EventDefinition')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.IList-1 'System.Collections.Generic.IList`1')
