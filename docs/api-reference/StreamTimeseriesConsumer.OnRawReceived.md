@@ -10,5 +10,7 @@ This event does not use Buffers, and data will be raised as they arrive without 
 public event EventHandler<TimeseriesDataRawReadEventArgs> OnRawReceived;
 ```
 
+Implements [OnRawReceived](IStreamTimeseriesConsumer.OnRawReceived.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamTimeseriesConsumer.OnRawReceived')
+
 #### Event Type
 [System.EventHandler&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.EventHandler-1 'System.EventHandler`1')[TimeseriesDataRawReadEventArgs](TimeseriesDataRawReadEventArgs.md 'QuixStreams.Streaming.Models.StreamConsumer.TimeseriesDataRawReadEventArgs')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.EventHandler-1 'System.EventHandler`1')

@@ -3,12 +3,14 @@
 
 ## StreamPropertiesProducer.Location Property
 
-Specify location of the stream in data catalogue.   
+Specify location of the stream in data catalogue.  
 For example: /cars/ai/carA/.
 
 ```csharp
 public string Location { get; set; }
 ```
+
+Implements [Location](IStreamPropertiesProducer.Location.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer.Location')
 
 #### Property Value
 [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')

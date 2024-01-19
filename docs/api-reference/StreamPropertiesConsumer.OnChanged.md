@@ -9,5 +9,7 @@ Raised when the stream properties change
 public event EventHandler<StreamPropertiesChangedEventArgs> OnChanged;
 ```
 
+Implements [OnChanged](IStreamPropertiesConsumer.OnChanged.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamPropertiesConsumer.OnChanged')
+
 #### Event Type
 [System.EventHandler&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.EventHandler-1 'System.EventHandler`1')[QuixStreams.Streaming.Models.StreamConsumer.StreamPropertiesChangedEventArgs](https://docs.microsoft.com/en-us/dotnet/api/QuixStreams.Streaming.Models.StreamConsumer.StreamPropertiesChangedEventArgs 'QuixStreams.Streaming.Models.StreamConsumer.StreamPropertiesChangedEventArgs')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.EventHandler-1 'System.EventHandler`1')

@@ -23,7 +23,7 @@ You have a local installation of [Kafka](https://kafka.apache.org/documentation/
 
 Optionally:
 
-Sign up for a free [Quix account](https://portal.platform.quix.ai/self-sign-up){target=_blank}. You may just want to connect to your own Kafka installation, but if you'd like to connect to the Quix Platform you'll need a free account.
+Sign up for a free [Quix account](https://portal.platform.quix.io/self-sign-up){target=_blank}. You may just want to connect to your own Kafka installation, but if you'd like to connect to the Quix Platform you'll need a free account.
 
 ## Getting help
 
@@ -182,7 +182,7 @@ As well as being able to connect directly to a Kafka installation, either locall
 
 To connect to the Quix Platform using Quix Streams, you will need to provide a token for authentication.
 
-1. Sign up for a free [Quix account](https://portal.platform.quix.ai/self-sign-up){target=_blank}, and log in.
+1. Sign up for a free [Quix account](https://portal.platform.quix.io/self-sign-up){target=_blank}, and log in.
 
 2. In the Quix Platform, click on `Topics` on the left-hand navigation. 
 
@@ -239,7 +239,7 @@ App.Run();
 
 Try one of the following resources to continue your Quix learning journey:
 
-* [Get a free Quix account](https://portal.platform.quix.ai/self-sign-up){target=_blank}
+* [Get a free Quix account](https://portal.platform.quix.io/self-sign-up){target=_blank}
 
 * [Quix Streams GitHub](https://github.com/quixio/quix-streams-dotnet){target=_blank}
 

@@ -28,6 +28,8 @@ The human friendly display name of the parameter
 
 The description of the parameter
 
+Implements [AddDefinition(string, string, string)](IStreamTimeseriesProducer.AddDefinition(string,string,string).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer.AddDefinition(string, string, string)')
+
 #### Returns
 [ParameterDefinitionBuilder](ParameterDefinitionBuilder.md 'QuixStreams.Streaming.Models.StreamProducer.ParameterDefinitionBuilder')  
 Parameter definition builder to define the parameter properties

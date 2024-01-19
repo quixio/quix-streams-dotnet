@@ -7,16 +7,17 @@ Helper class for producing [QuixStreams.Telemetry.Models.EventDefinitions](https
 
 ```csharp
 public class StreamEventsProducer :
+QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer,
 System.IDisposable
 ```
 
 Inheritance [System.Object](https://docs.microsoft.com/en-us/dotnet/api/System.Object 'System.Object') &#129106; StreamEventsProducer
 
-Implements [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
+Implements [IStreamEventsProducer](IStreamEventsProducer.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer'), [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
 
 | Properties | |
 | :--- | :--- |
-| [DefaultLocation](StreamEventsProducer.DefaultLocation.md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.DefaultLocation') | Default Location of the events. Event definitions added with [AddDefinition(string, string, string)](StreamEventsProducer.AddDefinition(string,string,string).md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.AddDefinition(string, string, string)') will be inserted at this location.<br/>See [AddLocation(string)](StreamEventsProducer.AddLocation(string).md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.AddLocation(string)') for adding definitions at a different location without changing default.<br/>Example: "/Group1/SubGroup2" |
+| [DefaultLocation](StreamEventsProducer.DefaultLocation.md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.DefaultLocation') | Default Location of the events. Event definitions added with [AddDefinition(string, string, string)](IStreamEventsProducer.AddDefinition(string,string,string).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.AddDefinition(string, string, string)') will be inserted at this location.<br/>See [AddLocation(string)](IStreamEventsProducer.AddLocation(string).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.AddLocation(string)') for adding definitions at a different location without changing default.<br/>Example: "/Group1/SubGroup2" |
 | [DefaultTags](StreamEventsProducer.DefaultTags.md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.DefaultTags') | Default Tags injected to all Event Values sent by the producer. |
 | [Epoch](StreamEventsProducer.Epoch.md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.Epoch') | Default epoch used for Timestamp event values. Datetime added on top of all the Timestamps. |
 
@@ -29,7 +30,6 @@ Implements [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/Syst
 | [AddTimestamp(TimeSpan)](StreamEventsProducer.AddTimestamp(TimeSpan).md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.AddTimestamp(System.TimeSpan)') | Starts adding a new set of event values at the given timestamp. |
 | [AddTimestampMilliseconds(long)](StreamEventsProducer.AddTimestampMilliseconds(long).md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.AddTimestampMilliseconds(long)') | Starts adding a new set of event values at the given timestamp. |
 | [AddTimestampNanoseconds(long)](StreamEventsProducer.AddTimestampNanoseconds(long).md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.AddTimestampNanoseconds(long)') | Starts adding a new set of event values at the given timestamp. |
-| [Dispose()](StreamEventsProducer.Dispose().md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.Dispose()') | Flushes internal buffers and disposes |
 | [Flush()](StreamEventsProducer.Flush().md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.Flush()') | Immediately writes the event definitions from the buffer without waiting for buffer condition to fulfill (200ms timeout) |
 | [Publish(EventData)](StreamEventsProducer.Publish(EventData).md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.Publish(QuixStreams.Streaming.Models.EventData)') | Publish an event into the stream. |
 | [Publish(ICollection&lt;EventData&gt;)](StreamEventsProducer.Publish(ICollection_EventData_).md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.Publish(System.Collections.Generic.ICollection<QuixStreams.Streaming.Models.EventData>)') | Publish events into the stream. |

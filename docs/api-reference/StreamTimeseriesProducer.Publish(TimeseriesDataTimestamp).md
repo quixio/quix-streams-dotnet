@@ -15,3 +15,5 @@ public void Publish(QuixStreams.Streaming.Models.TimeseriesDataTimestamp timesta
 `timestamp` [TimeseriesDataTimestamp](TimeseriesDataTimestamp.md 'QuixStreams.Streaming.Models.TimeseriesDataTimestamp')
 
 Timeseries timestamp to publish
+
+Implements [Publish(TimeseriesDataTimestamp)](IStreamTimeseriesProducer.Publish(TimeseriesDataTimestamp).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer.Publish(QuixStreams.Streaming.Models.TimeseriesDataTimestamp)')

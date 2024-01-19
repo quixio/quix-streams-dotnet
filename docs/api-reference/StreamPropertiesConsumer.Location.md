@@ -9,5 +9,7 @@ Gets the location of the stream
 public string Location { get; set; }
 ```
 
+Implements [Location](IStreamPropertiesConsumer.Location.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamPropertiesConsumer.Location')
+
 #### Property Value
 [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')

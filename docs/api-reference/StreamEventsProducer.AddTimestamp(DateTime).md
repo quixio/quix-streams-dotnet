@@ -17,6 +17,8 @@ public QuixStreams.Streaming.Models.StreamProducer.EventDataBuilder AddTimestamp
 
 The datetime to use for adding new event values
 
+Implements [AddTimestamp(DateTime)](IStreamEventsProducer.AddTimestamp(DateTime).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.AddTimestamp(System.DateTime)')
+
 #### Returns
 [EventDataBuilder](EventDataBuilder.md 'QuixStreams.Streaming.Models.StreamProducer.EventDataBuilder')  
 Event data builder to add event values at the provided time

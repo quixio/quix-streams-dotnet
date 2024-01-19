@@ -7,12 +7,13 @@ Consumer for streams, which raises [EventData](EventData.md 'QuixStreams.Streami
 
 ```csharp
 public class StreamEventsConsumer :
+QuixStreams.Streaming.Models.StreamConsumer.IStreamEventsConsumer,
 System.IDisposable
 ```
 
 Inheritance [System.Object](https://docs.microsoft.com/en-us/dotnet/api/System.Object 'System.Object') &#129106; StreamEventsConsumer
 
-Implements [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
+Implements [IStreamEventsConsumer](IStreamEventsConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamEventsConsumer'), [System.IDisposable](https://docs.microsoft.com/en-us/dotnet/api/System.IDisposable 'System.IDisposable')
 
 | Properties | |
 | :--- | :--- |

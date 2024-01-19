@@ -6,8 +6,8 @@
 Gets the producer for publishing timeseries related information of the stream such as parameter definitions and values
 
 ```csharp
-QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer Timeseries { get; }
+QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer Timeseries { get; }
 ```
 
 #### Property Value
-[StreamTimeseriesProducer](StreamTimeseriesProducer.md 'QuixStreams.Streaming.Models.StreamProducer.StreamTimeseriesProducer')
+[IStreamTimeseriesProducer](IStreamTimeseriesProducer.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamTimeseriesProducer')

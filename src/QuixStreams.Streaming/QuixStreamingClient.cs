@@ -117,6 +117,7 @@ namespace QuixStreams.Streaming
         private readonly ILogger logger = QuixStreams.Logging.CreateLogger<QuixStreamingClient>();
         private readonly IDictionary<string, string> brokerProperties;
         private readonly string token;
+        private readonly string workspaceId;
         private readonly bool autoCreateTopics;
         private readonly bool debug;
         private readonly ConcurrentDictionary<string, KafkaStreamingClient> wsToStreamingClientDict = new ConcurrentDictionary<string, KafkaStreamingClient>();
@@ -129,9 +130,9 @@ namespace QuixStreams.Streaming
         private static readonly ConcurrentDictionary<string, object> workspaceLocks = new ConcurrentDictionary<string, object>();
 
         /// <summary>
-        /// The base API uri. Defaults to <c>https://portal-api.platform.quix.ai</c>, or environment variable <c>Quix__Portal__Api</c> if available.
+        /// The base API uri. Defaults to <c>https://portal-api.platform.quix.io</c>, or environment variable <c>Quix__Portal__Api</c> if available.
         /// </summary>
-        public Uri ApiUrl = new Uri("https://portal-api.platform.quix.ai");
+        public Uri ApiUrl = new Uri("https://portal-api.platform.quix.io");
         
         /// <summary>
         /// The period for which some API responses will be cached to avoid excessive amount of calls. Defaults to 1 minute.
@@ -139,7 +140,7 @@ namespace QuixStreams.Streaming
         public TimeSpan CachePeriod = TimeSpan.FromMinutes(1);
 
         private bool tokenChecked;
-
+        
         /// <summary>
         /// Gets or sets the token validation configuration
         /// </summary>
@@ -153,7 +154,9 @@ namespace QuixStreams.Streaming
         /// <param name="properties">Additional broker properties</param>
         /// <param name="debug">Whether debugging should be enabled</param>
         /// <param name="httpClient">The http client to use</param>
-        public QuixStreamingClient(string token = null, bool autoCreateTopics = true, IDictionary<string, string> properties = null, bool debug = false, HttpClient httpClient = null)
+        /// <param name="workspaceId">The optional workspace id to use. When not provided, Quix__Workspace__Id environment variable will be used</param>
+        /// <param name="apiUrl">The optional api url to use. When not provided, Quix__Portal__Api environment variable is used if specified else defaults to https://portal-api.platform.quix.io</param>
+        public QuixStreamingClient(string token = null, bool autoCreateTopics = true, IDictionary<string, string> properties = null, bool debug = false, HttpClient httpClient = null, string workspaceId = null, Uri apiUrl = null)
         {
             this.token = token;
             if (string.IsNullOrWhiteSpace(this.token))
@@ -163,8 +166,23 @@ namespace QuixStreams.Streaming
                 {
                     throw new InvalidConfigurationException($"Token must be given as an argument or set in {SdkTokenKey} environment variable.");
                 }
-                this.logger.LogTrace("Using token from environment variable {1}", SdkTokenKey);
+                this.logger.LogTrace("Using token from environment variable {0}", SdkTokenKey);
             }
+
+            this.workspaceId = workspaceId;
+            if (string.IsNullOrWhiteSpace(this.workspaceId))
+            {
+                this.workspaceId = Environment.GetEnvironmentVariable(WorkspaceIdEnvironmentKey);
+                if (string.IsNullOrWhiteSpace(this.workspaceId))
+                {
+                    this.logger.LogTrace("Workspace Id will be picked from token if available, as not provided in {0}", WorkspaceIdEnvironmentKey);
+                }
+                else
+                {
+                    this.logger.LogTrace("Using token from environment variable {0}", WorkspaceIdEnvironmentKey);
+                }
+            }
+            
             this.autoCreateTopics = autoCreateTopics;
             this.brokerProperties = properties ?? new Dictionary<string, string>();
             this.debug = debug;
@@ -176,14 +194,22 @@ namespace QuixStreams.Streaming
             }
 
             this.httpClient = new Lazy<HttpClient>(() => httpClient);
-            
-            var envUri = Environment.GetEnvironmentVariable(PortalApiEnvironmentKey)?.ToLowerInvariant().TrimEnd('/');
-            if (!string.IsNullOrWhiteSpace(envUri))
+
+            if (apiUrl != null)
             {
-                if (envUri != ApiUrl.AbsoluteUri.ToLowerInvariant().TrimEnd('/'))
+                ApiUrl = apiUrl;
+            }
+            else
+            {
+                var envUri = Environment.GetEnvironmentVariable(PortalApiEnvironmentKey)?
+                    .ToLowerInvariant().TrimEnd('/');
+                if (!string.IsNullOrWhiteSpace(envUri))
                 {
-                    this.logger.LogInformation("Using {0} endpoint for portal, configured from env var {1}", envUri, PortalApiEnvironmentKey);
-                    ApiUrl = new Uri(envUri);
+                    if (envUri != ApiUrl.AbsoluteUri.ToLowerInvariant().TrimEnd('/'))
+                    {
+                        this.logger.LogInformation("Using {0} endpoint for portal, configured from env var {1}", envUri, PortalApiEnvironmentKey);
+                        ApiUrl = new Uri(envUri);
+                    }
                 }
             }
         }
@@ -406,6 +432,14 @@ namespace QuixStreams.Streaming
             return existingTopic.Id;
         }
 
+        private void ValidateAgainstConfiguredWorkspace(string workspaceId)
+        {
+            if (string.IsNullOrWhiteSpace(this.workspaceId)) return;
+            if (string.Equals(this.workspaceId, workspaceId)) return;
+            throw new InvalidConfigurationException(
+                $"The client is configured to use '{this.workspaceId}' but topic or token points to '{workspaceId}'.");
+        }
+
         private async Task<Workspace> GetWorkspaceFromConfiguration(string topicIdOrName)
         {
             var workspaces = await this.GetWorkspaces().ConfigureAwait(false);
@@ -414,6 +448,7 @@ namespace QuixStreams.Streaming
             if (topicToWorkspaceDict.TryGetValue(topicIdOrName, out var ws))
             {
                 this.logger.LogTrace("Retrieving workspace for topic {0} from cache", topicIdOrName);
+                ValidateAgainstConfiguredWorkspace(ws.WorkspaceId);
                 return ws;
             }
 
@@ -422,7 +457,7 @@ namespace QuixStreams.Streaming
             if (matchingWorkspace != null)
             {
                 this.logger.LogTrace("Found workspace using topic id where topic {0} can be present, called {1}.", topicIdOrName, matchingWorkspace.Name);
-
+                ValidateAgainstConfiguredWorkspace(matchingWorkspace.WorkspaceId);
                 return topicToWorkspaceDict.GetOrAdd(topicIdOrName, matchingWorkspace);
             }
             
@@ -430,13 +465,14 @@ namespace QuixStreams.Streaming
             if (workspaces.Count == 1)
             {
                 matchingWorkspace = workspaces.First();
+                ValidateAgainstConfiguredWorkspace(matchingWorkspace.WorkspaceId);
                 this.logger.LogTrace("Found workspace using token where topic {0} can be present, called {1}.", topicIdOrName, matchingWorkspace.Name);
                 return topicToWorkspaceDict.GetOrAdd(topicIdOrName, matchingWorkspace);
             }
             
             // Assume it is a name, in which case the workspace comes from environment variables or token
             // Environment variable check
-            var envWs = Environment.GetEnvironmentVariable(WorkspaceIdEnvironmentKey);
+            var envWs = this.workspaceId;
             if (!string.IsNullOrWhiteSpace(envWs))
             {
                 matchingWorkspace = workspaces.FirstOrDefault(y => y.WorkspaceId == envWs);
@@ -449,9 +485,9 @@ namespace QuixStreams.Streaming
                 var almostWorkspaceByEnv = workspaces.FirstOrDefault(y => y.WorkspaceId.GetLevenshteinDistance(envWs) < 2);
                 if (almostWorkspaceByEnv != null)
                 {
-                    throw new InvalidConfigurationException($"The workspace id specified ({envWs}) in environment variable {WorkspaceIdEnvironmentKey} is similar to {almostWorkspaceByEnv.WorkspaceId}, but not exact. Typo or token without access to it?");
+                    throw new InvalidConfigurationException($"The workspace id specified ({envWs}) provided (env var or constructor) is similar to {almostWorkspaceByEnv.WorkspaceId}, but not exact. Typo or token without access to it?");
                 }
-                throw new InvalidConfigurationException($"The workspace id specified ({envWs}) in environment variable {WorkspaceIdEnvironmentKey} is not available. Typo or token without access to it?");
+                throw new InvalidConfigurationException($"The workspace id specified ({envWs}) provided (env var or constructor) is not available. Typo or token without access to it?");
             }
             
             // Not able to find workspace, lets figure out what kind of exception we throw back. These exceptions are about topic id/name being similar/invalid, other methods have their exception above
@@ -486,7 +522,7 @@ namespace QuixStreams.Streaming
 
             }
 
-            throw new InvalidConfigurationException($"No workspace could be identified for topic {topicIdOrName}. Verify the topic id or name is correct. If name is provided then {WorkspaceIdEnvironmentKey} environment variable or token with access to 1 workspace only must be provided. Current token has access to {workspaces.Count} workspaces and env var is unset. Alternatively use {nameof(KafkaStreamingClient)} instead of {nameof(QuixStreamingClient)}.");
+            throw new InvalidConfigurationException($"No workspace could be identified for topic {topicIdOrName}. Verify the topic id or name is correct. If name is provided then {WorkspaceIdEnvironmentKey} environment variable, constructor variable or token with access to 1 workspace only must be provided. Current token has access to {workspaces.Count} workspaces and env var is unset. Alternatively use {nameof(KafkaStreamingClient)} instead of {nameof(QuixStreamingClient)}.");
         }
 
         private async Task<KafkaStreamingClient> CreateStreamingClientForWorkspace(Workspace ws)
@@ -783,7 +819,7 @@ namespace QuixStreams.Streaming
             
             var expires = jwt.ValidTo;
             if (jwt.Payload != null
-                && jwt.Payload.TryGetValue("https://quix.ai/exp", out var customExpiry)
+                && jwt.Payload.TryGetValue("https://quix.io/exp", out var customExpiry)
                 && customExpiry is string value
                 && long.TryParse(value, out var customExpirySeconds))
             {

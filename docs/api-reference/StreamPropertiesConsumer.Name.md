@@ -9,5 +9,7 @@ Gets the name of the stream
 public string Name { get; set; }
 ```
 
+Implements [Name](IStreamPropertiesConsumer.Name.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamPropertiesConsumer.Name')
+
 #### Property Value
 [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')

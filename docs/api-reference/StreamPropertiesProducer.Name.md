@@ -9,5 +9,7 @@ Name of the stream.
 public string Name { get; set; }
 ```
 
+Implements [Name](IStreamPropertiesProducer.Name.md 'QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer.Name')
+
 #### Property Value
 [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')

@@ -8,3 +8,5 @@ Immediately writes the properties yet to be sent instead of waiting for the flus
 ```csharp
 public void Flush();
 ```
+
+Implements [Flush()](IStreamPropertiesProducer.Flush().md 'QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer.Flush()')

@@ -9,5 +9,7 @@ Gets the latest set of parameter definitions
 public System.Collections.Generic.List<QuixStreams.Streaming.Models.ParameterDefinition> Definitions { get; set; }
 ```
 
+Implements [Definitions](IStreamTimeseriesConsumer.Definitions.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamTimeseriesConsumer.Definitions')
+
 #### Property Value
 [System.Collections.Generic.List&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1 'System.Collections.Generic.List`1')[ParameterDefinition](ParameterDefinition.md 'QuixStreams.Streaming.Models.ParameterDefinition')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1 'System.Collections.Generic.List`1')

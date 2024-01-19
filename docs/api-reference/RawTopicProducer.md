@@ -17,6 +17,7 @@ Implements [IRawTopicProducer](IRawTopicProducer.md 'QuixStreams.Streaming.Raw.I
 
 | Constructors | |
 | :--- | :--- |
+| [RawTopicProducer(IKafkaProducer, string)](RawTopicProducer.RawTopicProducer(IKafkaProducer,string).md 'QuixStreams.Streaming.Raw.RawTopicProducer.RawTopicProducer(QuixStreams.Kafka.IKafkaProducer, string)') | Initializes a new instance of [RawTopicProducer](RawTopicProducer.md 'QuixStreams.Streaming.Raw.RawTopicProducer') |
 | [RawTopicProducer(string, string, Dictionary&lt;string,string&gt;)](RawTopicProducer.RawTopicProducer(string,string,Dictionary_string,string_).md 'QuixStreams.Streaming.Raw.RawTopicProducer.RawTopicProducer(string, string, System.Collections.Generic.Dictionary<string,string>)') | Initializes a new instance of [RawTopicProducer](RawTopicProducer.md 'QuixStreams.Streaming.Raw.RawTopicProducer') |
 
 | Methods | |

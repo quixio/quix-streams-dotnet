@@ -16,5 +16,7 @@ public QuixStreams.Streaming.Models.StreamProducer.EventDefinitionBuilder AddLoc
 
 The group location
 
+Implements [AddLocation(string)](IStreamEventsProducer.AddLocation(string).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.AddLocation(string)')
+
 #### Returns
 [EventDefinitionBuilder](EventDefinitionBuilder.md 'QuixStreams.Streaming.Models.StreamProducer.EventDefinitionBuilder')

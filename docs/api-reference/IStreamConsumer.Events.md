@@ -6,8 +6,8 @@
 Gets the consumer for accessing event related information of the stream such as event definitions and values.
 
 ```csharp
-QuixStreams.Streaming.Models.StreamConsumer.StreamEventsConsumer Events { get; }
+QuixStreams.Streaming.Models.StreamConsumer.IStreamEventsConsumer Events { get; }
 ```
 
 #### Property Value
-[StreamEventsConsumer](StreamEventsConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.StreamEventsConsumer')
+[IStreamEventsConsumer](IStreamEventsConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamEventsConsumer')

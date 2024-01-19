@@ -3,7 +3,7 @@
 
 ## QuixStreamingClient.ApiUrl Field
 
-The base API uri. Defaults to `https://portal-api.platform.quix.ai`, or environment variable `Quix__Portal__Api` if available.
+The base API uri. Defaults to `https://portal-api.platform.quix.io`, or environment variable `Quix__Portal__Api` if available.
 
 ```csharp
 public Uri ApiUrl;

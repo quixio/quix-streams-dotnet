@@ -16,6 +16,8 @@ public QuixStreams.Streaming.Models.StreamConsumer.TimeseriesBufferConsumer Crea
 
 Zero or more parameter identifiers to filter as a whitelist. If provided, only those parameters will be available through this buffer
 
+Implements [CreateBuffer(string[])](IStreamTimeseriesConsumer.CreateBuffer(string[]).md 'QuixStreams.Streaming.Models.StreamConsumer.IStreamTimeseriesConsumer.CreateBuffer(string[])')
+
 #### Returns
 [TimeseriesBufferConsumer](TimeseriesBufferConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.TimeseriesBufferConsumer')  
 [TimeseriesBufferConsumer](TimeseriesBufferConsumer.md 'QuixStreams.Streaming.Models.StreamConsumer.TimeseriesBufferConsumer') which will raise OnDataReceived event when new data is consumed

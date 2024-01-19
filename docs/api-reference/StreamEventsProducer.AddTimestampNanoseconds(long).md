@@ -16,6 +16,8 @@ public QuixStreams.Streaming.Models.StreamProducer.EventDataBuilder AddTimestamp
 
 The time in nanoseconds since the default [Epoch](StreamEventsProducer.Epoch.md 'QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer.Epoch') to add the event values at
 
+Implements [AddTimestampNanoseconds(long)](IStreamEventsProducer.AddTimestampNanoseconds(long).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.AddTimestampNanoseconds(long)')
+
 #### Returns
 [EventDataBuilder](EventDataBuilder.md 'QuixStreams.Streaming.Models.StreamProducer.EventDataBuilder')  
 Event data builder to add event values at the provided time

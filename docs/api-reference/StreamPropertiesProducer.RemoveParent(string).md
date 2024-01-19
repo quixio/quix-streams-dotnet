@@ -15,3 +15,5 @@ public void RemoveParent(string parentStreamId);
 `parentStreamId` [System.String](https://docs.microsoft.com/en-us/dotnet/api/System.String 'System.String')
 
 Stream Id of the parent
+
+Implements [RemoveParent(string)](IStreamPropertiesProducer.RemoveParent(string).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamPropertiesProducer.RemoveParent(string)')

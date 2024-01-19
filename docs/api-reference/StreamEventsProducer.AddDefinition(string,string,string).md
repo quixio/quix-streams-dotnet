@@ -28,6 +28,8 @@ Human friendly display name of the event
 
 Description of the event
 
+Implements [AddDefinition(string, string, string)](IStreamEventsProducer.AddDefinition(string,string,string).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.AddDefinition(string, string, string)')
+
 #### Returns
 [EventDefinitionBuilder](EventDefinitionBuilder.md 'QuixStreams.Streaming.Models.StreamProducer.EventDefinitionBuilder')  
 Event definition builder to define the event properties

@@ -15,3 +15,5 @@ public void AddDefinitions(System.Collections.Generic.List<QuixStreams.Streaming
 `definitions` [System.Collections.Generic.List&lt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1 'System.Collections.Generic.List`1')[EventDefinition](EventDefinition.md 'QuixStreams.Streaming.Models.EventDefinition')[&gt;](https://docs.microsoft.com/en-us/dotnet/api/System.Collections.Generic.List-1 'System.Collections.Generic.List`1')
 
 List of definitions
+
+Implements [AddDefinitions(List&lt;EventDefinition&gt;)](IStreamEventsProducer.AddDefinitions(List_EventDefinition_).md 'QuixStreams.Streaming.Models.StreamProducer.IStreamEventsProducer.AddDefinitions(System.Collections.Generic.List<QuixStreams.Streaming.Models.EventDefinition>)')
