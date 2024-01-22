@@ -68,6 +68,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// <param name="message"></param>
         public void UpdateLatestMessageInfo(KafkaMessage message)
         {
+            if (message.TopicPartitionOffset == null) return;
             this.latestOffset[message.TopicPartitionOffset.TopicPartition] = message.TopicPartitionOffset.Offset;
             PerformTtlCheck();
         }
@@ -222,14 +223,17 @@ namespace QuixStreams.Kafka.Transport.SerDes
                         if (msgSegment == null) continue;
 
                         var latestMessage = msgSegment.MessageBuffer.Last(y => y != null);
+                        var insideDelta = true;
+                        long offsetDelta = -1;
+                        if (latestMessage.TopicPartitionOffset != null)
+                        {
+                            var latestOffsetForPartition =
+                                this.latestOffset[latestMessage.TopicPartitionOffset.TopicPartition];
+                            offsetDelta = latestOffsetForPartition.Value - latestMessage.TopicPartitionOffset.Offset.Value;
+                            insideDelta = offsetDelta < Math.Min(MaxOffsetDeltaWithinPartitionMax,
+                                msgSegment.MessageBuffer.Length * MaxOffsetDeltaWithinPartitionMultiplier);
+                        }
 
-                        var latestOffsetForPartition =
-                            this.latestOffset[latestMessage.TopicPartitionOffset.TopicPartition];
-
-                        var offsetDelta = latestOffsetForPartition.Value -
-                                          latestMessage.TopicPartitionOffset.Offset.Value;
-                        var insideDelta = offsetDelta < Math.Min(MaxOffsetDeltaWithinPartitionMax,
-                            msgSegment.MessageBuffer.Length * MaxOffsetDeltaWithinPartitionMultiplier);
                         var insideCutoff = msgSegment.LastUpdate > cutoff;
                         if (insideCutoff && insideDelta) continue; // not old enough
                         msgGroupBuffer.Value[index] = null;
