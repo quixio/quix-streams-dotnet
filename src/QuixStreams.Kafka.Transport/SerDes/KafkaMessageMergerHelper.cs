@@ -34,6 +34,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// <inheritdoc />
         public MessageMergeResult TryMerge(KafkaMessage messageSegment, out MergerBufferId mergerBufferId, out KafkaMessage message)
         {
+            this.buffer.UpdateLatestMessageInfo(messageSegment);
             var key = messageSegment.Key == null ? string.Empty : Constants.Utf8NoBOMEncoding.GetString(messageSegment.Key);
             mergerBufferId = default(MergerBufferId);
             var messageIdBytes = messageSegment.Headers

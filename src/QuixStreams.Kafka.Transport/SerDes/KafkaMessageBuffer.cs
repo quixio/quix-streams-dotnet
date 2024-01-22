@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 
 namespace QuixStreams.Kafka.Transport.SerDes
@@ -26,11 +27,14 @@ namespace QuixStreams.Kafka.Transport.SerDes
 
         private readonly TimeSpan timeToLive;
         private readonly int bufferPerMessageGroupKey;
+        private const int MaxOffsetDeltaWithinPartitionMultiplier = 20; // if 2 long, wait for 20 msgs max
+        private const int MaxOffsetDeltaWithinPartitionMax = 500; // wait up to 500 if multiplier goes above
         private readonly object valueBufferLock = new object();
         private DateTimeOffset lastTtlCheck = DateTimeOffset.Now; 
 
         private readonly Dictionary<string, BufferedValue[]> msgGroupBuffers = new Dictionary<string, BufferedValue[]>();
         private readonly ILogger logger;
+        private readonly Dictionary<TopicPartition, Offset> latestOffset = new Dictionary<TopicPartition, Offset>();
         
         /// <summary>
         /// Raised when members of the specified message have been purged. Reason could be timout or similar.
@@ -41,7 +45,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// Initializes a new instance of <see cref="KafkaMessageBuffer"/>
         /// </summary>
         /// <param name="bufferPerMessageGroupKey">The number of different buffered message ids a group can have concurrently. Higher number might help with a producer that is interweaving multiple split message</param>
-        public KafkaMessageBuffer(int bufferPerMessageGroupKey = 50) : this(TimeSpan.FromSeconds(60), bufferPerMessageGroupKey)
+        public KafkaMessageBuffer(int bufferPerMessageGroupKey = 500) : this(TimeSpan.FromSeconds(60), bufferPerMessageGroupKey)
         {
         }
 
@@ -56,6 +60,16 @@ namespace QuixStreams.Kafka.Transport.SerDes
             this.timeToLive = timeToLive;
             this.bufferPerMessageGroupKey = bufferPerMessageGroupKey;
             this.logger = QuixStreams.Logging.CreateLogger(typeof(KafkaMessageBuffer));
+        }
+
+        /// <summary>
+        /// Updates the latest message details in the buffer and cleans as required
+        /// </summary>
+        /// <param name="message"></param>
+        public void UpdateLatestMessageInfo(KafkaMessage message)
+        {
+            this.latestOffset[message.TopicPartitionOffset.TopicPartition] = message.TopicPartitionOffset.Offset;
+            PerformTtlCheck();
         }
 
         /// <summary>
@@ -189,33 +203,59 @@ namespace QuixStreams.Kafka.Transport.SerDes
 
         private void PerformTtlCheck()
         {
-            if (this.lastTtlCheck.AddTicks(timeToLive.Ticks / 10) > DateTimeOffset.Now) return; // check max N times per TTL duration to avoid spamming
-            this.lastTtlCheck = DateTimeOffset.Now;
-            var cutoff = DateTimeOffset.Now - timeToLive;
+            if (this.lastTtlCheck.AddSeconds(0.5) > DateTimeOffset.Now) return; // check max once per 2 seconds to avoid spamming
+
             var purged = new List<MergerBufferId>();
-            foreach (var msgGroupBuffer in msgGroupBuffers)
+
+            lock (this.valueBufferLock)
             {
-                for (var index = 0; index < msgGroupBuffer.Value.Length; index++)
+                if (this.lastTtlCheck.AddSeconds(0.5) > DateTimeOffset.Now) return; // check max once per 2 seconds to avoid spamming
+                this.lastTtlCheck = DateTimeOffset.Now;
+                var cutoff = DateTimeOffset.Now - timeToLive;
+                
+                
+                foreach (var msgGroupBuffer in msgGroupBuffers)
                 {
-                    var msgSegment = msgGroupBuffer.Value[index];
-                    if (msgSegment == null) continue;
-                    if (msgSegment.LastUpdate > cutoff) continue; // not old enough
-                    msgGroupBuffer.Value[index] = null;
-                    this.logger.LogWarning("Message segment expired, only a part of the message was received within allowed time. Group key: {0}, msg id: {1}.", msgSegment.BufferId.Key, msgSegment.BufferId.MessageId);
-                    this.OnMessagePurged?.Invoke(new MessagePurgedEventArgs(msgSegment.BufferId));
-                    break;
+                    for (var index = 0; index < msgGroupBuffer.Value.Length; index++)
+                    {
+                        var msgSegment = msgGroupBuffer.Value[index];
+                        if (msgSegment == null) continue;
+
+                        var latestMessage = msgSegment.MessageBuffer.Last(y => y != null);
+
+                        var latestOffsetForPartition =
+                            this.latestOffset[latestMessage.TopicPartitionOffset.TopicPartition];
+
+                        var offsetDelta = latestOffsetForPartition.Value -
+                                          latestMessage.TopicPartitionOffset.Offset.Value;
+                        var insideDelta = offsetDelta < Math.Min(MaxOffsetDeltaWithinPartitionMax,
+                            msgSegment.MessageBuffer.Length * MaxOffsetDeltaWithinPartitionMultiplier);
+                        var insideCutoff = msgSegment.LastUpdate > cutoff;
+                        if (insideCutoff && insideDelta) continue; // not old enough
+                        msgGroupBuffer.Value[index] = null;
+                        if (!insideCutoff) this.logger.LogWarning("Message segment expired, only a part of the message was received within allowed time. Group key: {0}, msg id: {1}.",
+                                msgSegment.BufferId.Key, msgSegment.BufferId.MessageId);
+                        else
+                            this.logger.LogWarning("Message segment expired, only a part of the message was received within offset delta {0}. Group key: {1}, msg id: {2}.",
+                                offsetDelta, msgSegment.BufferId.Key, msgSegment.BufferId.MessageId);
+                        
+                        purged.Add(msgSegment.BufferId);
+                    }
+                }
+
+
+                // check if the msgGroup is empty, if so, remove
+                var emptyKeys = msgGroupBuffers.Where(y => y.Value.All(x => x == null)).Select(y => y.Key).ToList();
+                foreach (var emptyKey in emptyKeys)
+                {
+                    msgGroupBuffers.Remove(emptyKey);
                 }
             }
-            
-            
-            // check if the msgGroup is empty, if so, remove
-            var emptyKeys = msgGroupBuffers.Where(y => y.Value.All(x => x == null)).Select(y=> y.Key).ToList();
-            foreach (var emptyKey in emptyKeys)
+
+            foreach (var bufferId in purged)
             {
-                msgGroupBuffers.Remove(emptyKey);
+                this.OnMessagePurged?.Invoke(new MessagePurgedEventArgs(bufferId));
             }
-            
-            
         }
 
         /// <summary>

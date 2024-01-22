@@ -31,7 +31,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             this.helper = new KafkaMessageMergerHelper(messageBuffer, this.logger);
             this.helper.OnMessageSegmentsPurged += (bufferId) =>
             {
-                if (this.RemoveFromBuffer(bufferId))
+                if (this.RemoveFromBuffer(bufferId, false))
                 {
                     RaiseNextPackageIfReady().GetAwaiter().GetResult();
                 }
@@ -51,7 +51,11 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// <returns>An awaitable <see cref="Task"/></returns>
         public Task Merge(KafkaMessage kafkaMessage)
         {
-            if (this.helper.TryConvertLegacySplitMessage(kafkaMessage, out var convertedMessage)) kafkaMessage = convertedMessage;
+            var original = kafkaMessage;
+            if (this.helper.TryConvertLegacySplitMessage(kafkaMessage, out var convertedMessage))
+            {
+                kafkaMessage = convertedMessage;
+            }
             
             var mergeResult = this.helper.TryMerge(kafkaMessage, out var bufferId, out var mergedMessage);
 
@@ -166,11 +170,11 @@ namespace QuixStreams.Kafka.Transport.SerDes
             return true;
         }
         
-        private bool RemoveFromBuffer(MergerBufferId bufferId)
+        private bool RemoveFromBuffer(MergerBufferId bufferId, bool purge = true)
         {
             if (bufferId.Equals(default)) return false;
             if (!pendingMessages.TryRemove(bufferId, out _)) return false;
-            this.helper.Purge(bufferId);
+            if (purge) this.helper.Purge(bufferId);
             return true;
         }
 
