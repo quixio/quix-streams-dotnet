@@ -45,7 +45,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// Initializes a new instance of <see cref="KafkaMessageBuffer"/>
         /// </summary>
         /// <param name="bufferPerMessageGroupKey">The number of different buffered message ids a group can have concurrently. Higher number might help with a producer that is interweaving multiple split message</param>
-        public KafkaMessageBuffer(int bufferPerMessageGroupKey = 500) : this(TimeSpan.FromSeconds(60), bufferPerMessageGroupKey)
+        public KafkaMessageBuffer(int bufferPerMessageGroupKey = 50) : this(TimeSpan.FromSeconds(60), bufferPerMessageGroupKey)
         {
         }
 
