@@ -132,13 +132,123 @@ namespace QuixStreams.Streaming.IntegrationTests
         }
 
         [Fact]
-        public async Task StreamPublishAndConsume_ShouldReceiveExpectedMessages()
+        public async Task StreamPublishAndConsumeWithPartitionAndOffset_ShouldReceiveExpectedMessages()
         {
             var topic = nameof(StreamPublishAndConsume_ShouldReceiveExpectedMessages);
             
             await this.kafkaDockerTestFixture.EnsureTopic(topic, 2);
             
-            var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Error, partition: new Partition(1), offset: new Offset(9000));
+            var topicProducer = client.GetTopicProducer(topic);
+
+            IList<TimeseriesDataRaw> data = new List<TimeseriesDataRaw>();
+            string streamId = null;
+            var expectedData = new List<TimeseriesDataRaw>();
+
+            using (var stream = topicProducer.CreateStream())
+            {
+                streamId = stream.StreamId;
+                this.output.WriteLine("First stream id is {0}", streamId);
+
+                stream.Properties.Name = "Volvo car telemetry";
+                stream.Properties.Location = "Car telemetry/Vehicles/Volvo";
+                stream.Properties.AddParent("1234");
+                stream.Properties.Metadata["test_key"] = "test_value";
+                stream.Properties.TimeOfRecording = new DateTime(2018, 01, 01);
+                stream.Properties.Flush();
+                
+                this.output.WriteLine("Flushing stream properties");
+
+                var expectedParameterDefinitions = new ParameterDefinitions
+                {
+                    Parameters = new List<ParameterDefinition>
+                    {
+                        {
+                            new ParameterDefinition
+                            {
+                                Id = "p1",
+                                Name = "P0 parameter",
+                                MinimumValue = 0,
+                                MaximumValue = 10,
+                                Unit = "kmh"
+                            }
+                        },
+                        {
+                            new ParameterDefinition
+                            {
+                                Id = "p2",
+                                Name = "P1 parameter",
+                                MinimumValue = 0,
+                                MaximumValue = 10,
+                                Unit = "kmh"
+                            }
+                        }
+                    }
+                };
+
+                var expectedEventDefinitions = new EventDefinitions
+                {
+                    Events = new List<EventDefinition>()
+                    {
+                        new EventDefinition
+                        {
+                            Id = "evid3"
+                        },
+                        new EventDefinition
+                        {
+                            Id = "evid4"
+                        }
+                    }
+                };
+
+
+                (stream as IStreamProducerInternal).Publish(expectedParameterDefinitions);
+                this.output.WriteLine("Flushing parameter definitions");
+
+                (stream as IStreamProducerInternal).Publish(expectedEventDefinitions);
+                this.output.WriteLine("Flushing event definitions");
+
+                this.output.WriteLine("Generating timeseries data raw");
+                expectedData.Add(GenerateTimeseriesData(0));
+                expectedData.Add(GenerateTimeseriesData(10));
+                
+                (stream as IStreamProducerInternal).Publish(expectedData);
+                
+                stream.Close();
+            }
+            
+            var topicConsumer = client.GetTopicConsumer(topic, partition: new Partition(1), offset: new Offset(4));
+
+            topicConsumer.OnStreamReceived += (s, e) =>
+            {
+                if (e.StreamId != streamId)
+                {
+                    this.output.WriteLine("Ignoring stream {0}", e.StreamId);
+                    return;
+                }
+
+                (e as IStreamConsumerInternal).OnTimeseriesData += (s2, e2) => data.Add(e2);
+            };
+
+            this.output.WriteLine("Subscribing");
+            topicConsumer.Subscribe();
+            this.output.WriteLine("Subscribed");
+            
+            topicConsumer.Dispose();
+            
+            SpinWait.SpinUntil(() => data.Count == 1, 5000);
+
+            Assert.Equal(1, data.Count);
+            Assert.Equal(expectedData.LastOrDefault().Timestamps.FirstOrDefault(), data.FirstOrDefault()?.Timestamps.FirstOrDefault());
+        }
+
+        [Fact]
+        public async Task StreamPublishAndConsume_ShouldReceiveExpectedMessages()
+        {
+            var topic = nameof(StreamPublishAndConsume_ShouldReceiveExpectedMessages);
+            
+            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
+            
+            var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest);
             var topicProducer = client.GetTopicProducer(topic);
 
             IList<TimeseriesDataRaw> data = new List<TimeseriesDataRaw>();
@@ -255,8 +365,7 @@ namespace QuixStreams.Streaming.IntegrationTests
                 this.output.WriteLine("Generating timeseries data raw");
                 var expectedData = new List<TimeseriesDataRaw>();
                 expectedData.Add(GenerateTimeseriesData(0));
-                expectedData.Add(GenerateTimeseriesData(10000));
-                expectedData.Add(GenerateTimeseriesData(10010));
+                expectedData.Add(GenerateTimeseriesData(10));
                 
 
                 (stream as IStreamProducerInternal).Publish(expectedData);
