@@ -5,18 +5,19 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Quix.TestBase.Extensions;
 using QuixStreams.Kafka;
 using QuixStreams.Telemetry;
 using QuixStreams.Streaming.Models;
-using QuixStreams.Telemetry.Kafka;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
 using RocksDbSharp;
 using Xunit;
 using Xunit.Abstractions;
+using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
 using EventDefinition = QuixStreams.Telemetry.Models.EventDefinition;
 using ParameterDefinition = QuixStreams.Telemetry.Models.ParameterDefinition;
 
@@ -135,10 +136,9 @@ namespace QuixStreams.Streaming.IntegrationTests
         {
             var topic = nameof(StreamPublishAndConsume_ShouldReceiveExpectedMessages);
             
+            await this.kafkaDockerTestFixture.EnsureTopic(topic, 2);
             
-            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
-            
-            var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest);
+            var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Error, partition: new Partition(1), offset: new Offset(9000));
             var topicProducer = client.GetTopicProducer(topic);
 
             IList<TimeseriesDataRaw> data = new List<TimeseriesDataRaw>();
@@ -255,7 +255,8 @@ namespace QuixStreams.Streaming.IntegrationTests
                 this.output.WriteLine("Generating timeseries data raw");
                 var expectedData = new List<TimeseriesDataRaw>();
                 expectedData.Add(GenerateTimeseriesData(0));
-                expectedData.Add(GenerateTimeseriesData(10));
+                expectedData.Add(GenerateTimeseriesData(10000));
+                expectedData.Add(GenerateTimeseriesData(10010));
                 
 
                 (stream as IStreamProducerInternal).Publish(expectedData);
