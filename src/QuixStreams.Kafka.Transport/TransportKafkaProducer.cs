@@ -70,6 +70,8 @@ namespace QuixStreams.Kafka.Transport
                         // but this worked
                         var size = this.producer
                             .GetMaxMessageSizeBytes(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+
+                        if (size > 1000) size -= 1000; // This is done to offset kafka message overhead causing Message too Large exceptions
                         this.kafkaMessageSplitter = new KafkaMessageSplitter(size);
                     }
                 }
