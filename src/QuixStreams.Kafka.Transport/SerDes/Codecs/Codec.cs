@@ -43,6 +43,7 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs
             }
             catch (Exception ex)
             {
+                if (ex is OutOfMemoryException) throw;
                 logger.LogDebug(ex, "Failed to deserialize message with codec {0}", this.Id);
                 return false;
             }
@@ -59,6 +60,7 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs
             }
             catch (Exception ex)
             {
+                if (ex is OutOfMemoryException) throw;
                 logger.LogDebug(ex, "Failed to deserialize message with codec {0}", this.Id);
                 return false;
             }
