@@ -141,103 +141,57 @@ namespace QuixStreams.Streaming.IntegrationTests
             var topicProducer = client.GetTopicProducer(topic);
 
             IList<TimeseriesDataRaw> data = new List<TimeseriesDataRaw>();
-            string streamId = null;
-            var expectedData = new List<TimeseriesDataRaw>();
 
-            using (var stream = topicProducer.CreateStream())
-            {
-                streamId = stream.StreamId;
-                this.output.WriteLine("First stream id is {0}", streamId);
+            List<TimeseriesDataRaw> ProduceRandomData(string streamId)
+            {            
+                var producedData = new List<TimeseriesDataRaw>();
 
-                stream.Properties.Name = "Volvo car telemetry";
-                stream.Properties.Location = "Car telemetry/Vehicles/Volvo";
-                stream.Properties.AddParent("1234");
-                stream.Properties.Metadata["test_key"] = "test_value";
-                stream.Properties.TimeOfRecording = new DateTime(2018, 01, 01);
-                stream.Properties.Flush();
-                
-                this.output.WriteLine("Flushing stream properties");
+                using var stream = topicProducer.CreateStream(streamId);
+                this.output.WriteLine("The stream id is {0}", streamId);
 
-                var expectedParameterDefinitions = new ParameterDefinitions
-                {
-                    Parameters = new List<ParameterDefinition>
-                    {
-                        {
-                            new ParameterDefinition
-                            {
-                                Id = "p1",
-                                Name = "P0 parameter",
-                                MinimumValue = 0,
-                                MaximumValue = 10,
-                                Unit = "kmh"
-                            }
-                        },
-                        {
-                            new ParameterDefinition
-                            {
-                                Id = "p2",
-                                Name = "P1 parameter",
-                                MinimumValue = 0,
-                                MaximumValue = 10,
-                                Unit = "kmh"
-                            }
-                        }
-                    }
-                };
-
-                var expectedEventDefinitions = new EventDefinitions
-                {
-                    Events = new List<EventDefinition>()
-                    {
-                        new EventDefinition
-                        {
-                            Id = "evid3"
-                        },
-                        new EventDefinition
-                        {
-                            Id = "evid4"
-                        }
-                    }
-                };
-
-
-                (stream as IStreamProducerInternal).Publish(expectedParameterDefinitions);
-                this.output.WriteLine("Flushing parameter definitions");
-
-                (stream as IStreamProducerInternal).Publish(expectedEventDefinitions);
-                this.output.WriteLine("Flushing event definitions");
-
-                this.output.WriteLine("Generating timeseries data raw");
-                expectedData.Add(GenerateTimeseriesData(0));
-                expectedData.Add(GenerateTimeseriesData(10));
-                
-                (stream as IStreamProducerInternal).Publish(expectedData);
-                
+                producedData.Add(GenerateTimeseriesData(0));
+                producedData.Add(GenerateTimeseriesData(10));
+                    
+                (stream as IStreamProducerInternal).Publish(producedData);
+                    
                 stream.Close();
-            }
-            
-            var topicConsumer = client.GetTopicConsumer(topic, new PartitionOffset(1, 4));
 
+                return producedData;
+            }
+
+            var expectedData = ProduceRandomData("stream-1");
+            ProduceRandomData("ADifferentstream");
+            
+            var topicConsumer = client.GetTopicConsumer(topic, new PartitionOffset(1, 2));
+
+            var totalPackages = 0;
+            var streamEndReceived = false;
             topicConsumer.OnStreamReceived += (s, e) =>
             {
-                if (e.StreamId != streamId)
+                if (e.StreamId != "stream-1")
                 {
                     this.output.WriteLine("Ignoring stream {0}", e.StreamId);
                     return;
                 }
 
-                (e as IStreamConsumerInternal).OnTimeseriesData += (s2, e2) => data.Add(e2);
+                var internalConsumer = (IStreamConsumerInternal)e;
+                internalConsumer.OnTimeseriesData += (s2, e2) => data.Add(e2);
+                internalConsumer.OnPackageReceived += (s2, e2) => totalPackages++;
+                internalConsumer.OnStreamClosed += (s2, e2) => streamEndReceived = true;
             };
 
             this.output.WriteLine("Subscribing");
             topicConsumer.Subscribe();
             this.output.WriteLine("Subscribed");
             
-            topicConsumer.Dispose();
             
             SpinWait.SpinUntil(() => data.Count == 1, 5000);
 
-            Assert.Equal(1, data.Count);
+            topicConsumer.Commit();
+            topicConsumer.Dispose();
+            
+            Assert.Equal(2, totalPackages);
+            Assert.True(streamEndReceived);
             Assert.Equal(expectedData.LastOrDefault().Timestamps.FirstOrDefault(), data.FirstOrDefault()?.Timestamps.FirstOrDefault());
         }
 
