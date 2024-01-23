@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
 using QuixStreams.Streaming.Raw;
@@ -64,12 +65,16 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             return broker;
         }
 
-        ITopicConsumer IQuixStreamingClient.GetTopicConsumer(string topicIdOrName, string consumerGroup, CommitOptions options,
-            AutoOffsetReset autoOffset, Partition? partition, Offset? offset)
+        ITopicConsumer IQuixStreamingClient.GetTopicConsumer(string topicIdOrName, string consumerGroup, CommitOptions options, AutoOffsetReset autoOffset)
         {
             return GetTopicConsumer(topicIdOrName);
         }
 
+        ITopicConsumer IQuixStreamingClient.GetTopicConsumer(string topicIdOrName, PartitionOffset offset, string consumerGroup, CommitOptions options = null)
+        {
+            return GetTopicConsumer(topicIdOrName);
+        }
+        
         IRawTopicConsumer IKafkaStreamingClient.GetRawTopicConsumer(string topic, string consumerGroup, AutoOffsetReset? autoOffset)
         {
             throw new NotImplementedException();
@@ -85,8 +90,12 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             return GetTopicProducer(topic);
         }
 
-        ITopicConsumer IKafkaStreamingClient.GetTopicConsumer(string topic, string consumerGroup, CommitOptions options,
-            AutoOffsetReset autoOffset, Partition? partition, Offset? offset)
+        ITopicConsumer IKafkaStreamingClient.GetTopicConsumer(string topic, string consumerGroup, CommitOptions options, AutoOffsetReset autoOffset)
+        {
+            return GetTopicConsumer(topic);
+        }
+        
+        ITopicConsumer IKafkaStreamingClient.GetTopicConsumer(string topic, PartitionOffset partitionOffset, string consumerGroup, CommitOptions options)
         {
             return GetTopicConsumer(topic);
         }
@@ -111,11 +120,19 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             string topicIdOrName,
             string consumerGroup,
             CommitOptions options,
-            AutoOffsetReset autoOffset, 
-            Partition? partition,
-            Offset? offset)
+            AutoOffsetReset autoOffset)
         {
             return Task.FromResult(((IQuixStreamingClient)this).GetTopicConsumer(topicIdOrName, consumerGroup, options, autoOffset));
+        }
+        
+        
+        Task<ITopicConsumer> IQuixStreamingClientAsync.GetTopicConsumerAsync(
+            string topicIdOrName,
+            PartitionOffset offset,
+            string consumerGroup,
+            CommitOptions options)
+        {
+            return Task.FromResult(((IQuixStreamingClient)this).GetTopicConsumer(topicIdOrName, consumerGroup, options));
         }
 
         Task<IRawTopicConsumer> IQuixStreamingClientAsync.GetRawTopicConsumerAsync(string topicIdOrName, string consumerGroup, AutoOffsetReset? autoOffset)

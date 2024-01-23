@@ -99,6 +99,16 @@ namespace QuixStreams.Kafka
         public ConsumerTopicConfiguration(string topic, Partition partition, Offset offset) : this(topic, new List<Partition>(1) {partition}, offset)
         {
         }
+        
+        /// <summary>
+        /// Initializes a new <see cref="ConsumerTopicConfiguration" /> with a single topic and partition with the specified offset.
+        /// </summary>
+        /// <param name="topic">The topic to set the partitions for</param>
+        /// <param name="partitionOffset">The partition offset to use</param>
+        public ConsumerTopicConfiguration(string topic, PartitionOffset partitionOffset) : this(topic, partitionOffset?.Partition, partitionOffset?.Offset)
+        {
+        }
+        
         /// <summary>
         /// Initializes a new <see cref="ConsumerTopicConfiguration" /> with a single topic and partition with the specified offset.
         /// </summary>
@@ -108,6 +118,7 @@ namespace QuixStreams.Kafka
         public ConsumerTopicConfiguration(string topic, Partition? partition, Offset? offset) : this(topic, new List<Partition>(1) { partition ?? Partition.Any }, offset ?? Offset.Unset)
         {
         }
+        
         /// <summary>
         /// Initializes a new <see cref="ConsumerTopicConfiguration" /> with a single topic for, which all specified partitions are set to default. 
         /// Default is the last unread offset or first available offset if

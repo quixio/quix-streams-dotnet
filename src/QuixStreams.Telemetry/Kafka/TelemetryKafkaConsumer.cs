@@ -73,9 +73,8 @@ namespace QuixStreams.Telemetry.Kafka
         /// </summary>
         /// <param name="telemetryKafkaConsumerConfiguration">Kafka broker configuration for <see cref="TelemetryKafkaConsumer"/></param>
         /// <param name="topic">Topic name to read from</param>
-        /// <param name="partition">The partition to read from</param>
-        /// <param name="offset">The offset to start reading from</param>
-        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, Partition? partition = null, Offset? offset = null)
+        /// <param name="partitionOffset">The partition offset to start reading from</param>
+        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, PartitionOffset partitionOffset = null)
         {
             Topic = topic;
             // Kafka Transport layer -> Transport layer
@@ -94,7 +93,7 @@ namespace QuixStreams.Telemetry.Kafka
                 o.AutoCommitEnabled = commitOptions.AutoCommitEnabled;
             };
             
-            var topicConfig = new ConsumerTopicConfiguration(topic, partition, offset);
+            var topicConfig = new ConsumerTopicConfiguration(topic, partitionOffset);
             this.kafkaConsumer = new KafkaConsumer(subConfig, topicConfig);
             this.GroupId = subConfig.GroupId;
         }

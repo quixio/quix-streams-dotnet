@@ -134,7 +134,7 @@ namespace QuixStreams.Streaming.IntegrationTests
         [Fact]
         public async Task StreamPublishAndConsumeWithPartitionAndOffset_ShouldReceiveExpectedMessages()
         {
-            var topic = nameof(StreamPublishAndConsume_ShouldReceiveExpectedMessages);
+            var topic = nameof(StreamPublishAndConsumeWithPartitionAndOffset_ShouldReceiveExpectedMessages);
             
             await this.kafkaDockerTestFixture.EnsureTopic(topic, 2);
             
@@ -216,7 +216,7 @@ namespace QuixStreams.Streaming.IntegrationTests
                 stream.Close();
             }
             
-            var topicConsumer = client.GetTopicConsumer(topic, partition: new Partition(1), offset: new Offset(4));
+            var topicConsumer = client.GetTopicConsumer(topic, new PartitionOffset(1, 4));
 
             topicConsumer.OnStreamReceived += (s, e) =>
             {
