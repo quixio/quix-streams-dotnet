@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams;
+using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Streaming.Configuration;
 using QuixStreams.Streaming.Models;
@@ -9,6 +11,7 @@ using QuixStreams.Streaming.Raw;
 using QuixStreams.Streaming.Utils;
 using QuixStreams.Telemetry.Configuration;
 using QuixStreams.Telemetry.Kafka;
+using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
 
 namespace QuixStreams.Streaming
 {
@@ -24,6 +27,16 @@ namespace QuixStreams.Streaming
         /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
         ITopicConsumer GetTopicConsumer(string topic, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest);
 
+        /// <summary>
+        /// Gets a topic consumer capable of subscribing to receive incoming streams.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
+        /// <param name="options">The settings to use for committing</param>
+        /// <param name="partitionOffset">The partition offset to start reading from</param>
+        /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
+        ITopicConsumer GetTopicConsumer(string topic, PartitionOffset partitionOffset, string consumerGroup = null, CommitOptions options = null);
+        
         /// <summary>
         /// Gets a topic consumer capable of subscribing to receive non-quixstreams incoming messages. 
         /// </summary>
@@ -143,6 +156,31 @@ namespace QuixStreams.Streaming
             return topicConsumer;
         }
 
+        
+        /// <summary>
+        /// Gets a topic consumer capable of subscribing to receive incoming streams.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
+        /// <param name="options">The settings to use for committing</param>
+        /// <param name="partitionOffset">The partition offset to start reading from</param>
+        /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
+        public ITopicConsumer GetTopicConsumer(string topic, PartitionOffset partitionOffset, string consumerGroup = null, CommitOptions options = null)
+        {
+            var kafkaReaderConfiguration = new TelemetryKafkaConsumerConfiguration(brokerAddress, consumerGroup, brokerProperties)
+            {
+                CommitOptions = options
+            };
+
+            var kafkaReader = new TelemetryKafkaConsumer(kafkaReaderConfiguration, topic, partitionOffset);
+
+            var topicConsumer = new TopicConsumer(kafkaReader);
+
+            App.Register(topicConsumer);
+
+            return topicConsumer;
+        }
+        
         /// <summary>
         /// Gets a topic consumer capable of subscribing to receive non-quixstreams incoming messages. 
         /// </summary>

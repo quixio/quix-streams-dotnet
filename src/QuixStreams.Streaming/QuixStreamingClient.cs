@@ -13,8 +13,10 @@ using System.Security.Authentication;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Streaming.Configuration;
 using QuixStreams.Streaming.Exceptions;
@@ -24,7 +26,8 @@ using QuixStreams.Streaming.QuixApi.Portal;
 using QuixStreams.Streaming.QuixApi.Portal.Requests;
 using QuixStreams.Streaming.Raw;
 using QuixStreams.Streaming.Utils;
-using QuixStreams.Telemetry.Kafka;
+using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
+using SaslMechanism = QuixStreams.Streaming.Configuration.SaslMechanism;
 
 namespace QuixStreams.Streaming
 {
@@ -43,6 +46,16 @@ namespace QuixStreams.Streaming
         /// <param name="autoOffset">The offset to use when there is no saved offset for the consumer group.</param>
         /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
         ITopicConsumer GetTopicConsumer(string topicIdOrName, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest);
+
+        /// <summary>
+        /// Gets a topic consumer capable of subscribing to receive incoming streams.
+        /// </summary>
+        /// <param name="topicIdOrName">Id or name of the topic. If name is provided, workspace will be derived from environment variable or token, in that order</param>
+        /// <param name="partitionOffset">The partition offset to start reading from</param>
+        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
+        /// <param name="options">The settings to use for committing</param>
+        /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
+        ITopicConsumer GetTopicConsumer(string topicIdOrName, PartitionOffset partitionOffset, string consumerGroup = null, CommitOptions options = null);
 
         /// <summary>
         /// Gets a topic consumer capable of subscribing to receive non-quixstreams incoming messages. 
@@ -84,6 +97,16 @@ namespace QuixStreams.Streaming
         /// <returns>A task returning an instance of <see cref="ITopicConsumer"/></returns>
         Task<ITopicConsumer> GetTopicConsumerAsync(string topicIdOrName, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest);
 
+        /// <summary>
+        /// Asynchronously gets a topic consumer capable of subscribing to receive incoming streams.
+        /// </summary>
+        /// <param name="topicIdOrName">Id or name of the topic. If name is provided, workspace will be derived from environment variable or token, in that order</param>
+        /// <param name="partitionOffset">The partition offset to start reading from</param>
+        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
+        /// <param name="options">The settings to use for committing</param>
+        /// <returns>A task returning an instance of <see cref="ITopicConsumer"/></returns>
+        Task<ITopicConsumer> GetTopicConsumerAsync(string topicIdOrName, PartitionOffset partitionOffset, string consumerGroup = null, CommitOptions options = null);
+        
         /// <summary>
         /// Asynchronously gets a topic consumer capable of subscribing to receive non-quixstreams incoming messages.
         /// </summary>
@@ -232,6 +255,24 @@ namespace QuixStreams.Streaming
             return client.GetTopicConsumer(topicId, consumerGroup, options, autoOffset);
         }
 
+        /// <summary>
+        /// Gets a topic consumer capable of subscribing to receive incoming streams.
+        /// </summary>
+        /// <param name="topicIdOrName">Id or name of the topic. If name is provided, workspace will be derived from environment variable or token, in that order</param>
+        /// <param name="partitionOffset">The partition offset to start reading from</param>
+        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
+        /// <param name="options">The settings to use for committing</param>
+        /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
+        public ITopicConsumer GetTopicConsumer(string topicIdOrName, PartitionOffset partitionOffset, string consumerGroup = null, CommitOptions options = null)
+        {
+            if (string.IsNullOrWhiteSpace(topicIdOrName)) throw new ArgumentNullException(nameof(topicIdOrName));
+            
+            var (client, topicId, ws) = this.ValidateTopicAndCreateClient(topicIdOrName).ConfigureAwait(false).GetAwaiter().GetResult();
+            (consumerGroup, options) = GetValidConsumerGroup(topicIdOrName, consumerGroup, options).ConfigureAwait(false).GetAwaiter().GetResult();
+            
+            return client.GetTopicConsumer(topicId, partitionOffset, consumerGroup, options);
+        }
+        
         /// <inheritdoc/>
         public async Task<ITopicConsumer> GetTopicConsumerAsync(string topicIdOrName, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest)
         {
@@ -241,6 +282,17 @@ namespace QuixStreams.Streaming
             (consumerGroup, options) = await GetValidConsumerGroup(topicIdOrName, consumerGroup, options).ConfigureAwait(false);
 
             return client.GetTopicConsumer(topicId, consumerGroup, options, autoOffset);
+        }
+
+        /// <inheritdoc/>
+        public async Task<ITopicConsumer> GetTopicConsumerAsync(string topicIdOrName, PartitionOffset partitionOffset, string consumerGroup = null, CommitOptions options = null)
+        {
+            if (string.IsNullOrWhiteSpace(topicIdOrName)) throw new ArgumentNullException(nameof(topicIdOrName));
+
+            var (client, topicId, ws) = await this.ValidateTopicAndCreateClient(topicIdOrName).ConfigureAwait(false);
+            (consumerGroup, options) = await GetValidConsumerGroup(topicIdOrName, consumerGroup, options).ConfigureAwait(false);
+
+            return client.GetTopicConsumer(topicId, partitionOffset, consumerGroup, options);
         }
 
         /// <summary>

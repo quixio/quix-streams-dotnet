@@ -5,18 +5,19 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Quix.TestBase.Extensions;
 using QuixStreams.Kafka;
 using QuixStreams.Telemetry;
 using QuixStreams.Streaming.Models;
-using QuixStreams.Telemetry.Kafka;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
 using RocksDbSharp;
 using Xunit;
 using Xunit.Abstractions;
+using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
 using EventDefinition = QuixStreams.Telemetry.Models.EventDefinition;
 using ParameterDefinition = QuixStreams.Telemetry.Models.ParameterDefinition;
 
@@ -131,10 +132,73 @@ namespace QuixStreams.Streaming.IntegrationTests
         }
 
         [Fact]
+        public async Task StreamPublishAndConsumeWithPartitionAndOffset_ShouldReceiveExpectedMessages()
+        {
+            var topic = nameof(StreamPublishAndConsumeWithPartitionAndOffset_ShouldReceiveExpectedMessages);
+            
+            await this.kafkaDockerTestFixture.EnsureTopic(topic, 2);
+            
+            var topicProducer = client.GetTopicProducer(topic);
+
+            IList<TimeseriesDataRaw> data = new List<TimeseriesDataRaw>();
+
+            List<TimeseriesDataRaw> ProduceRandomData(string streamId)
+            {            
+                var producedData = new List<TimeseriesDataRaw>();
+
+                using var stream = topicProducer.CreateStream(streamId);
+                this.output.WriteLine("The stream id is {0}", streamId);
+
+                producedData.Add(GenerateTimeseriesData(0));
+                producedData.Add(GenerateTimeseriesData(10));
+                    
+                (stream as IStreamProducerInternal).Publish(producedData);
+                    
+                stream.Close();
+
+                return producedData;
+            }
+
+            var expectedData = ProduceRandomData("stream-1");
+            ProduceRandomData("ADifferentstream");
+            
+            var topicConsumer = client.GetTopicConsumer(topic, new PartitionOffset(1, 2));
+
+            var totalPackages = 0;
+            var streamEndReceived = false;
+            topicConsumer.OnStreamReceived += (s, e) =>
+            {
+                if (e.StreamId != "stream-1")
+                {
+                    this.output.WriteLine("Ignoring stream {0}", e.StreamId);
+                    return;
+                }
+
+                var internalConsumer = (IStreamConsumerInternal)e;
+                internalConsumer.OnTimeseriesData += (s2, e2) => data.Add(e2);
+                internalConsumer.OnPackageReceived += (s2, e2) => totalPackages++;
+                internalConsumer.OnStreamClosed += (s2, e2) => streamEndReceived = true;
+            };
+
+            this.output.WriteLine("Subscribing");
+            topicConsumer.Subscribe();
+            this.output.WriteLine("Subscribed");
+            
+            
+            SpinWait.SpinUntil(() => data.Count == 1, 5000);
+
+            topicConsumer.Commit();
+            topicConsumer.Dispose();
+            
+            Assert.Equal(2, totalPackages);
+            Assert.True(streamEndReceived);
+            Assert.Equal(expectedData.LastOrDefault().Timestamps.FirstOrDefault(), data.FirstOrDefault()?.Timestamps.FirstOrDefault());
+        }
+
+        [Fact]
         public async Task StreamPublishAndConsume_ShouldReceiveExpectedMessages()
         {
             var topic = nameof(StreamPublishAndConsume_ShouldReceiveExpectedMessages);
-            
             
             await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
             
