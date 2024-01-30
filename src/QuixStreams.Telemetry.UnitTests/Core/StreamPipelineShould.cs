@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.UnitTests.Helpers;
@@ -99,6 +101,54 @@ namespace QuixStreams.Telemetry.UnitTests
             Assert.Equal(testModel2, handledPackage.Value);
         }
 
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(3)]
+        public void Send_WithMultipleComponentRegistered_ReceiveExpected(int numberOfComponents)
+        {
+            // Arrange
+            var invokingComponents = new List<BypassComponent<TestModel1>>();
+            IStreamPipeline pipeline = new StreamPipeline();
+            TestModel1 testModel1 = new TestModel1();
+            
+            void Callback(BypassComponent<TestModel1> component, TestModel1 package)
+            {
+                if (package != testModel1) throw new Exception("Incorrect package raised");
+                invokingComponents.Add(component);
+            }
+            
+            var components = new List<BypassComponent<TestModel1>>();
+            for (int i = 0; i < numberOfComponents; i++)
+            {
+                var component = new BypassComponent<TestModel1>(Callback);
+                components.Add(component);
+                pipeline.AddComponent(component);
+            }
+            
+
+            // Act
+            pipeline.Send(testModel1);
+
+            // Assert
+            invokingComponents.Select(y=> y.Id)
+                .Should().BeEquivalentTo(components.Select(y=> y.Id), o => o.WithStrictOrdering());
+        }
+
+        private class BypassComponent<T> : StreamComponent
+        {
+
+            public readonly Guid Id = Guid.NewGuid();
+            
+            public BypassComponent(Action<BypassComponent<T>, T> callback)
+            {
+                this.Input.Subscribe<T>(package =>
+                {
+                    callback(this, package);
+                });
+                this.Input.LinkTo(this.Output);
+            }
+        }
 
     }
 
