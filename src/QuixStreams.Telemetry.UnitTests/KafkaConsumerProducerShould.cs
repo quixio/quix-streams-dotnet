@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Quix.TestBase.Extensions;
-using QuixStreams;
-using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.SerDes.Codecs;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
