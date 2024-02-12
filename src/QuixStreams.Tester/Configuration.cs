@@ -59,8 +59,14 @@ namespace QuixStreams.Tester
         public int NumberOfStreams { get; set; }
         
         public bool TimeseriesEnabled => TimeseriesRate > 0;
+        public int TimeseriesParameterCount { get; set; }
+
+        public int ParameterDefinitionCount { get; set; }
 
         public bool EventsEnabled => EventRate > 0;
+        
+        public int EventDefinitionCount { get; set; }
+
         
 
         public double EventRate { get; set; }

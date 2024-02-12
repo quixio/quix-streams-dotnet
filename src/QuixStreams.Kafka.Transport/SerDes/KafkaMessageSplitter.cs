@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka.Transport.SerDes.Legacy;
 
@@ -55,6 +58,11 @@ namespace QuixStreams.Kafka.Transport.SerDes
         internal static int ExpectedHeaderSplitInfoSize = KafkaMessage.EstimateHeaderSize(
             CreateSegmentDictionary(int.MaxValue, BitConverter.GetBytes(int.MaxValue), Guid.NewGuid().ToByteArray()));
 
+        internal static int ExpectedCompressionInfoSize = KafkaMessage.EstimateHeaderSize(new Dictionary<string, byte[]>()
+        {
+            { Constants.KafkaMessageHeaderCompression, new KafkaHeader("", "GZIP").Value}
+        });
+        
         /// <summary>
         /// Initializes a new instance of <see cref="KafkaMessageSplitter"/>
         /// </summary>
@@ -115,28 +123,89 @@ namespace QuixStreams.Kafka.Transport.SerDes
                 logger.LogWarning("A message could not be split because your message limit is {0} bytes.", this.MaximumKafkaMessageSize);
                 yield return message;
             }
+            
+            var compressedMessage = CompressMessage(message);
+            KafkaMessage messageToSplit = compressedMessage;
+            if (compressedMessage.MessageSize > message.MessageSize)
+            {
+                // Use original, less overhead
+                messageToSplit = message;
+                compressedMessage = null;
+            }
+            else
+            {
+                var compressedValueSizeMax = valueSizeMax - ExpectedCompressionInfoSize;
+                var compressedCount = (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
+                var nonCompressedCount = (int)Math.Ceiling((double)message.Value.Length / valueSizeMax);
+
+                if (nonCompressedCount <= compressedCount)
+                {
+                    // Use original, less overhead
+                    messageToSplit = message;
+                    compressedMessage = null;
+                }
+                else
+                {
+                    valueSizeMax = compressedValueSizeMax;
+                    if (compressedCount == 1) 
+                    {
+                        // Due to compression there is is nothing to split
+                        yield return messageToSplit;
+                        yield break;
+                    }
+                }
+            }
 
             var messageId = Guid.NewGuid().ToByteArray();
-            var count = (int)Math.Ceiling((double)message.Value.Length / valueSizeMax);
+            var count = (int)Math.Ceiling((double)messageToSplit.Value.Length / valueSizeMax);
             var countAsBytes = BitConverter.GetBytes(count);
             var start = 0;
             for (int index = 0; index < count; index++)
             {
-                var end = Math.Min(start + valueSizeMax, message.Value.Length); // non inclusive
+                var end = Math.Min(start + valueSizeMax, messageToSplit.Value.Length); // non inclusive
                 var length = end - start;
                 var segment = new byte[length];
-                Array.Copy(message.Value, start, segment, 0, length);
+                Array.Copy(messageToSplit.Value, start, segment, 0, length);
                 var headers = CreateSegmentDictionary(index, countAsBytes, messageId);
-                var messageHeaders = message.Headers?.ToList() ?? new List<KafkaHeader>();
+                var messageHeaders = messageToSplit.Headers?.ToList() ?? new List<KafkaHeader>();
                 foreach (var header in headers)
                 {
                     messageHeaders.Add(new KafkaHeader(header.Key, header.Value));
                 }
 
-                var segmentMessage = new KafkaMessage(message.Key, segment, messageHeaders.ToArray());
+                var segmentMessage = new KafkaMessage(messageToSplit.Key, segment, messageHeaders.ToArray());
                 yield return segmentMessage;
                 start = end;
             }
+        }
+
+        private KafkaMessage CompressMessage(KafkaMessage message)
+        {
+            using (var compressedStream = new MemoryStream())
+            using (var zipStream = new GZipStream(compressedStream, CompressionLevel.Optimal))
+            {
+                zipStream.Write(message.Value, 0, message.Value.Length);
+                zipStream.Close();
+                var headers = ExtendHeaderByN(message.Headers, 1);
+                headers[headers.Length-1] = new KafkaHeader(Constants.KafkaMessageHeaderCompression, "GZIP");
+
+                var compressed = compressedStream.ToArray();
+                
+                return new KafkaMessage(message.Key, compressed, headers, message.Timestamp);
+            }
+        }
+
+        private KafkaHeader[] ExtendHeaderByN(KafkaHeader[] headers, int number)
+        {
+            if (headers == null) return new KafkaHeader[number];
+            var extendedHeaders = new KafkaHeader[headers.Length + number];
+            for (var index = 0; index < headers.Length; index++)
+            {
+                var kafkaHeader = headers[index];
+                extendedHeaders[index] = kafkaHeader;
+            }
+
+            return extendedHeaders;
         }
 
         internal static IDictionary<string, byte[]> CreateSegmentDictionary(int index, byte[] countBytes, byte[] messageGuidBytes)

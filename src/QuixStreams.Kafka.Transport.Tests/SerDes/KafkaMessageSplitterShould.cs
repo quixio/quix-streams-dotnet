@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Text;
 using FluentAssertions;
 using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.SerDes.Legacy;
@@ -178,6 +179,38 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             // Assert
             segments.Count.Should().Be(1, "Bytes should not be split");
             segments[0].Value.Should().BeSameAs(data);
+        }
+        
+        [Fact]
+        public void Split_UsingHeaderProtocolWithExcessiveValueSize_ShouldUseCompression()
+        {
+            // Arrange
+            PackageSerializationSettings.Mode = PackageSerializationMode.Header;
+            var maxByteSize = 500;
+            var splitter = new KafkaMessageSplitter(maxByteSize);
+            var data = new string[500];
+            for (var ii = 0; ii < data.Length; ii++)
+            {
+                data[ii] = $"Some_value_that_should_get_compressed_{ii}";
+            }
+
+            var dataBytes = Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
+
+            var key = Encoding.UTF8.GetBytes("My super key");
+            var message = new KafkaMessage(key, dataBytes);
+
+            // Act
+            var segments = splitter.Split(message).ToList();
+
+            // Assert
+            segments.Count.Should().Be(9);
+            foreach (var segment in segments)
+            {
+                segment.MessageSize.Should().BeLessOrEqualTo(maxByteSize);
+                var compression = Encoding.UTF8.GetString(segment.Headers
+                    .First(y => y.Key == Constants.KafkaMessageHeaderCompression).Value);
+                compression.Should().Be("GZIP");
+            }
         }
     }
 }

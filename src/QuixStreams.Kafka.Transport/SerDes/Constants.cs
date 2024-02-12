@@ -52,6 +52,11 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// The message segment count the message got split into
         /// </summary>
         internal const string KafkaMessageHeaderSplitMessageCount = "__Q_SplitMessageCount";
+        
+        /// <summary>
+        /// The compression used for the value itself to avoid message split or reduce segment count
+        /// </summary>
+        internal const string KafkaMessageHeaderCompression = "__Q_Compression";
 
 
     }

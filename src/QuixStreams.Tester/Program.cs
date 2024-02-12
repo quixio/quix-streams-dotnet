@@ -53,7 +53,10 @@ namespace QuixStreams.Tester
             var streams = new IStreamProducer[Configuration.ProducerConfig.NumberOfStreams];
             for (int ii = 0; ii < streams.Length; ii++)
             {
-                streams[ii] = topicProducer.CreateStream();
+                var stream = topicProducer.CreateStream();
+                GenerateDefinition(stream);
+                streams[ii] = stream;
+
             }
 
             if (Configuration.ProducerConfig.TimeseriesEnabled)
@@ -79,6 +82,70 @@ namespace QuixStreams.Tester
             finally
             {
                 Console.WriteLine("Finished producing");
+            }
+        }
+
+        private static void GenerateDefinition(IStreamProducer stream)
+        {
+            if (Configuration.ProducerConfig.ParameterDefinitionCount > 0)
+            {
+                var names = new string[]
+                {
+                    "numeric_parameter_INDEX",
+                    "string_parameter_INDEX",
+                    "binary_parameter_INDEX"
+                };
+                
+                var locations = new string[]
+                {
+                    "/some/path",
+                    "/some/other/path",
+                    "/",
+                    "/yet/another/path"
+                };
+                
+                var customProp = new string[]
+                {
+                    "{}",
+                    "{\"my\":\"json\"}",
+                    "abracadabra"
+                };
+                
+                for (var i = 0; i <= Configuration.ProducerConfig.ParameterDefinitionCount; i++)
+                {
+                    var name = names[i % names.Length].Replace("INDEX", i.ToString());
+                    var location = locations[i % locations.Length];
+                    var customPRop = locations[i % locations.Length];
+                    stream.Timeseries.AddLocation(location)
+                        .AddDefinition(name, description: "parameter with some description")
+                        .SetCustomProperties(customPRop);
+                }
+            }
+
+            if (Configuration.ProducerConfig.EventDefinitionCount > 0)
+            {
+                var names = new string[]
+                {
+                    "event_one_INDEX",
+                    "another_INDEX",
+                    "fun_event_INDEX"
+                };
+                
+                var locations = new string[]
+                {
+                    "/some/path",
+                    "/some/other/path",
+                    "/",
+                    "/yet/another/path"
+                };
+                
+                for (var i = 0; i <= Configuration.ProducerConfig.EventDefinitionCount; i++)
+                {
+                    var name = names[i % names.Length].Replace("INDEX", i.ToString());
+                    var location = locations[i % locations.Length];
+                    stream.Timeseries.AddLocation(location)
+                        .AddDefinition(name, description: "parameter with some description");
+                }
             }
         }
 
@@ -156,12 +223,25 @@ namespace QuixStreams.Tester
                         var tsdb = tsd.AddTimestamp(expectedTime);
 
                         var random = new Random();
-                        for (var jj = 1; jj <= 10; jj++)
+                        for (var jj = 1; jj <= Configuration.ProducerConfig.TimeseriesParameterCount; jj++)
                         {
-                            if (random.Next(0, 3) == 1) tsdb.AddValue($"numeric_parameter_{jj}", jj);
-                            if (random.Next(0, 3) == 1) tsdb.AddValue($"string_parameter_{jj}", $"value_{jj}");
                             if (random.Next(0, 3) == 1)
+                            {
+                                tsdb.AddValue($"numeric_parameter_{jj}", jj);
+                                continue;
+                            }
+
+                            if (random.Next(0, 3) == 1)
+                            {
+                                tsdb.AddValue($"string_parameter_{jj}", $"value_{jj}");
+                                continue;
+                            }
+
+                            if (random.Next(0, 3) == 1)
+                            {
                                 tsdb.AddValue($"binary_parameter_{jj}", Encoding.UTF8.GetBytes($"binary_value_{jj}"));
+                                continue;
+                            }
                         }
 
                         if (random.Next(0, 2) == 1) tsdb.AddTag("Random_Tag", $"tag{random.Next(0, 10)}");
