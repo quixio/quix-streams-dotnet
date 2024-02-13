@@ -146,7 +146,8 @@ namespace QuixStreams.Streaming.Models
 
             foreach (var tagPair in tags)
             {
-                this.AddTag(tagPair.Key, tagPair.Value);
+                if (string.IsNullOrEmpty(tagPair.Value)) this.RemoveTag(tagPair.Key);
+                else this.AddTag(tagPair.Key, tagPair.Value);
             }
 
             return this;

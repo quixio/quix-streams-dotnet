@@ -18,6 +18,11 @@ namespace QuixStreams.Streaming.UnitTests.Models
             tsdts.AddTag("test2", "val5");
             tsdts.AddTags(null);
             tsdts.AddTags(new Dictionary<string, string>());
+            tsdts.AddTag("test5", "willgetdeleted");
+            tsdts.AddTags(new Dictionary<string, string>()
+            {
+                {"test5", null}
+            });
 
             // Assert
             tsdts.Tags.Count.Should().Be(2);
