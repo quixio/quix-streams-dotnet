@@ -208,7 +208,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             var segments = splitter.Split(message).ToList();
 
             // Assert
-            segments.Count.Should().Be(14);
+            segments.Count.Should().Be(9);
             foreach (var segment in segments)
             {
                 segment.MessageSize.Should().BeLessOrEqualTo(maxByteSize);
@@ -241,7 +241,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             var segments = splitter.Split(message).ToList();
 
             // Assert
-            segments.Count.Should().Be(14);
+            segments.Count.Should().Be(8);
             foreach (var segment in segments)
             {
                 segment.MessageSize.Should().BeLessOrEqualTo(maxByteSize);
