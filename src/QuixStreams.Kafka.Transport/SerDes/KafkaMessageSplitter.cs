@@ -134,8 +134,15 @@ namespace QuixStreams.Kafka.Transport.SerDes
             }
             else
             {
-                var compressedValueSizeMax = valueSizeMax - ExpectedCompressionInfoSize;
+                var compressedValueSizeMax = this.MaximumKafkaMessageSize - compressedMessage.HeaderSize - (compressedMessage.Key?.Length ?? 0);
                 var compressedCount = (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
+                if (compressedCount != 1)
+                {
+                    // In this case we have to recalculate count assuming we have to add split info
+                    compressedValueSizeMax -= ExpectedHeaderSplitInfoSize;
+                    if (compressedValueSizeMax < -1) compressedCount = int.MaxValue;
+                    else compressedCount = (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
+                }
                 var nonCompressedCount = (int)Math.Ceiling((double)message.Value.Length / valueSizeMax);
 
                 if (nonCompressedCount <= compressedCount)
@@ -188,6 +195,15 @@ namespace QuixStreams.Kafka.Transport.SerDes
                 zipStream.Close();
                 var headers = ExtendHeaderByN(message.Headers, 1);
                 headers[headers.Length-1] = new KafkaHeader(Constants.KafkaMessageHeaderCompression, "GZIP");
+
+                for(var index = 0; index < headers.Length; index++)
+                {
+                    var header = headers[index];
+                    if (header.Key != Constants.KafkaMessageHeaderCodecId) continue;
+                    var value = Encoding.UTF8.GetString(header.Value);
+                    var newValue = $"[GZIP]-{value}";
+                    headers[index] = new KafkaHeader(header.Key, newValue);
+                }
 
                 var compressed = compressedStream.ToArray();
                 

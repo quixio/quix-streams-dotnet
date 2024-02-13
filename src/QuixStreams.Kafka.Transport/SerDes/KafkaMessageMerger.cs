@@ -138,12 +138,20 @@ namespace QuixStreams.Kafka.Transport.SerDes
                     var index = 0;
                     foreach (var messageHeader in message.Headers)
                     {
+                        var headerToUse = messageHeader;
                         // skip the compression header
                         if (messageHeader.Key == Constants.KafkaMessageHeaderCompression)
                         {
                             continue;
                         }
-                        headers[index] = messageHeader;
+
+                        if (messageHeader.Key == Constants.KafkaMessageHeaderCodecId)
+                        {
+                            var value = Encoding.UTF8.GetString(messageHeader.Value);
+                            var newValue = value.Replace("[GZIP]-", "");
+                            headerToUse = new KafkaHeader(messageHeader.Key, newValue);
+                        }
+                        headers[index] = headerToUse;
                         index++;
                     }
                 }
