@@ -23,7 +23,8 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         private readonly Timer flushTimer;
         private bool timerEnabled = false; // Here because every now and then resetting its due time to never doesn't work
         private const int PropertyChangedFlushInterval = 20;
-        private int lastHash = 0;
+        private const int DefaultEmptyHash = 0;
+        private int lastHash = DefaultEmptyHash;
         private readonly object flushLock = new object();
         private bool isDisposed = false;
 
@@ -204,10 +205,12 @@ namespace QuixStreams.Streaming.Models.StreamProducer
                 };
 
                 var hash = streamProperties.GetHashCode();
-                if (flushOnlyOnChange && hash == lastHash)
-                {
-                    return;
-                }
+                
+                // Has it changed
+                if (flushOnlyOnChange && hash == lastHash) return;
+
+                // Do not flush empty state for a new stream
+                if (lastHash == DefaultEmptyHash && !streamProperties.IsSet()) return;
 
                 this.lastHash = hash;
                 this.lastHeartbeatRebroadcastTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -225,7 +228,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
                 {
                     try
                     {
-                        return this.Parents.ToList();
+                        return this.Parents.Distinct().ToList();
                     }
                     catch (System.ArgumentException ex)
                     {
