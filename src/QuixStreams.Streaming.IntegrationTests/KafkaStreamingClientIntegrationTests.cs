@@ -162,7 +162,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             var expectedData = ProduceRandomData("stream-1");
             ProduceRandomData("ADifferentstream");
             
-            var topicConsumer = client.GetTopicConsumer(topic, new PartitionOffset(1, 2));
+            var topicConsumer = client.GetTopicConsumer(topic, new PartitionOffset(1, 1));
 
             var totalPackages = 0;
             var streamEndReceived = false;
