@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace QuixStreams.Telemetry.Models
 {
@@ -35,6 +36,20 @@ namespace QuixStreams.Telemetry.Models
         /// </summary>
         public DateTime? TimeOfRecording { get; set; }
 
+        /// <summary>
+        /// Returns whether any values differ from empty value
+        /// </summary>
+        /// <returns></returns>
+        public bool IsSet()
+        {
+            if (!string.IsNullOrWhiteSpace(this.Name)) return true;
+            if (!string.IsNullOrWhiteSpace(this.Location)) return true;
+            if (this.Metadata != null && this.Metadata.Count > 0) return true;
+            if (this.Parents != null && this.Parents.Count > 0) return true;
+            if (this.TimeOfRecording != null) return true;
+            return false;
+        }
+        
         /// <summary>
         /// Returns the hash of the content
         /// </summary>
