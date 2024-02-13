@@ -44,8 +44,8 @@ namespace QuixStreams.Telemetry.UnitTests
         
         [Theory]
         [InlineData("valid-stream-id", false)]
-        [InlineData("in/valid/stream/id", true)]
-        [InlineData("in\\valid\\stream\\id", true)]
+        [InlineData("also/valid/stream/id", false)]
+        [InlineData("also\\valid\\stream\\id", false)]
         public void Constructor_StreamId_ShouldDoExpected(string streamId, bool throwArgumentOutOfRangeException)
         {
             Action action = () =>  new StreamPipeline(streamId);

@@ -53,10 +53,6 @@ namespace QuixStreams.Telemetry
                     streamId = DefaultStreamIdWhenMissing;
                 }
             }
-            else if (streamId.IndexOfAny(new char[] {'/', '\\'}) > -1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(streamId), "Stream Id must not contain the following characters: /\\");
-            }
 
             this.StreamId = streamId;
             this.cancellationToken = cancellationToken;

@@ -20,10 +20,6 @@ namespace QuixStreams.Telemetry.Models
             set
             {
                 if (string.IsNullOrWhiteSpace(value)) throw new ArgumentOutOfRangeException(nameof(Id), "Parameter must have a unique Id");
-                if (value.IndexOfAny(new char[] {'/', '\\'}) > -1)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(Id), "Parameter Id must not contain the following characters: /\\");
-                }
                 id = value;
             }
         }

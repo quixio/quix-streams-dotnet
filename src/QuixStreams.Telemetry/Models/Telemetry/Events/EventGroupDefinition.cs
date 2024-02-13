@@ -19,7 +19,6 @@ namespace QuixStreams.Telemetry.Models
             set
             {
                 if (string.IsNullOrWhiteSpace(value)) throw new ArgumentOutOfRangeException(nameof(Name), "Group must have a name");
-                if (value.IndexOfAny(new char[] {'/', '\\'}) > -1) throw new ArgumentOutOfRangeException(nameof(Name), "Group name must not contain the following characters: /\\");
                 name = value;
             }
         }
