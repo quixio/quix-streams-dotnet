@@ -212,13 +212,43 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             foreach (var segment in segments)
             {
                 segment.MessageSize.Should().BeLessOrEqualTo(maxByteSize);
-                var compression = Encoding.UTF8.GetString(segment.Headers
-                    .First(y => y.Key == Constants.KafkaMessageHeaderCompression).Value);
-                compression.Should().Be("GZIP");
                 
                 var codecId = Encoding.UTF8.GetString(segment.Headers
                     .First(y => y.Key == Constants.KafkaMessageHeaderCodecId).Value);
-                codecId.Should().Be($"[GZIP]-{testCodecId}");
+                codecId.Should().Be($"{Constants.KafkaMessageHeaderCodecIdGZipCompression}{testCodecId}");
+            }
+        }
+        
+        [Fact]
+        public void Split_UsingHeaderProtocolNoCodecIdWithExcessiveValueSize_ShouldUseCompression()
+        {
+            // Arrange
+            PackageSerializationSettings.Mode = PackageSerializationMode.Header;
+            var maxByteSize = 500;
+            var splitter = new KafkaMessageSplitter(maxByteSize);
+            var data = new string[500];
+            for (var ii = 0; ii < data.Length; ii++)
+            {
+                data[ii] = $"Some_value_that_should_get_compressed_{ii}";
+            }
+
+            var dataBytes = Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
+
+            var key = Encoding.UTF8.GetBytes("My super key");
+            var message = new KafkaMessage(key, dataBytes);
+
+            // Act
+            var segments = splitter.Split(message).ToList();
+
+            // Assert
+            segments.Count.Should().Be(14);
+            foreach (var segment in segments)
+            {
+                segment.MessageSize.Should().BeLessOrEqualTo(maxByteSize);
+                
+                var codecId = Encoding.UTF8.GetString(segment.Headers
+                    .First(y => y.Key == Constants.KafkaMessageHeaderCodecId).Value);
+                codecId.Should().Be(Constants.KafkaMessageHeaderCodecIdGZipCompression);
             }
         }
     }

@@ -60,7 +60,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
 
         internal static int ExpectedCompressionInfoSize = KafkaMessage.EstimateHeaderSize(new Dictionary<string, byte[]>()
         {
-            { Constants.KafkaMessageHeaderCompression, new KafkaHeader("", "GZIP").Value}
+            { Constants.KafkaMessageHeaderCodecId, new KafkaHeader("", Constants.KafkaMessageHeaderCodecIdGZipCompression).Value}
         });
         
         /// <summary>
@@ -193,16 +193,23 @@ namespace QuixStreams.Kafka.Transport.SerDes
             {
                 zipStream.Write(message.Value, 0, message.Value.Length);
                 zipStream.Close();
-                var headers = ExtendHeaderByN(message.Headers, 1);
-                headers[headers.Length-1] = new KafkaHeader(Constants.KafkaMessageHeaderCompression, "GZIP");
-
+                var headers = ExtendHeaderByN(message.Headers, 0);
+                
+                var updated = false;
                 for(var index = 0; index < headers.Length; index++)
                 {
                     var header = headers[index];
                     if (header.Key != Constants.KafkaMessageHeaderCodecId) continue;
                     var value = Encoding.UTF8.GetString(header.Value);
-                    var newValue = $"[GZIP]-{value}";
+                    var newValue = $"{Constants.KafkaMessageHeaderCodecIdGZipCompression}{value}";
+                    updated = true;
                     headers[index] = new KafkaHeader(header.Key, newValue);
+                }
+
+                if (!updated)
+                {
+                    headers = ExtendHeaderByN(headers, 1);
+                    headers[headers.Length-1] = new KafkaHeader(Constants.KafkaMessageHeaderCodecId, Constants.KafkaMessageHeaderCodecIdGZipCompression);
                 }
 
                 var compressed = compressedStream.ToArray();

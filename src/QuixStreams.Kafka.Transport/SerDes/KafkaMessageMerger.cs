@@ -118,12 +118,12 @@ namespace QuixStreams.Kafka.Transport.SerDes
         
         private KafkaMessage DecompressMessage(KafkaMessage message)
         {
-            var header = message.Headers?.FirstOrDefault(y => y.Key == Constants.KafkaMessageHeaderCompression);
+            var header = message.Headers?.FirstOrDefault(y => y.Key == Constants.KafkaMessageHeaderCodecId);
             if (header == null) return message;
             var encoding = Encoding.UTF8.GetString(header.Value);
-            if (encoding != "GZIP")
+            if (!encoding.StartsWith(Constants.KafkaMessageHeaderCodecIdGZipCompression))
             {
-                throw new NotSupportedException($"Encoding {encoding} is not supported.");
+                return message; // there is nothing to decompress
             }
             
             using (var compressedStream = new MemoryStream(message.Value))
@@ -134,21 +134,15 @@ namespace QuixStreams.Kafka.Transport.SerDes
                 KafkaHeader[] headers = null;
                 if (message.Headers?.Length > 1)
                 {
-                    headers = new KafkaHeader[message.Headers.Length - 1];
+                    headers = new KafkaHeader[message.Headers.Length];
                     var index = 0;
                     foreach (var messageHeader in message.Headers)
                     {
                         var headerToUse = messageHeader;
-                        // skip the compression header
-                        if (messageHeader.Key == Constants.KafkaMessageHeaderCompression)
-                        {
-                            continue;
-                        }
-
                         if (messageHeader.Key == Constants.KafkaMessageHeaderCodecId)
                         {
                             var value = Encoding.UTF8.GetString(messageHeader.Value);
-                            var newValue = value.Replace("[GZIP]-", "");
+                            var newValue = value.Substring(Constants.KafkaMessageHeaderCodecIdGZipCompression.Length);
                             headerToUse = new KafkaHeader(messageHeader.Key, newValue);
                         }
                         headers[index] = headerToUse;
