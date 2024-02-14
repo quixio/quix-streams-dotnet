@@ -2,7 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -58,7 +61,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             }
             
             var mergeResult = this.helper.TryMerge(kafkaMessage, out var bufferId, out var mergedMessage);
-
+            
             if (mergeResult == MessageMergeResult.Discarded) return Task.CompletedTask;
 
             if (mergeResult == MessageMergeResult.MergePending)
@@ -80,12 +83,12 @@ namespace QuixStreams.Kafka.Transport.SerDes
             {
                 // null buffer id means that this is not a merged message
                 // lets use original message completely
-                messageToRaise = kafkaMessage;
+                messageToRaise = DecompressMessage(kafkaMessage);
             }
             else
             {
                 // buffer id means that this is a merged message
-                messageToRaise = mergedMessage;
+                messageToRaise = DecompressMessage(mergedMessage);
             }
             
             Debug.Assert(messageToRaise != null);
@@ -111,6 +114,44 @@ namespace QuixStreams.Kafka.Transport.SerDes
             }
 
             return RaiseNextPackageIfReady();
+        }
+        
+        private KafkaMessage DecompressMessage(KafkaMessage message)
+        {
+            var header = message.Headers?.FirstOrDefault(y => y.Key == Constants.KafkaMessageHeaderCodecId);
+            if (header == null) return message;
+            var encoding = Encoding.UTF8.GetString(header.Value);
+            if (!encoding.StartsWith(Constants.KafkaMessageHeaderCodecIdGZipCompression))
+            {
+                return message; // there is nothing to decompress
+            }
+            
+            using (var compressedStream = new MemoryStream(message.Value))
+            using (var zipStream = new GZipStream(compressedStream, CompressionMode.Decompress))
+            using (var resultStream = new MemoryStream())
+            {
+                zipStream.CopyTo(resultStream);
+                KafkaHeader[] headers = null;
+                if (message.Headers?.Length > 1)
+                {
+                    headers = new KafkaHeader[message.Headers.Length];
+                    var index = 0;
+                    foreach (var messageHeader in message.Headers)
+                    {
+                        var headerToUse = messageHeader;
+                        if (messageHeader.Key == Constants.KafkaMessageHeaderCodecId)
+                        {
+                            var value = Encoding.UTF8.GetString(messageHeader.Value);
+                            var newValue = value.Substring(Constants.KafkaMessageHeaderCodecIdGZipCompression.Length);
+                            headerToUse = new KafkaHeader(messageHeader.Key, newValue);
+                        }
+                        headers[index] = headerToUse;
+                        index++;
+                    }
+                }
+                
+                return new KafkaMessage(message.Key, resultStream.ToArray(), headers, message.Timestamp, message.TopicPartitionOffset);
+            }
         }
         
         private async Task RaiseNextPackageIfReady()

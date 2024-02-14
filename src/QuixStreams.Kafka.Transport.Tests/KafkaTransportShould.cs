@@ -47,7 +47,7 @@ namespace QuixStreams.Kafka.Transport.Tests
         {
             yield return new object[] { PackageSerializationMode.LegacyValue, true, 500, 4};
             yield return new object[] { PackageSerializationMode.LegacyValue, false, 18, 1 };
-            yield return new object[] { PackageSerializationMode.Header, true, 500, 18 };
+            yield return new object[] { PackageSerializationMode.Header, true, 500, 14 };
             yield return new object[] { PackageSerializationMode.Header, false, 400, 1};
         }
     }

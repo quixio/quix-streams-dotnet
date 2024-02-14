@@ -52,6 +52,11 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// The message segment count the message got split into
         /// </summary>
         internal const string KafkaMessageHeaderSplitMessageCount = "__Q_SplitMessageCount";
+        
+        /// <summary>
+        /// The prefix used for GZIP compression in <see cref="KafkaMessageHeaderCodecId"/>
+        /// </summary>
+        internal const string KafkaMessageHeaderCodecIdGZipCompression = "[GZIP]";
 
 
     }

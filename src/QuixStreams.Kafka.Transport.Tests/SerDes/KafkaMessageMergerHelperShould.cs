@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Quix.TestBase.Extensions;
@@ -17,7 +19,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
 
         public KafkaMessageMergerHelperShould(ITestOutputHelper output)
         {
-            const int maxMsgLength = 50;
+            const int maxMsgLength = 500;
             this.splitter = new KafkaMessageSplitter(KafkaMessageSplitter.ExpectedHeaderSplitInfoSize + maxMsgLength);
             this.logger = output.ConvertToLogger<KafkaMessageMergerHelperShould>();
         }
@@ -31,8 +33,26 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         {
             var length = (int)Math.Ceiling(splitter.MaximumKafkaMessageSize * 5.5); // just a bit more than max;
             originalData = new byte[length];
-            var random = new Random();
-            random.NextBytes(originalData);
+
+            // Introduce something that can be compressed more than random bytes
+            var pos = 0;
+            while (true)
+            {
+                var nextBytes = Encoding.UTF8.GetBytes($"SomeString{pos}");
+                if (pos + nextBytes.Length < originalData.Length)
+                {
+                    nextBytes.CopyTo(originalData, pos);
+                    pos += nextBytes.Length;
+                }
+                else
+                {
+                    var target = new Span<Byte>(originalData, pos, originalData.Length - pos);
+                    var source = new Span<Byte>(nextBytes, 0, originalData.Length - pos);
+                    source.CopyTo(target);
+                    break;
+                }
+            }
+            
 
             var message = new KafkaMessage(null, originalData, null);
             return splitter.Split(message);
@@ -99,25 +119,32 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         [Theory]
         [InlineData(PackageSerializationMode.LegacyValue)]
         [InlineData(PackageSerializationMode.Header)]
-        public void Merge_WithSplitDataThatIsLastMessageWithRest_ShouldReturnMerged(PackageSerializationMode mode)
+        public async Task Merge_WithSplitDataThatIsLastMessageWithRest_ShouldReturnMerged(PackageSerializationMode mode)
         {
             // Arrange
             PackageSerializationSettings.Mode = mode;
-            var merger = new KafkaMessageMergerHelper(new KafkaMessageBuffer(), logger);
+            var merger = new KafkaMessageMerger(new KafkaMessageBuffer());
             var splitData = this.GetSplitData(out var data).ToList();
-
+            
+            var results = new List<KafkaMessage>(1);
+            merger.OnMessageAvailable += message =>
+            {
+                results.Add(message);
+                return Task.CompletedTask;
+            };
+            
             // Act
             for (var index = 0; index < splitData.Count - 1; index++)
             {
                 var segment = splitData[index];
-                merger.TryMerge(segment, out var _, out var _);
+                await merger.Merge(segment);
             }
 
-            var mergeResult = merger.TryMerge(splitData[splitData.Count-1], out var _, out var result);
+            await merger.Merge(splitData[splitData.Count-1]);
 
+            results.Count.Should().Be(1);
             // Arrange
-            mergeResult.Should().Be(MessageMergeResult.Merged);
-            result.Value.Should().BeEquivalentTo(data, "we have all necessary segments to merge");
+            results[0].Value.Should().BeEquivalentTo(data, "we have all necessary segments to merge");
         }
         
         [Theory]
@@ -153,18 +180,25 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         [Theory]
         [InlineData(PackageSerializationMode.LegacyValue)]
         [InlineData(PackageSerializationMode.Header)]
-        public void Merge_InterlacingMessages_ShouldReturnMerged(PackageSerializationMode mode)
+        public async Task Merge_InterlacingMessages_ShouldReturnMerged(PackageSerializationMode mode)
         {
             var uniqueMessageCount = 10;
             
             // Arrange
             PackageSerializationSettings.Mode = mode;
-            var merger = new KafkaMessageMergerHelper(new KafkaMessageBuffer(uniqueMessageCount), logger);
+            var merger = new KafkaMessageMerger(new KafkaMessageBuffer());
             var splitData = Enumerable.Range(0, 10).Select(x=>
             new {
                 Segments = this.GetSplitData(out var data).ToList(),
                 Data = data
             }).ToList();
+            
+            var results = new List<KafkaMessage>(1);
+            merger.OnMessageAvailable += message =>
+            {
+                results.Add(message);
+                return Task.CompletedTask;
+            };
 
             var splitCount = splitData.First().Segments.Count;
             
@@ -174,52 +208,66 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
                 for (int msgIndex = 0; msgIndex < uniqueMessageCount; msgIndex++)
                 {
                     var segment = splitData[msgIndex].Segments[segmentIndex];
-                    merger.TryMerge(segment, out var _, out var _);
+                    await merger.Merge(segment);
                 }
             }
-            // Arrange
+            
+            // Arrange the last pieces
             for (int msgIndex = 0; msgIndex < uniqueMessageCount; msgIndex++)
             {
                 var sD = splitData[msgIndex];
-                var mergeResult = merger.TryMerge(sD.Segments[sD.Segments.Count-1], out var _, out var result);
-                mergeResult.Should().Be(MessageMergeResult.Merged);
-                result.Value.Should().BeEquivalentTo(sD.Data, $"we have all necessary segments to merge msg {msgIndex}");
+                await merger.Merge(sD.Segments[sD.Segments.Count-1]);
+            }
+            
+            // Assert
+            results.Count.Should().Be(uniqueMessageCount);
+            for (int msgIndex = 0; msgIndex < uniqueMessageCount; msgIndex++)
+            {
+                var sD = splitData[msgIndex];
+                var message = results[msgIndex];
+                message.Value.Should().BeEquivalentTo(sD.Data, $"we have all necessary segments to merge msg {msgIndex}");
             }
         }
         
         [Theory]
         [InlineData(PackageSerializationMode.LegacyValue)]
         [InlineData(PackageSerializationMode.Header)]
-        public void Merge_DifferentMessageGroupKey_ShouldReturnMerged(PackageSerializationMode mode)
+        public async Task Merge_DifferentMessageGroupKey_ShouldReturnMerged(PackageSerializationMode mode)
         {
             var uniqueMessageCount = 10;
             
             // Arrange
             PackageSerializationSettings.Mode = mode;
-            var merger = new KafkaMessageMergerHelper(new KafkaMessageBuffer(uniqueMessageCount), this.logger);
+            var merger = new KafkaMessageMerger(new KafkaMessageBuffer(uniqueMessageCount));
             var splitData1 = this.GetSplitData(out var data1).ToList();
             var splitData2 = this.GetSplitData(out var data2).ToList();
 
+            var results = new List<KafkaMessage>(1);
+            merger.OnMessageAvailable += message =>
+            {
+                results.Add(message);
+                return Task.CompletedTask;
+            };
+            
             // Act
             for (var index = 0; index < splitData1.Count - 1; index++)
             {
                 var segment = splitData1[index];
-                merger.TryMerge(segment, out var _, out var _);
+                await merger.Merge(segment);
             }
             for (var index = 0; index < splitData2.Count - 1; index++)
             {
                 var segment = splitData2[index];
-                merger.TryMerge(segment, out var _, out var _);
+                await merger.Merge(segment);
             }
 
-            var mergeResult1 = merger.TryMerge(splitData1[splitData1.Count-1], out var _, out var result1);
-            var mergeResult2 = merger.TryMerge(splitData2[splitData2.Count-1], out var _, out var result2);
+            await merger.Merge(splitData1[splitData1.Count-1]);
+            await merger.Merge(splitData2[splitData2.Count-1]);
 
             // Arrange
-            mergeResult1.Should().Be(MessageMergeResult.Merged);
-            result1.Value.Should().BeEquivalentTo(data1, "we have all necessary segments to merge");
-            mergeResult2.Should().Be(MessageMergeResult.Merged);
-            result2.Value.Should().BeEquivalentTo(data2, "we have all necessary segments to merge");
+            results.Count.Should().Be(2);
+            results[0].Value.Should().BeEquivalentTo(data1, "we have all necessary segments to merge");
+            results[1].Value.Should().BeEquivalentTo(data2, "we have all necessary segments to merge");
         }
     }
 }
