@@ -392,7 +392,7 @@ namespace QuixStreams.Streaming
                 };
                 
                 // Hacky workaround to an issue that Kafka client can't be left with no GroupId, but it still uses it for ACL checks.
-                QuixStreams.Kafka.ConsumerConfiguration.ConsumerGroupIdWhenNotSetPrefix = ws.WorkspaceId;
+                QuixStreams.Kafka.ConsumerConfiguration.ConsumerGroupIdWhenNotSetPrefix = $"{ws.WorkspaceId}-";
                 return (null, newCommitOptions);
             }
             
