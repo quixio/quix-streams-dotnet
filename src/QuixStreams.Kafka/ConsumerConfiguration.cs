@@ -8,7 +8,13 @@ namespace QuixStreams.Kafka
     public class ConsumerConfiguration
     {
         private readonly IDictionary<string, string> consumerProperties = new Dictionary<string, string>();
-        public static string ConsumerGroupIdWhenNotSet = "UNSET-" +Guid.NewGuid().ToString("D"); // technically any random static would do, but in case something does commit under that consumer id, it would possibly break things
+        public static string ConsumerGroupIdWhenNotSetPrefix = "UNSET";
+        
+        /// <summary>
+        /// This is intended to be an unique consumer group to avoid accidental load balancing or even if commit is done
+        /// by mistake, commit under an irrelevant consumer group
+        /// </summary>
+        public readonly string ConsumerGroupIdWhenNotSet = ConsumerGroupIdWhenNotSetPrefix + "-" + Guid.NewGuid().ToString("D");
 
         /// <summary>
         /// Initializes a new instance of <see cref="ConsumerConfiguration" />
