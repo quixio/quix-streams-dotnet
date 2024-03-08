@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;
 
@@ -25,6 +26,18 @@ namespace QuixStreams.Streaming.Raw
         /// <param name="topicName">Name of the topic.</param>
         /// <param name="brokerProperties">Additional broker properties</param>
         public RawTopicProducer(string brokerAddress, string topicName, Dictionary<string, string> brokerProperties = null)
+            : this(brokerAddress, topicName, brokerProperties, Partition.Any)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="RawTopicProducer"/>
+        /// </summary>
+        /// <param name="brokerAddress">Address of Kafka cluster.</param>
+        /// <param name="topicName">Name of the topic.</param>
+        /// <param name="partition">Partition to produce to.</param>
+        /// <param name="brokerProperties">Additional broker properties</param>
+        public RawTopicProducer(string brokerAddress, string topicName, Dictionary<string, string> brokerProperties, Partition partition)
         {
             brokerProperties ??= new Dictionary<string, string>();
             if (!brokerProperties.ContainsKey("queued.max.messages.kbytes")) brokerProperties["queued.max.messages.kbytes"] = "20480";
@@ -32,11 +45,11 @@ namespace QuixStreams.Streaming.Raw
             this.topicName = topicName;
 
             var publisherConfiguration = new QuixStreams.Kafka.ProducerConfiguration(brokerAddress, brokerProperties);
-            var topicConfiguration = new QuixStreams.Kafka.ProducerTopicConfiguration(this.topicName);
+            var topicConfiguration = new QuixStreams.Kafka.ProducerTopicConfiguration(this.topicName, partition);
 
             this.kafkaProducer = new KafkaProducer(publisherConfiguration, topicConfiguration);
         }
-        
+
         /// <summary>
         /// Initializes a new instance of <see cref="RawTopicProducer"/>
         /// </summary>

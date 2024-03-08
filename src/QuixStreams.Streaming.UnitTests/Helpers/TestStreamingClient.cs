@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Confluent.Kafka;
 using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
@@ -19,7 +18,6 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
         private TelemetryKafkaConsumer telemetryKafkaConsumer;
         private Func<string, TelemetryKafkaProducer> createKafkaProducer;
         private Dictionary<string, TestBroker> brokers = new Dictionary<string, TestBroker>();
-
 
         public TestStreamingClient(CodecType codec = CodecType.Protobuf, TimeSpan publishDelay = default)
         {
@@ -85,7 +83,17 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             throw new NotImplementedException();
         }
 
+        IRawTopicProducer IKafkaStreamingClient.GetRawTopicProducer(string topic, int partitionId)
+        {
+            throw new NotImplementedException();
+        }
+
         ITopicProducer IKafkaStreamingClient.GetTopicProducer(string topic)
+        {
+            return GetTopicProducer(topic);
+        }
+
+        ITopicProducer IKafkaStreamingClient.GetTopicProducer(string topic, int partitionId)
         {
             return GetTopicProducer(topic);
         }
