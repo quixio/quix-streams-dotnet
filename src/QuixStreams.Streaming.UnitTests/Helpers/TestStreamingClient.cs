@@ -55,6 +55,11 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             return topicProducer;
         }
 
+        public ITopicProducer GetTopicProducer(string topic, int partitionId)
+        {
+            return GetTopicProducer(topic);
+        }
+
         private TestBroker GetBroker(string topic)
         {
             if (this.brokers.TryGetValue(topic, out var broker)) return broker;
@@ -119,6 +124,11 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             throw new NotImplementedException();
         }
 
+        IRawTopicProducer IQuixStreamingClient.GetRawTopicProducer(string topicIdOrName, int partitionId)
+        {
+            throw new NotImplementedException();
+        }
+
         ITopicProducer IQuixStreamingClient.GetTopicProducer(string topicIdOrName)
         {
             return GetTopicProducer(topicIdOrName);
@@ -153,9 +163,19 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             return Task.FromResult(((IQuixStreamingClient)this).GetRawTopicProducer(topicIdOrName));
         }
 
+        Task<IRawTopicProducer> IQuixStreamingClientAsync.GetRawTopicProducerAsync(string topicIdOrName, int partitionId)
+        {
+            return Task.FromResult(((IQuixStreamingClient)this).GetRawTopicProducer(topicIdOrName, partitionId));
+        }
+
         Task<ITopicProducer> IQuixStreamingClientAsync.GetTopicProducerAsync(string topicIdOrName)
         {
             return Task.FromResult(((IQuixStreamingClient)this).GetTopicProducer(topicIdOrName));
+        }
+
+        Task<ITopicProducer> IQuixStreamingClientAsync.GetTopicProducerAsync(string topicIdOrName, int partitionId)
+        {
+            return Task.FromResult(((IQuixStreamingClient)this).GetTopicProducer(topicIdOrName, partitionId));
         }
     }
 }
