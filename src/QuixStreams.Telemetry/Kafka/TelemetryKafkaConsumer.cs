@@ -65,17 +65,13 @@ namespace QuixStreams.Telemetry.Kafka
         public readonly string GroupId;
 
         /// <summary>
-        /// If set to false it wont wait for the broker verification
-        /// </summary>
-        public bool VerifyBrokerConnection { get; set; } = true;
-
-        /// <summary>
         /// Initializes a new instance of <see cref="TelemetryKafkaConsumer"/>
         /// </summary>
         /// <param name="telemetryKafkaConsumerConfiguration">Kafka broker configuration for <see cref="TelemetryKafkaConsumer"/></param>
         /// <param name="topic">Topic name to read from</param>
         /// <param name="partitionOffset">The partition offset to start reading from</param>
-        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, PartitionOffset partitionOffset = null)
+        /// <param name="verifyBrokerConnection">If set to false it wont wait for the broker verification</param>
+        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, PartitionOffset partitionOffset = null, bool verifyBrokerConnection = true)
         {
             Topic = topic;
             // Kafka Transport layer -> Transport layer
@@ -97,7 +93,7 @@ namespace QuixStreams.Telemetry.Kafka
             var topicConfig = new ConsumerTopicConfiguration(topic, partitionOffset);
             this.kafkaConsumer = new KafkaConsumer(subConfig, topicConfig)
             {
-                VerifyBrokerConnection = VerifyBrokerConnection
+                VerifyBrokerConnection = verifyBrokerConnection
             };
             this.GroupId = subConfig.GroupId;
         }
