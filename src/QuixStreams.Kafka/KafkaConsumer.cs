@@ -83,6 +83,11 @@ namespace QuixStreams.Kafka
         public event EventHandler<RevokedEventArgs> OnRevoked;
 
         /// <summary>
+        /// If set to false it wont wait for the broker verification
+        /// </summary>
+        public bool VerifyBrokerConnection { get; set; } = true;
+        
+        /// <summary>
         /// Initializes a new instance of <see cref="KafkaConsumer"/>
         /// </summary>
         /// <param name="consumerConfiguration">The subscriber configuration to use</param>
@@ -321,15 +326,19 @@ namespace QuixStreams.Kafka
                 connectionEstablishedEvent.Reset();
                 var connectSw = Stopwatch.StartNew();
                 this.StartWorkerThread();
-                if (connectionEstablishedEvent.Wait(TimeSpan.FromSeconds(5)))
-                { 
-                    connectSw.Stop();
-                    this.logger.LogTrace("[{0}] Connected to broker in {1}", this.configId, connectSw.Elapsed);
-                }
-                else
+                if (VerifyBrokerConnection)
                 {
-                    this.logger.LogDebug("[{0}] Connection to broker was not verified in {1}", this.configId, connectSw.Elapsed);
+                    if (connectionEstablishedEvent.Wait(TimeSpan.FromSeconds(5)))
+                    {
+                        connectSw.Stop();
+                        this.logger.LogTrace("[{0}] Connected to broker in {1}", this.configId, connectSw.Elapsed);
+                    }
+                    else
+                    {
+                        this.logger.LogDebug("[{0}] Connection to broker was not verified in {1}", this.configId, connectSw.Elapsed);
+                    }
                 }
+
                 this.logger.LogTrace("[{0}] Open finished", this.configId);       
             }
         }
