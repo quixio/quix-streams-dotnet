@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Streaming.Configuration;
@@ -54,11 +52,27 @@ namespace QuixStreams.Streaming
         IRawTopicProducer GetRawTopicProducer(string topic);
 
         /// <summary>
+        /// Gets a topic producer capable of publishing non-quixstreams messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
+        IRawTopicProducer GetRawTopicProducer(string topic, int partitionId);
+
+        /// <summary>
         /// Gets a topic producer capable of publishing stream messages. 
         /// </summary>
         /// <param name="topic">Name of the topic.</param>
         /// <returns>Instance of <see cref="ITopicProducer"/></returns>
         ITopicProducer GetTopicProducer(string topic);
+
+        /// <summary>
+        /// Gets a topic producer capable of publishing stream messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <returns>Instance of <see cref="ITopicProducer"/></returns>
+        ITopicProducer GetTopicProducer(string topic, int partitionId);
     }
 
     /// <summary>
@@ -207,6 +221,22 @@ namespace QuixStreams.Streaming
             var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties);
 
             App.Register(rawTopicProducer);
+
+            return rawTopicProducer;
+        }
+
+        /// <summary>
+        /// Gets a topic producer capable of publishing non-quixstreams messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
+        public IRawTopicProducer GetRawTopicProducer(string topic, int partitionId)
+        {
+            var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties, partitionId);
+
+            App.Register(rawTopicProducer);
+
             return rawTopicProducer;
         }
         
@@ -219,6 +249,21 @@ namespace QuixStreams.Streaming
         {
             var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic);
             
+            App.Register(topicProducer);
+
+            return topicProducer;
+        }
+
+        /// <summary>
+        /// Gets a topic producer capable of publishing stream messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <returns>Instance of <see cref="ITopicProducer"/></returns>
+        public ITopicProducer GetTopicProducer(string topic, int partitionId)
+        {
+            var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic, partitionId);
+
             App.Register(topicProducer);
 
             return topicProducer;

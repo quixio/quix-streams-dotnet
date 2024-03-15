@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;
 using QuixStreams.Telemetry.Kafka;
@@ -32,15 +33,28 @@ namespace QuixStreams.Streaming
         }
         
         /// <summary>
-        /// Initializes a new instance of <see cref="TopicProducer"/>
+        /// Initializes a new instance of the <see cref="TopicProducer"/> class.
         /// </summary>
+        /// <param name="config">Kafka producer configuration.</param>
+        /// <param name="topic">Name of the topic.</param>
         public TopicProducer(KafkaProducerConfiguration config, string topic)
+            : this(config, topic, Partition.Any)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TopicProducer"/> class.
+        /// </summary>
+        /// <param name="config">Kafka producer configuration.</param>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partition">Partition to produce to.</param>
+        public TopicProducer(KafkaProducerConfiguration config, string topic, Partition partition)
         {
             this.topic = topic;
-            
+
             var prodConfig = new ProducerConfiguration(config.BrokerList, config.Properties);
-            var topicConfig = new ProducerTopicConfiguration(topic);
-            
+            var topicConfig = new ProducerTopicConfiguration(topic, partition);
+
             this.kafkaProducer =  new KafkaProducer(prodConfig, topicConfig);
 
             createKafkaProducer = (string streamId) => new TelemetryKafkaProducer(this.kafkaProducer, streamId);
