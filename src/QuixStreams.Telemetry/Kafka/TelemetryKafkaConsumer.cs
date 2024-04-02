@@ -13,13 +13,13 @@ namespace QuixStreams.Telemetry.Kafka
     /// KafkaReader initializes transport layer classes and sets up a <see cref="StreamPipelineFactory"/> to detect new streams in Kafka topic 
     /// and start new <see cref="StreamPipeline"/> instances where all the messages of the stream are going to be sent.
     /// </summary>
-    public class TelemetryKafkaConsumer: IDisposable
+    public class TelemetryKafkaConsumer : IDisposable
     {
         /// <summary>
         /// The topic the kafka consumer is created for
         /// </summary>
         public readonly string Topic = "Unknown";
-        
+
         private readonly ILogger logger = Logging.CreateLogger<TelemetryKafkaConsumer>();
         private IKafkaTransportConsumer kafkaTransportConsumer;
         private bool isDisposed = false;
@@ -33,7 +33,7 @@ namespace QuixStreams.Telemetry.Kafka
         /// Event raised when an exception occurs during the Reading processes
         /// </summary>
         public event EventHandler<Exception> OnReceiveException;
-        
+
         /// <summary>
         /// Event raised with streams belonging to kafka partition(s) revoked
         /// </summary>
@@ -43,12 +43,12 @@ namespace QuixStreams.Telemetry.Kafka
         /// Raised when the kafka topic will became unavailable, but it is still possible at this point
         /// </summary>
         public event EventHandler OnRevoking;
-        
+
         /// <summary>
         /// Raised when commit occurs
         /// </summary>
         public event EventHandler OnCommitted;
-        
+
         /// <summary>
         /// Raised before commit
         /// </summary>
@@ -57,11 +57,7 @@ namespace QuixStreams.Telemetry.Kafka
         /// <summary>
         /// Stream Context cache for all the streams of the topic
         /// </summary>
-        public IStreamContextCache ContextCache
-        {
-            get;
-            private set;
-        }
+        public IStreamContextCache ContextCache { get; private set; }
 
         /// <summary>
         /// Group id
@@ -74,7 +70,8 @@ namespace QuixStreams.Telemetry.Kafka
         /// <param name="telemetryKafkaConsumerConfiguration">Kafka broker configuration for <see cref="TelemetryKafkaConsumer"/></param>
         /// <param name="topic">Topic name to read from</param>
         /// <param name="partitionOffset">The partition offset to start reading from</param>
-        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, PartitionOffset partitionOffset = null)
+        /// <param name="verifyBrokerConnection">If set to false it wont wait for the broker verification</param>
+        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, PartitionOffset partitionOffset = null, bool verifyBrokerConnection = true)
         {
             Topic = topic;
             // Kafka Transport layer -> Transport layer
@@ -92,12 +89,15 @@ namespace QuixStreams.Telemetry.Kafka
                 o.CommitInterval = commitOptions.CommitInterval;
                 o.AutoCommitEnabled = commitOptions.AutoCommitEnabled;
             };
-            
+
             var topicConfig = new ConsumerTopicConfiguration(topic, partitionOffset);
-            this.kafkaConsumer = new KafkaConsumer(subConfig, topicConfig);
+            this.kafkaConsumer = new KafkaConsumer(subConfig, topicConfig)
+            {
+                VerifyBrokerConnection = verifyBrokerConnection
+            };
             this.GroupId = subConfig.GroupId;
         }
-        
+
         /// <summary>
         /// Initializes a new instance of <see cref="TelemetryKafkaConsumer"/>
         /// </summary>
@@ -122,10 +122,7 @@ namespace QuixStreams.Telemetry.Kafka
                 return false;
 
             this.kafkaConsumer.OnErrorOccurred += ReadingExceptionHandler;
-            this.kafkaTransportConsumer = new KafkaTransportConsumer(kafkaConsumer, (o) =>
-            { 
-                this.configureCommitOptions?.Invoke(o.CommitOptions);
-            });
+            this.kafkaTransportConsumer = new KafkaTransportConsumer(kafkaConsumer, (o) => { this.configureCommitOptions?.Invoke(o.CommitOptions); });
             return true;
         }
 
@@ -135,7 +132,7 @@ namespace QuixStreams.Telemetry.Kafka
             {
                 if (e is KafkaException)
                 {
-                    this.logger.LogError(e, "Exception receiving package from Kafka");                    
+                    this.logger.LogError(e, "Exception receiving package from Kafka");
                 }
                 else
                 {
@@ -162,7 +159,7 @@ namespace QuixStreams.Telemetry.Kafka
             this.kafkaTransportConsumer.OnRevoking += RevokingHandler;
             this.kafkaTransportConsumer.OnCommitted += CommittedHandler;
             this.kafkaTransportConsumer.OnCommitting += CommitingHandler;
-            this.streamPipelineFactory.Open(); 
+            this.streamPipelineFactory.Open();
             this.kafkaConsumer.Open();
         }
 
@@ -170,7 +167,7 @@ namespace QuixStreams.Telemetry.Kafka
         {
             this.OnCommitted?.Invoke(this, EventArgs.Empty);
         }
-        
+
         private void CommitingHandler(object sender, CommittingEventArgs e)
         {
             this.OnCommitting?.Invoke(this, EventArgs.Empty);
@@ -230,7 +227,7 @@ namespace QuixStreams.Telemetry.Kafka
 
         /// <inheritdoc />
         public void Dispose()
-        {           
+        {
             if (isDisposed) return;
             isDisposed = true;
             this.StopHelper();
@@ -258,6 +255,7 @@ namespace QuixStreams.Telemetry.Kafka
                     this.logger.LogTrace("Finished manual commit (nothing to commit)");
                     return; // there is nothing to commit
                 }
+
                 this.kafkaTransportConsumer.Commit(contexts);
                 this.logger.LogTrace("Finished manual commit");
             }

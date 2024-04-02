@@ -34,6 +34,17 @@ namespace QuixStreams.Telemetry.Models
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="StreamPackage"/>
+        /// </summary>
+        /// <param name="type">The type of the content value</param>
+        /// <param name="value">The content value of the package</param>
+        /// <param name="kafkaMessage">The kafka message the stream package is derived from</param>
+        public StreamPackage(Type type, object value, KafkaMessage kafkaMessage) : this(type, value)
+        {
+            this.KafkaMessage = kafkaMessage;
+        }
+
+        /// <summary>
         /// Type of the content value
         /// </summary>
         public Type Type { get; }
@@ -47,7 +58,7 @@ namespace QuixStreams.Telemetry.Models
         /// The Kafka message this stream package derives from
         /// Can be null if not consumed from broker
         /// </summary>
-        public KafkaMessage KafkaMessage { get; }
+        public KafkaMessage KafkaMessage { get; protected set; }
 
         /// <summary>
         /// Serialize the package into Json
