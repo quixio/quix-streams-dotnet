@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Text;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;
@@ -49,12 +50,33 @@ namespace QuixStreams.Streaming
         /// <param name="topic">Name of the topic.</param>
         /// <param name="partition">Partition to produce to.</param>
         public TopicProducer(KafkaProducerConfiguration config, string topic, Partition partition)
+            : this(config, topic, partition, null)
+        {
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TopicProducer"/> class.
+        /// </summary>
+        /// <param name="config">Kafka producer configuration.</param>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitioner">Partitioner to produce each message with.</param>
+        public TopicProducer(KafkaProducerConfiguration config, string topic, StreamPartitionerDelegate partitioner)
+            : this(config, topic, Partition.Any, partitioner)
+
+        {
+        }
+        
+        private TopicProducer(KafkaProducerConfiguration config, string topic, Partition partition, StreamPartitionerDelegate partitioner)
         {
             this.topic = topic;
 
             var prodConfig = new ProducerConfiguration(config.BrokerList, config.Properties);
-            var topicConfig = new ProducerTopicConfiguration(topic, partition);
-
+            var topicConfig = partitioner == null
+                ? new ProducerTopicConfiguration(topic, partition)
+                : new ProducerTopicConfiguration(topic, 
+                    (partitionerTopic, partitionCount, message) =>
+                        partitioner(partitionerTopic, message.Key == null ? null : Encoding.UTF8.GetString(message.Key), partitionCount));
+            
             this.kafkaProducer =  new KafkaProducer(prodConfig, topicConfig);
 
             createKafkaProducer = (string streamId) => new TelemetryKafkaProducer(this.kafkaProducer, streamId);
@@ -146,4 +168,28 @@ namespace QuixStreams.Streaming
         }
     }
 
+    /// <summary>
+    ///     Calculate a partition number given a <paramref name="partitionCount" />
+    ///     and <paramref name="streamId" />. The <paramref name="topic" />
+    ///     is also provided, but is typically not used.
+    /// </summary>
+    /// <remarks>
+    ///     A partitioner instance may be called in any thread at any time and
+    ///     may be called multiple times for the same message/key.
+    /// 
+    ///     A partitioner:
+    ///     - MUST NOT block or execute for prolonged periods of time.
+    ///     - MUST return a value between 0 and partitionCount-1.
+    ///     - MUST NOT throw any exception.
+    /// </remarks>
+    /// <param name="topic">The topic.</param>
+    /// <param name="partitionCount">
+    ///     The number of partitions in <paramref name="topic" />.
+    /// </param>
+    /// <param name="streamId">The stream id the message will be produced with.</param>
+    /// <returns>
+    ///     The calculated <seealso cref="T:Confluent.Kafka.Partition" />, possibly
+    ///     <seealso cref="F:Confluent.Kafka.Partition.Any" />.
+    /// </returns>
+    public delegate Partition StreamPartitionerDelegate(string topic, string streamId, int partitionCount);
 }

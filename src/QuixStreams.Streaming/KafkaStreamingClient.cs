@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
@@ -55,9 +56,17 @@ namespace QuixStreams.Streaming
         /// Gets a topic producer capable of publishing non-quixstreams messages.
         /// </summary>
         /// <param name="topic">Name of the topic.</param>
-        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <param name="partition">The partition to produce to.</param>
         /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
-        IRawTopicProducer GetRawTopicProducer(string topic, int partitionId);
+        IRawTopicProducer GetRawTopicProducer(string topic, Partition partition);
+
+        /// <summary>
+        /// Gets a topic producer capable of publishing non-quixstreams messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitioner">Partitioner to produce messages with.</param>
+        /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
+        IRawTopicProducer GetRawTopicProducer(string topic, QuixPartitionerDelegate partitioner);
 
         /// <summary>
         /// Gets a topic producer capable of publishing stream messages. 
@@ -70,9 +79,17 @@ namespace QuixStreams.Streaming
         /// Gets a topic producer capable of publishing stream messages.
         /// </summary>
         /// <param name="topic">Name of the topic.</param>
-        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <param name="partition">The partition to produce to.</param>
         /// <returns>Instance of <see cref="ITopicProducer"/></returns>
-        ITopicProducer GetTopicProducer(string topic, int partitionId);
+        ITopicProducer GetTopicProducer(string topic, Partition partition);
+        
+        /// <summary>
+        /// Gets a topic producer capable of publishing stream messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitioner">The partitioner to produce with.</param>
+        /// <returns>Instance of <see cref="ITopicProducer"/></returns>
+        ITopicProducer GetTopicProducer(string topic, StreamPartitionerDelegate partitioner);
     }
 
     /// <summary>
@@ -229,11 +246,26 @@ namespace QuixStreams.Streaming
         /// Gets a topic producer capable of publishing non-quixstreams messages.
         /// </summary>
         /// <param name="topic">Name of the topic.</param>
-        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <param name="partition">Partition to produce messages to.</param>
         /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
-        public IRawTopicProducer GetRawTopicProducer(string topic, int partitionId)
+        public IRawTopicProducer GetRawTopicProducer(string topic, Partition partition)
         {
-            var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties, partitionId);
+            var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties, partition);
+
+            App.Register(rawTopicProducer);
+
+            return rawTopicProducer;
+        }
+        
+        /// <summary>
+        /// Gets a topic producer capable of publishing non-quixstreams messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitioner">Partitioner to produce messages with.</param>
+        /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
+        public IRawTopicProducer GetRawTopicProducer(string topic, QuixPartitionerDelegate partitioner)
+        {
+            var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties, partitioner);
 
             App.Register(rawTopicProducer);
 
@@ -258,11 +290,26 @@ namespace QuixStreams.Streaming
         /// Gets a topic producer capable of publishing stream messages.
         /// </summary>
         /// <param name="topic">Name of the topic.</param>
-        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <param name="partition">The partition to produce to.</param>
         /// <returns>Instance of <see cref="ITopicProducer"/></returns>
-        public ITopicProducer GetTopicProducer(string topic, int partitionId)
+        public ITopicProducer GetTopicProducer(string topic, Partition partition)
         {
-            var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic, partitionId);
+            var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic, partition);
+
+            App.Register(topicProducer);
+
+            return topicProducer;
+        }
+        
+        /// <summary>
+        /// Gets a topic producer capable of publishing stream messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitioner">The partitioner to produce with.</param>
+        /// <returns>Instance of <see cref="ITopicProducer"/></returns>
+        public ITopicProducer GetTopicProducer(string topic, StreamPartitionerDelegate partitioner)
+        {
+            var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic, partitioner);
 
             App.Register(topicProducer);
 

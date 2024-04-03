@@ -20,7 +20,7 @@ namespace QuixStreams.Kafka
         {
             if (string.IsNullOrWhiteSpace(topic))
             {
-                throw new ArgumentOutOfRangeException(nameof(topic), "Cannot be null or empty");
+                throw new ArgumentOutOfRangeException(nameof(topic), "Topic cannot be null or empty");
             }
 
             this.Topic = topic;
@@ -36,6 +36,16 @@ namespace QuixStreams.Kafka
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="ProducerTopicConfiguration"/>
+        /// </summary>
+        /// <param name="topic">The topic to write to</param>
+        /// <param name="partitioner">The partitioner to use when sending a message</param>
+        public ProducerTopicConfiguration(string topic, QuixPartitionerDelegate partitioner) : this(topic, Partition.Any)
+        {
+            Partitioner = partitioner ?? throw new ArgumentOutOfRangeException(nameof(partitioner), "Partitioner cannot be null or empty");
+        }
+
+        /// <summary>
         /// The topic to write to
         /// </summary>
         public string Topic { get; }
@@ -44,6 +54,11 @@ namespace QuixStreams.Kafka
         /// The partition to write to
         /// </summary>
         public Partition Partition { get; }
+        
+        /// <summary>
+        /// The partition to select the partition for the message
+        /// </summary>
+        public QuixPartitionerDelegate Partitioner { get; }
     }
 
     public sealed class ConsumerTopicConfiguration
@@ -225,4 +240,31 @@ namespace QuixStreams.Kafka
         /// </summary>
         public Offset Offset { get; }
     }
+    
+    
+    
+    /// <summary>
+    ///     Calculate a partition number given a <paramref name="partitionCount" />
+    ///     and <paramref name="message" />. The <paramref name="topic" />
+    ///     is also provided, but is typically not used.
+    /// </summary>
+    /// <remarks>
+    ///     A partitioner instance may be called in any thread at any time and
+    ///     may be called multiple times for the same message/key.
+    /// 
+    ///     A partitioner:
+    ///     - MUST NOT block or execute for prolonged periods of time.
+    ///     - MUST return a value between 0 and partitionCount-1.
+    ///     - MUST NOT throw any exception.
+    /// </remarks>
+    /// <param name="topic">The topic.</param>
+    /// <param name="partitionCount">
+    ///     The number of partitions in <paramref name="topic" />.
+    /// </param>
+    /// <param name="message">The message to select partition for.</param>
+    /// <returns>
+    ///     The calculated <seealso cref="T:Confluent.Kafka.Partition" />, possibly
+    ///     <seealso cref="F:Confluent.Kafka.Partition.Any" />.
+    /// </returns>
+    public delegate Partition QuixPartitionerDelegate(string topic, int partitionCount, KafkaMessage message);
 }
