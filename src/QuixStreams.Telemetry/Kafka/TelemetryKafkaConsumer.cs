@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Transactions;
@@ -64,20 +65,76 @@ namespace QuixStreams.Telemetry.Kafka
         /// </summary>
         public readonly string GroupId;
 
+       /// <summary>
+        /// Initializes a new instance of <see cref="TelemetryKafkaConsumer"/>
+        /// </summary>
+        /// <param name="telemetryKafkaConsumerConfiguration">Kafka broker configuration for <see cref="TelemetryKafkaConsumer"/></param>
+        /// <param name="topic">Topic name to read from</param>
+        /// <param name="verifyBrokerConnection">If set to false it wont wait for the broker verification</param>
+        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, bool verifyBrokerConnection = true)
+            :this(telemetryKafkaConsumerConfiguration, ConvertConfigurationHelper(telemetryKafkaConsumerConfiguration, out var subConfig), topic)
+        {
+            var topicConfig = new ConsumerTopicConfiguration(topic);
+            this.kafkaConsumer = new KafkaConsumer(subConfig, topicConfig)
+            {
+                VerifyBrokerConnection = verifyBrokerConnection
+            };
+        }
+       
+       /// <summary>
+       /// Initializes a new instance of <see cref="TelemetryKafkaConsumer"/>
+       /// </summary>
+       /// <param name="telemetryKafkaConsumerConfiguration">Kafka broker configuration for <see cref="TelemetryKafkaConsumer"/></param>
+       /// <param name="topic">Topic name to read from</param>
+       /// <param name="partitionOffset">The partition offset to start reading from</param>
+       /// <param name="verifyBrokerConnection">If set to false it wont wait for the broker verification</param>
+       [Obsolete("Use constructor supporting multiple partition offsets")]
+       public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, PartitionOffset partitionOffset, bool verifyBrokerConnection = true)
+           :this(telemetryKafkaConsumerConfiguration, topic, new [] {partitionOffset}, verifyBrokerConnection)
+       {
+       }
+        
         /// <summary>
         /// Initializes a new instance of <see cref="TelemetryKafkaConsumer"/>
         /// </summary>
         /// <param name="telemetryKafkaConsumerConfiguration">Kafka broker configuration for <see cref="TelemetryKafkaConsumer"/></param>
         /// <param name="topic">Topic name to read from</param>
-        /// <param name="partitionOffset">The partition offset to start reading from</param>
+        /// <param name="partitionOffsets">The partition offsets to start reading from</param>
         /// <param name="verifyBrokerConnection">If set to false it wont wait for the broker verification</param>
-        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, PartitionOffset partitionOffset = null, bool verifyBrokerConnection = true)
+        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, ICollection<PartitionOffset> partitionOffsets, bool verifyBrokerConnection = true)
+            :this(telemetryKafkaConsumerConfiguration, ConvertConfigurationHelper(telemetryKafkaConsumerConfiguration, out var subConfig), topic)
+        {
+            var topicConfig = new ConsumerTopicConfiguration(topic, partitionOffsets);
+            this.kafkaConsumer = new KafkaConsumer(subConfig, topicConfig)
+            {
+                VerifyBrokerConnection = verifyBrokerConnection
+            };
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of <see cref="TelemetryKafkaConsumer"/>
+        /// </summary>
+        /// <param name="telemetryKafkaConsumerConfiguration">Kafka broker configuration for <see cref="TelemetryKafkaConsumer"/></param>
+        /// <param name="topic">Topic name to read from</param>
+        /// <param name="partitions">The partitions to start reading from</param>
+        /// <param name="verifyBrokerConnection">If set to false it wont wait for the broker verification</param>
+        public TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, string topic, ICollection<Partition> partitions, bool verifyBrokerConnection = true)
+        : this(telemetryKafkaConsumerConfiguration, ConvertConfigurationHelper(telemetryKafkaConsumerConfiguration, out var subConfig), topic)
+        {
+            var topicConfig = new ConsumerTopicConfiguration(topic, partitions);
+            this.kafkaConsumer = new KafkaConsumer(subConfig, topicConfig)
+            {
+                VerifyBrokerConnection = verifyBrokerConnection
+            };
+        }
+        
+        private TelemetryKafkaConsumer(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration, ConsumerConfiguration consumerConfiguration, string topic)
         {
             Topic = topic;
             // Kafka Transport layer -> Transport layer
             var subConfig = telemetryKafkaConsumerConfiguration.ToSubscriberConfiguration();
             var commitOptions = telemetryKafkaConsumerConfiguration.CommitOptions ?? new CommitOptions();
-            if (commitOptions.AutoCommitEnabled && !subConfig.ConsumerGroupSet)
+            if (commitOptions.AutoCommitEnabled && !consumerConfiguration.ConsumerGroupSet)
             {
                 logger.LogDebug("Disabled automatic kafka commit as no consumer group is set");
                 commitOptions.AutoCommitEnabled = false;
@@ -89,13 +146,20 @@ namespace QuixStreams.Telemetry.Kafka
                 o.CommitInterval = commitOptions.CommitInterval;
                 o.AutoCommitEnabled = commitOptions.AutoCommitEnabled;
             };
-
-            var topicConfig = new ConsumerTopicConfiguration(topic, partitionOffset);
-            this.kafkaConsumer = new KafkaConsumer(subConfig, topicConfig)
-            {
-                VerifyBrokerConnection = verifyBrokerConnection
-            };
+            
             this.GroupId = subConfig.GroupId;
+        }
+
+        /// <summary>
+        /// Main purpose is to avoid saving it on instance and converting twice in constructors
+        /// </summary>
+        private static ConsumerConfiguration ConvertConfigurationHelper(TelemetryKafkaConsumerConfiguration telemetryKafkaConsumerConfiguration,
+            out ConsumerConfiguration consumerConfiguration)
+        {
+            // The out parameter is to use in invoking constructor
+            consumerConfiguration = telemetryKafkaConsumerConfiguration.ToSubscriberConfiguration();
+            // The return is to pass to the initial constructor
+            return consumerConfiguration;
         }
 
         /// <summary>

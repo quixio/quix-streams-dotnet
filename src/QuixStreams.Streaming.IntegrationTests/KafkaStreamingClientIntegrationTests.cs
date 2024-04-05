@@ -602,7 +602,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             
             await this.kafkaDockerTestFixture.EnsureTopic(topic, 4);
             
-            using var rawTopicConsumer = client.GetRawTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest);
+            using var rawTopicConsumer = client.GetRawTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest, new List<Partition>() {new Partition(3)});
             var messagesRead = new List<KafkaMessage>();
             rawTopicConsumer.Subscribe();
             rawTopicConsumer.OnMessageReceived += (sender, message) => messagesRead.Add(message);
@@ -698,13 +698,45 @@ namespace QuixStreams.Streaming.IntegrationTests
         }
         
         [Fact]
+        public async Task Stream_WithPartitionConsumerSpecified_ShouldReceiveExpectedMessages()
+        {
+            var topic = nameof(Stream_WithPartitionSpecified_ShouldReceiveExpectedMessages);
+            
+            await this.kafkaDockerTestFixture.EnsureTopic(topic, 4);
+            
+            using var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest, partitions: new List<Partition>() {new Partition(3)});
+            var streamsRead = new List<string>();
+            topicConsumer.Subscribe();
+            topicConsumer.OnStreamReceived += (sender, stream) => streamsRead.Add(stream.StreamId);
+            var topicProducer = client.GetTopicProducer(topic, 3);
+
+            using (var stream = topicProducer.CreateStream())
+            {
+                output.WriteLine($"New stream created: {stream.StreamId}");
+
+                stream.Properties.Name = "Volvo car telemetry";
+                stream.Properties.Location = "Car telemetry/Vehicles/Volvo";
+                stream.Properties.AddParent("1234");
+                stream.Properties.Metadata["test_key"] = "test_value";
+
+                stream.Close();
+            }
+
+            topicProducer.Dispose();
+
+            SpinWait.SpinUntil(() => streamsRead.Count == 1, 5000);
+
+            streamsRead.Count.Should().Be(1);
+        }
+        
+        [Fact]
         public async Task Stream_WithPartitionerSpecified_ShouldReceiveExpectedMessages()
         {
             var topic = nameof(Stream_WithPartitionerSpecified_ShouldReceiveExpectedMessages);
             
             await this.kafkaDockerTestFixture.EnsureTopic(topic, 4);
             
-            using var rawTopicConsumer = client.GetRawTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest);
+            using var rawTopicConsumer = client.GetRawTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest, new List<Partition>() {new Partition(3)});
             var messagesRead = new List<KafkaMessage>();
             rawTopicConsumer.Subscribe();
             rawTopicConsumer.OnMessageReceived += (sender, message) => messagesRead.Add(message);

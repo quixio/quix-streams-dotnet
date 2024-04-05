@@ -190,7 +190,7 @@ namespace QuixStreams.Kafka
         /// <param name="topic">The topic to set the partitions for</param>
         /// <param name="partitions">The partitions to set the offset for</param>
         /// <param name="offset">The offset</param>
-        public ConsumerTopicConfiguration(string topic, ICollection<Partition> partitions, Offset offset) : this(topic, partitions.Select(p => new PartitionOffset(p.Value, offset)).ToList())
+        public ConsumerTopicConfiguration(string topic, ICollection<Partition> partitions, Offset offset) : this(topic, partitions?.Select(p => new PartitionOffset(p.Value, offset)).ToList() ?? new List<PartitionOffset> { new PartitionOffset(Partition.Any, Offset.Unset)})
         {
         }
 

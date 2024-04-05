@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;
 using QuixStreams;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Telemetry.Kafka;
+using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
 
 namespace QuixStreams.Streaming.Raw
 {
@@ -60,7 +62,8 @@ namespace QuixStreams.Streaming.Raw
         /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
         /// <param name="brokerProperties">Additional broker properties</param>
         /// <param name="autoOffset">The offset to use when there is no saved offset for the consumer group.</param>
-        public RawTopicConsumer(string brokerAddress, string topicName, string consumerGroup, Dictionary<string, string> brokerProperties = null, AutoOffsetReset? autoOffset = null)
+        /// <param name="partitions">The partitions to subscribe to. If not provided, All partitions are subscribed to according to other configuration such as consumer group.</param>
+        public RawTopicConsumer(string brokerAddress, string topicName, string consumerGroup, Dictionary<string, string> brokerProperties = null, AutoOffsetReset? autoOffset = null, ICollection<Partition> partitions = null)
         {
             this.topicName = topicName;
             brokerProperties ??= new Dictionary<string, string>();
@@ -76,7 +79,7 @@ namespace QuixStreams.Streaming.Raw
             //disable quix-custom keep alive messages because they can interfere with the received data since we dont have any protocol running this over
             consConfig.CheckForKeepAlivePackets = false;
 
-            var topicConfiguration = new ConsumerTopicConfiguration(topicName);
+            var topicConfiguration = new ConsumerTopicConfiguration(topicName, partitions);
             this.kafkaConsumer = new KafkaConsumer(consConfig, topicConfiguration);
         }
 

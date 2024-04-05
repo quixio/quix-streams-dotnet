@@ -74,7 +74,7 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             return broker;
         }
         
-        public IRawTopicConsumer GetRawTopicConsumer(string topic, string consumerGroup, AutoOffsetReset? autoOffset)
+        public IRawTopicConsumer GetRawTopicConsumer(string topic, string consumerGroup, AutoOffsetReset? autoOffset, ICollection<Partition> partitions = null)
         {
             throw new NotImplementedException();
         }
@@ -99,7 +99,7 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             return GetTopicProducer(topic);
         }
 
-        public ITopicConsumer GetTopicConsumer(string topic, string consumerGroup, CommitOptions options, AutoOffsetReset autoOffset)
+        public ITopicConsumer GetTopicConsumer(string topic, string consumerGroup, CommitOptions options, AutoOffsetReset autoOffset, ICollection<Partition> partitions)
         {
             return GetTopicConsumer(topic);
         }
@@ -113,9 +113,10 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             string topicIdOrName,
             string consumerGroup,
             CommitOptions options,
-            AutoOffsetReset autoOffset)
+            AutoOffsetReset autoOffset,
+            ICollection<Partition> partitions)
         {
-            return Task.FromResult(GetTopicConsumer(topicIdOrName, consumerGroup, options, autoOffset));
+            return Task.FromResult(GetTopicConsumer(topicIdOrName, consumerGroup, options, autoOffset, partitions));
         }
         
         
@@ -128,7 +129,7 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             return Task.FromResult(GetTopicConsumer(topicIdOrName, offset, consumerGroup, options));
         }
 
-        public Task<IRawTopicConsumer> GetRawTopicConsumerAsync(string topicIdOrName, string consumerGroup, AutoOffsetReset? autoOffset)
+        public Task<IRawTopicConsumer> GetRawTopicConsumerAsync(string topicIdOrName, string consumerGroup, AutoOffsetReset? autoOffset, ICollection<Partition> partitions)
         {
             return Task.FromResult(GetRawTopicConsumer(topicIdOrName, consumerGroup, autoOffset));
         }
