@@ -9,13 +9,13 @@ In this quickstart guide you will learn how to start using Quix Streams as quick
 * Create a consumer
 * Create a producer
 * Create a producer/consumer transform 
-* Connect to the Quix Platform
+* Connect to Quix Cloud
 
 The typical stream processing pipline you create with Quix Streams involves producers, consumers, and transforms. Producers publish information into a topic, consumers subscribe to read information from a topic. Transforms typically consume data, process it in some way, and then publish the transformed data to a topic, or stream within a topic.
 
 In this guide you'll learn how to create a producer that publishes data to a topic, a consumer that reads data from a topic, and a simple transform that consumes data from a topic, transforms it, and then publishes the new data to a topic.
 
-Initially you will work with your local Kafka installation, and then you'll learn how you can connect to Quix Platform. In Quix Platform you can build your stream processing pipelines graphically.
+Initially you will work with your local Kafka installation, and then you'll learn how you can connect to Quix Cloud. In Quix Cloud you can build your stream processing pipelines graphically.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ You have a local installation of [Kafka](https://kafka.apache.org/documentation/
 
 Optionally:
 
-Sign up for a free [Quix account](https://portal.platform.quix.io/self-sign-up){target=_blank}. You may just want to connect to your own Kafka installation, but if you'd like to connect to the Quix Platform you'll need a free account.
+Sign up for a free [Quix account](https://portal.platform.quix.io/signup){target=_blank}. You may just want to connect to your own Kafka installation, but if you'd like to connect to Quix Cloud you'll need a free account.
 
 ## Getting help
 
@@ -174,34 +174,34 @@ This example reads data in from the `quickstart-topic` topic, and then writes th
 
 This approach of consuming, transforming, and producing data is a fundamental of building data processing pipelines.
 
-## Connecting to Quix Platform
+## Connecting to Quix Cloud
 
-As well as being able to connect directly to a Kafka installation, either locally (for development purposes), on premise, or in the cloud, you can also connect to the Quix Platform, the SaaS for building real-time stream processing applications. Quix Platform provides the ability to build stream processing applications in a graphical environment, and deploy the applications to the Quix-hosted infrastructure.
+As well as being able to connect directly to a Kafka installation, either locally (for development purposes), on premise, or in the cloud, you can also connect to Quix Cloud, the SaaS for building real-time stream processing applications. Quix Cloud provides the ability to build stream processing applications in a graphical environment, and deploy the applications to the Quix-hosted infrastructure.
 
 ### Obtaining a token
 
-To connect to the Quix Platform using Quix Streams, you will need to provide a token for authentication.
+To connect to Quix Cloud using Quix Streams, you will need to provide a token for authentication.
 
-1. Sign up for a free [Quix account](https://portal.platform.quix.io/self-sign-up){target=_blank}, and log in.
+1. Sign up for a free [Quix account](https://portal.platform.quix.io/signup){target=_blank}, and log in.
 
-2. In the Quix Platform, click on `Topics` on the left-hand navigation. 
+2. In Quix Cloud, click on `Topics` on the left-hand navigation. 
 
 3. Click on the gear icon. The `Broker Settings` dialog is displayed. 
 
-4. Copy `token 1` to the clipboard. You will use that in the code that connects to the Quix platform.
+4. Copy `token 1` to the clipboard. You will use that in the code that connects to Quix Cloud.
 
-### Code to connect to Quix Platform
+### Code to connect to Quix Cloud
 
-The following code snippet shows you how to connect to the Quix Platform:
+The following code snippet shows you how to connect to Quix Cloud:
 
 ``` csharp
 // Client connecting to kafka using Quix Streaming client to retrieve authentication details
 var client = new QuixStreamingClient("<your-token>"); // token can be obtained from UI (either PAT or streaming token)
 ```
 
-This connects to the Quix Platform, rather than your local Kafka installation, which is the code you saw previously in this guide.
+This connects to Quix Cloud, rather than your local Kafka installation, which is the code you saw previously in this guide.
 
-A further example is to rewrite the consumer-producer program you created earlier in this Quickstart, to work with Quix Platform:
+A further example is to rewrite the consumer-producer program you created earlier in this Quickstart, to work with Quix Cloud:
 
 ``` csharp
 using QuixStreams.Streaming;
@@ -239,16 +239,18 @@ App.Run();
 
 Try one of the following resources to continue your Quix learning journey:
 
-* [Get a free Quix account](https://portal.platform.quix.io/self-sign-up){target=_blank}
+* [Get a free Quix account](https://portal.platform.quix.io/signup){target=_blank}
 
-* [Quix Streams GitHub](https://github.com/quixio/quix-streams-dotnet){target=_blank}
+* [Quix Streams C# GitHub](https://github.com/quixio/quix-streams-dotnet){target=_blank}
 
-* [Quix Platform glossary](https://quix.io/docs/platform/glossary.html)
+* [Quix Streams Python GitHub](https://github.com/quixio/quix-streams){target=_blank}
+
+* [Quix Cloud](https://quix.io/docs/quix-cloud/overview.html)
 
 * [The Stream community on Slack](https://quix.io/slack-invite){target=_blank}
 
 * [Stream processing glossary](https://quix.io/stream-processing-glossary/){target=_blank}
 
-* [Sentiment analysis tutorial](https://quix.io/docs/platform/tutorials/sentiment-analysis/index.html)
+* [Sentiment analysis tutorial](https://quix.io/docs/tutorials/sentiment-analysis/overview.html)
 
-* [Kafka setup blog post](https://www.quix.io/blog/send-timeseries-data-to-kafka-python/?returnUrl=https://www.quix.io/blog/tutorial/){target=_blank}
+* [Kafka setup blog post](https://www.quix.io/blog/send-timeseries-data-to-kafka-python){target=_blank}

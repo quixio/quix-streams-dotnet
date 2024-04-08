@@ -1,12 +1,12 @@
 # Connecting to a broker
 
-It is possible to connect Quix Streams to a Kafka broker managed by the Quix Platform, or to your own managed or self-hosted Kafka broker.
+It is possible to connect Quix Streams to a Kafka broker managed by Quix Cloud, or to your own managed or self-hosted Kafka broker.
 
 How you can connect Quix Streams to these is discussed in the following sections.
 
 ## Connecting to Kafka
 
-You can connect to Kafka using the `KafkaStreamingClient` class provided by the library. This is a Kafka specific client implementation that requires some explicit configuration, but enables you to connect to any Kafka cluster even outside of the Quix Platform.
+You can connect to Kafka using the `KafkaStreamingClient` class provided by the library. This is a Kafka specific client implementation that requires some explicit configuration, but enables you to connect to any Kafka cluster even outside of Quix Cloud.
 
 When your broker requires no authentication, you can use the following code to create a client to connect to it:
 
@@ -25,11 +25,11 @@ var client = new QuixStreams.Streaming.KafkaStreamingClient("127.0.0.1:9093", se
 
 ## Connecting to Quix
 
-Quix Streams comes with a streaming client that enables you to connect to Quix Platform topics easily. The streaming client manages the connections between your application and Quix and makes sure that the data is delivered reliably to and from your application. You can still use `KafkaStreamingClient` and manually set details, but `QuixStreamingClient` is a much easier way to connect.
+Quix Streams comes with a streaming client that enables you to connect to Quix Cloud topics easily. The streaming client manages the connections between your application and Quix and makes sure that the data is delivered reliably to and from your application. You can still use `KafkaStreamingClient` and manually set details, but `QuixStreamingClient` is a much easier way to connect.
 
 `QuixStreamingClient` handles the cumbersome part of setting up your streaming credentials using the Quix API. 
 
-### Code running in Quix Platform
+### Code running in Quix Cloud
 
 When you’re running the app in the Quix Portal, the following code connects to Quix:
 
@@ -41,7 +41,7 @@ var client = new QuixStreams.Streaming.QuixStreamingClient();
 
 If you wish to connect to Quix with your code running locally, you’ll have to provide an **OAuth2.0** bearer token. Quix have created a token for this, called `SDK token`. 
 
-Once you have [obtained the token](https://quix.io/docs/platform/how-to/streaming-token.html) you will have to provide it as an argument to `QuixStreamingClient` or set the `Quix__Sdk__Token` environment variable. This is shown in the following code:
+Once you have [obtained the token](https://quix.io/docs/develop/authentication/streaming-token.html) you will have to provide it as an argument to `QuixStreamingClient` or set the `Quix__Sdk__Token` environment variable. This is shown in the following code:
 
 ``` csharp
 var client = new QuixStreams.Streaming.QuixStreamingClient("your_token");

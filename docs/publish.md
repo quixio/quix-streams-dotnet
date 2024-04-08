@@ -4,7 +4,7 @@ Quix Streams enables you use stream context to publish data to your topic. You c
 
 ## Connect to Quix
 
-In order to start publishing data to Quix you first need an instance of `KafkaStreamingClient` (or `QuixStreamingClient` if using the Quix Platform). To create an instance, use the following code:
+In order to start publishing data to Quix you first need an instance of `KafkaStreamingClient` (or `QuixStreamingClient` if using Quix Cloud). To create an instance, use the following code:
 
 ``` csharp
 var client = new QuixStreams.Streaming.KafkaStreamingClient("127.0.0.1:9092");
@@ -49,7 +49,7 @@ stream.Properties.Metadata["metakey2"] = "value2";
 
 ### Stream name
 
-When using Quix Platform, the stream name is the display name of your stream in the platform. If you specify one, Quix Platform uses it instead of the Stream ID to represent your stream inside the platform. For example, the following name:
+When using Quix Cloud, the stream name is the display name of your stream in the platform. If you specify one, Quix Cloud uses it instead of the Stream ID to represent your stream inside the platform. For example, the following name:
 
 ``` csharp
 stream.Properties.Name = "Hello World my first stream";
@@ -287,7 +287,7 @@ stream.Timeseries.Buffer.CustomTrigger = data => data.Timestamps[0].Tags["is_cri
 
 ### Parameter definitions
 
-Quix Streams enables you to define metadata for parameters and events to describe them. You can define things like human readable names, descriptions, acceptable ranges of values, and so on. Quix Platform uses some of this configuration when visualizing data on the platform, but you can also use them in your own models, bridges, or visualization implementations.
+Quix Streams enables you to define metadata for parameters and events to describe them. You can define things like human readable names, descriptions, acceptable ranges of values, and so on. Quix Cloud uses some of this configuration when visualizing data on the platform, but you can also use them in your own models, bridges, or visualization implementations.
 
 We call this parameter metadata `ParameterDefinitions`, and all you need to do is to use the `AddDefinition` helper function of the `stream.timeseries` property:
 
@@ -311,7 +311,7 @@ stream.Timeseries
     .SetRange(0, 400);
 ```
 
-The Min and Max range definition sets the Y axis range in the waveform visualisation view in Quix Platform. This definition:
+The Min and Max range definition sets the Y axis range in the waveform visualisation view in Quix Cloud. This definition:
 
 ``` csharp
 .AddDefinition("Speed").SetRange(0, 400)

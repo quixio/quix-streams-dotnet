@@ -38,7 +38,7 @@ The Code of Conduct applies in all official Quix spaces - both our in-person eve
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior can be sent to mods@quix.io. All issues are dealt with seriousness and in confidence.
+Instances of abusive, harassing, or otherwise unacceptable behavior can be sent to support@quix.io. All issues are dealt with seriousness and in confidence.
 
 If someone engages in any behavior violating this Code of Conduct, the moderators may take any action they deem appropriate, including warning the offender in private or in public, expulsion from the community, exclusion from any interaction, and loss of all rights in this community.
 

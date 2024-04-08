@@ -239,7 +239,7 @@ If the system crashes (or is restarted), Kafka resumes message processing from t
 
 !!! tip
 
-    For this facility to work in Quix Platform you need to enable the State Management feature. You can enable it in the `Deployment` dialog, where you can also specify the size of storage required. When using Quix Streams with a third-party broker such as Kafka, no configuration is required, and data is automatically stored on the local file system.
+    For this facility to work in Quix Cloud you need to enable the State Management feature. You can enable it in the `Deployment` dialog, where you can also specify the size of storage required. When using Quix Streams with a third-party broker such as Kafka, no configuration is required, and data is automatically stored on the local file system.
 
 ## Tracking computed values across multiple streams
 
