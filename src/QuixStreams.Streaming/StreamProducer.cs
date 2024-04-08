@@ -280,7 +280,7 @@ namespace QuixStreams.Streaming
                     sw.Stop();
                     if (!lastSendTask.IsCanceled && !lastSendTask.IsCompleted && !lastSendTask.IsFaulted)
                     {
-                        this.logger.LogWarning("Last send did not finish in {0:g} for stream {1}. In future this timeout will be configurable.", sw.Elapsed, this.StreamId);
+                        this.logger.LogWarning("Last send did not finish in {0:g} for stream {1}.", sw.Elapsed, this.StreamId);
                     }
                     else
                     {
