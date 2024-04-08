@@ -4,7 +4,7 @@ Your code may get restarted multiple times. A user intervention (like manually s
 
 !!! note
 
-	When using the Quix Platform, the platform automatically detects the problem and restarts the underlying service in an attempt to recover from the fault.
+	When using Quix Cloud, the platform automatically detects the problem and restarts the underlying service in an attempt to recover from the fault.
 
 Due to the code being run in memory, each time a deployment restarts, internal variables will be reset. For example, if you were to calculate the count of the elements in the stream, this counter would get reset on each restart. The counter would then start at the default value not knowing what was the last known value in the state of the previous run before program terminated.
 
@@ -12,7 +12,7 @@ Quix Streams has state management built in to enable values to be used and persi
 
 !!! note
 
-	When using the Quix Platform, the platform provides your replicas with a shared state store when enabled.
+	When using Quix Cloud, the platform provides your replicas with a shared state store when enabled.
 
 The library provides automatic state management which handles application lifecycle automatically, such as commits and revocation to ensure the state reflects the processed and committed messages only. There are two types of state available: Dictionary state and Scalar state. The stream state management is available on the stream consumer and not the producer currently.
 

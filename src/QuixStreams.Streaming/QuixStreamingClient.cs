@@ -32,8 +32,8 @@ using SaslMechanism = QuixStreams.Streaming.Configuration.SaslMechanism;
 namespace QuixStreams.Streaming
 {
     /// <summary>
-    /// Represents a streaming client for Kafka configured automatically using Environment Variables and Quix platform endpoints.
-    /// Use this Client when you use this library together with Quix platform.
+    /// Represents a streaming client for Kafka configured automatically using Environment Variables and Quix Cloud endpoints.
+    /// Use this Client when you use this library together with Quix Cloud.
     /// </summary>
     public interface IQuixStreamingClient : IQuixStreamingClientAsync
     {
@@ -116,8 +116,8 @@ namespace QuixStreams.Streaming
     }
 
     /// <summary>
-    /// Represents an asynchronous streaming client for Kafka configured automatically using Environment Variables and Quix platform endpoints.
-    /// Use this Client when you use this library together with Quix platform.
+    /// Represents an asynchronous streaming client for Kafka configured automatically using Environment Variables and Quix Cloud endpoints.
+    /// Use this Client when you use this library together with Quix Cloud.
     /// </summary>
     public interface IQuixStreamingClientAsync
     {
@@ -200,8 +200,8 @@ namespace QuixStreams.Streaming
     }
 
     /// <summary>
-    /// Streaming client for Kafka configured automatically using Environment Variables and Quix platform endpoints.
-    /// Use this Client when you use this library together with Quix platform.
+    /// Streaming client for Kafka configured automatically using Environment Variables and Quix Cloud endpoints.
+    /// Use this Client when you use this library together with Quix Cloud.
     /// </summary>
     public class QuixStreamingClient : IQuixStreamingClient
     {
