@@ -41,7 +41,7 @@ namespace QuixStreams.Kafka
         public int HeaderSize { get; protected set; }
         
         /// <summary>
-        /// The topic partition offset associated with the message. Can be null.
+        /// The topic partition offset associated with the message. Null when the message is not read from broker.
         /// </summary>
         public TopicPartitionOffset TopicPartitionOffset { get; protected set; }
         

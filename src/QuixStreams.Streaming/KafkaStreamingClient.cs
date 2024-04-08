@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
@@ -22,8 +23,9 @@ namespace QuixStreams.Streaming
         /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
         /// <param name="options">The settings to use for committing</param>
         /// <param name="autoOffset">The offset to use when there is no saved offset for the consumer group.</param>
+        /// <param name="partitions">The partitions to subscribe to. If not provided, All partitions are subscribed to according to other configuration such as consumer group.</param>
         /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
-        ITopicConsumer GetTopicConsumer(string topic, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest);
+        ITopicConsumer GetTopicConsumer(string topic, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest, ICollection<Partition> partitions = null);
 
         /// <summary>
         /// Gets a topic consumer capable of subscribing to receive incoming streams.
@@ -41,8 +43,9 @@ namespace QuixStreams.Streaming
         /// <param name="topic">Name of the topic.</param>
         /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
         /// <param name="autoOffset">The offset to use when there is no saved offset for the consumer group.</param>
+        /// <param name="partitions">The partitions to subscribe to. If not provided, All partitions are subscribed to according to other configuration such as consumer group.</param>
         /// <returns>Instance of <see cref="IRawTopicConsumer"/></returns>
-        IRawTopicConsumer GetRawTopicConsumer(string topic, string consumerGroup = null, AutoOffsetReset? autoOffset = null);
+        IRawTopicConsumer GetRawTopicConsumer(string topic, string consumerGroup = null, AutoOffsetReset? autoOffset = null, ICollection<Partition> partitions = null);
 
         /// <summary>
         /// Gets a topic producer capable of publishing non-quixstreams messages.  
@@ -55,9 +58,17 @@ namespace QuixStreams.Streaming
         /// Gets a topic producer capable of publishing non-quixstreams messages.
         /// </summary>
         /// <param name="topic">Name of the topic.</param>
-        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <param name="partition">The partition to produce to.</param>
         /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
-        IRawTopicProducer GetRawTopicProducer(string topic, int partitionId);
+        IRawTopicProducer GetRawTopicProducer(string topic, Partition partition);
+
+        /// <summary>
+        /// Gets a topic producer capable of publishing non-quixstreams messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitioner">Partitioner to produce messages with.</param>
+        /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
+        IRawTopicProducer GetRawTopicProducer(string topic, QuixPartitionerDelegate partitioner);
 
         /// <summary>
         /// Gets a topic producer capable of publishing stream messages. 
@@ -70,9 +81,17 @@ namespace QuixStreams.Streaming
         /// Gets a topic producer capable of publishing stream messages.
         /// </summary>
         /// <param name="topic">Name of the topic.</param>
-        /// <param name="partitionId">Id of the partition to produce to.</param>
+        /// <param name="partition">The partition to produce to.</param>
         /// <returns>Instance of <see cref="ITopicProducer"/></returns>
-        ITopicProducer GetTopicProducer(string topic, int partitionId);
+        ITopicProducer GetTopicProducer(string topic, Partition partition);
+        
+        /// <summary>
+        /// Gets a topic producer capable of publishing stream messages.
+        /// </summary>
+        /// <param name="topic">Name of the topic.</param>
+        /// <param name="partitioner">The partitioner to produce with.</param>
+        /// <returns>Instance of <see cref="ITopicProducer"/></returns>
+        ITopicProducer GetTopicProducer(string topic, StreamPartitionerDelegate partitioner);
     }
 
     /// <summary>
@@ -145,15 +164,8 @@ namespace QuixStreams.Streaming
             if (debug) this.brokerProperties["debug"] = "all";
         }
         
-        /// <summary>
-        /// Gets a topic consumer capable of subscribing to receive incoming streams.
-        /// </summary>
-        /// <param name="topic">Name of the topic.</param>
-        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
-        /// <param name="options">The settings to use for committing</param>
-        /// <param name="autoOffset">The offset to use when there is no saved offset for the consumer group.</param>
-        /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
-        public ITopicConsumer GetTopicConsumer(string topic, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest)
+        /// <inheritdoc/>
+        public ITopicConsumer GetTopicConsumer(string topic, string consumerGroup = null, CommitOptions options = null, AutoOffsetReset autoOffset = AutoOffsetReset.Latest, ICollection<Partition> partitions = null)
         {
             var kafkaReaderConfiguration = new TelemetryKafkaConsumerConfiguration(brokerAddress, consumerGroup, brokerProperties)
             {
@@ -161,7 +173,7 @@ namespace QuixStreams.Streaming
                 AutoOffsetReset = autoOffset.ConvertToKafka()
             };
 
-            var kafkaReader = new TelemetryKafkaConsumer(kafkaReaderConfiguration, topic);
+            var kafkaReader = new TelemetryKafkaConsumer(kafkaReaderConfiguration, topic, partitions: partitions);
 
             var topicConsumer = new TopicConsumer(kafkaReader);
 
@@ -170,15 +182,7 @@ namespace QuixStreams.Streaming
             return topicConsumer;
         }
 
-        
-        /// <summary>
-        /// Gets a topic consumer capable of subscribing to receive incoming streams.
-        /// </summary>
-        /// <param name="topic">Name of the topic.</param>
-        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
-        /// <param name="options">The settings to use for committing</param>
-        /// <param name="partitionOffset">The partition offset to start reading from</param>
-        /// <returns>Instance of <see cref="ITopicConsumer"/></returns>
+        /// <inheritdoc/>
         public ITopicConsumer GetTopicConsumer(string topic, PartitionOffset partitionOffset, string consumerGroup = null, CommitOptions options = null)
         {
             var kafkaReaderConfiguration = new TelemetryKafkaConsumerConfiguration(brokerAddress, consumerGroup, brokerProperties)
@@ -194,28 +198,18 @@ namespace QuixStreams.Streaming
 
             return topicConsumer;
         }
-        
-        /// <summary>
-        /// Gets a topic consumer capable of subscribing to receive non-quixstreams incoming messages. 
-        /// </summary>
-        /// <param name="topic">Name of the topic.</param>
-        /// <param name="consumerGroup">The consumer group id to use for consuming messages. If null, consumer group is not used and only consuming new messages.</param>
-        /// <param name="autoOffset">The offset to use when there is no saved offset for the consumer group.</param>
-        /// <returns>Instance of <see cref="IRawTopicConsumer"/></returns>
-        public IRawTopicConsumer GetRawTopicConsumer(string topic, string consumerGroup = null, AutoOffsetReset? autoOffset = null)
+
+        /// <inheritdoc/>
+        public IRawTopicConsumer GetRawTopicConsumer(string topic, string consumerGroup = null, AutoOffsetReset? autoOffset = null, ICollection<Partition> partitions = null)
         {
-            var rawTopicConsumer = new RawTopicConsumer(brokerAddress, topic, consumerGroup, brokerProperties, autoOffset ?? AutoOffsetReset.Latest);
+            var rawTopicConsumer = new RawTopicConsumer(brokerAddress, topic, consumerGroup, brokerProperties, autoOffset ?? AutoOffsetReset.Latest, partitions: partitions);
 
             App.Register(rawTopicConsumer);
             
             return rawTopicConsumer;
         }
 
-        /// <summary>
-        /// Gets a topic producer capable of publishing non-quixstreams messages.  
-        /// </summary>
-        /// <param name="topic">Name of the topic.</param>
-        /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
+        /// <inheritdoc/>
         public IRawTopicProducer GetRawTopicProducer(string topic)
         {
             var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties);
@@ -225,26 +219,27 @@ namespace QuixStreams.Streaming
             return rawTopicProducer;
         }
 
-        /// <summary>
-        /// Gets a topic producer capable of publishing non-quixstreams messages.
-        /// </summary>
-        /// <param name="topic">Name of the topic.</param>
-        /// <param name="partitionId">Id of the partition to produce to.</param>
-        /// <returns>Instance of <see cref="IRawTopicProducer"/></returns>
-        public IRawTopicProducer GetRawTopicProducer(string topic, int partitionId)
+        /// <inheritdoc/>
+        public IRawTopicProducer GetRawTopicProducer(string topic, Partition partition)
         {
-            var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties, partitionId);
+            var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties, partition);
 
             App.Register(rawTopicProducer);
 
             return rawTopicProducer;
         }
         
-        /// <summary>
-        /// Gets a topic producer capable of publishing stream messages. 
-        /// </summary>
-        /// <param name="topic">Name of the topic.</param>
-        /// <returns>Instance of <see cref="ITopicProducer"/></returns>
+        /// <inheritdoc/>
+        public IRawTopicProducer GetRawTopicProducer(string topic, QuixPartitionerDelegate partitioner)
+        {
+            var rawTopicProducer = new RawTopicProducer(brokerAddress, topic, brokerProperties, partitioner);
+
+            App.Register(rawTopicProducer);
+
+            return rawTopicProducer;
+        }
+        
+        /// <inheritdoc/>
         public ITopicProducer GetTopicProducer(string topic)
         {
             var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic);
@@ -254,15 +249,20 @@ namespace QuixStreams.Streaming
             return topicProducer;
         }
 
-        /// <summary>
-        /// Gets a topic producer capable of publishing stream messages.
-        /// </summary>
-        /// <param name="topic">Name of the topic.</param>
-        /// <param name="partitionId">Id of the partition to produce to.</param>
-        /// <returns>Instance of <see cref="ITopicProducer"/></returns>
-        public ITopicProducer GetTopicProducer(string topic, int partitionId)
+        /// <inheritdoc/>
+        public ITopicProducer GetTopicProducer(string topic, Partition partition)
         {
-            var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic, partitionId);
+            var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic, partition);
+
+            App.Register(topicProducer);
+
+            return topicProducer;
+        }
+        
+        /// <inheritdoc/>
+        public ITopicProducer GetTopicProducer(string topic, StreamPartitionerDelegate partitioner)
+        {
+            var topicProducer = new TopicProducer(new KafkaProducerConfiguration(brokerAddress, brokerProperties), topic, partitioner);
 
             App.Register(topicProducer);
 

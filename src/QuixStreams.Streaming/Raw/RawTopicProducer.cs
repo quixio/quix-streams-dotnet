@@ -38,18 +38,37 @@ namespace QuixStreams.Streaming.Raw
         /// <param name="partition">Partition to produce to.</param>
         /// <param name="brokerProperties">Additional broker properties</param>
         public RawTopicProducer(string brokerAddress, string topicName, Dictionary<string, string> brokerProperties, Partition partition)
+            : this(brokerAddress, topicName, brokerProperties, partition, null)
+        {
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of <see cref="RawTopicProducer"/>
+        /// </summary>
+        /// <param name="brokerAddress">Address of Kafka cluster.</param>
+        /// <param name="topicName">Name of the topic.</param>
+        /// <param name="partitioner">Partitioner to produce each message with.</param>
+        /// <param name="brokerProperties">Additional broker properties</param>
+        public RawTopicProducer(string brokerAddress, string topicName, Dictionary<string, string> brokerProperties, QuixPartitionerDelegate partitioner)
+            : this(brokerAddress, topicName, brokerProperties, Partition.Any, partitioner)
+        {
+        }
+        
+        private RawTopicProducer(string brokerAddress, string topicName, Dictionary<string, string> brokerProperties, Partition partition, QuixPartitionerDelegate partitioner)
         {
             brokerProperties ??= new Dictionary<string, string>();
             if (!brokerProperties.ContainsKey("queued.max.messages.kbytes")) brokerProperties["queued.max.messages.kbytes"] = "20480";
 
             this.topicName = topicName;
 
-            var publisherConfiguration = new QuixStreams.Kafka.ProducerConfiguration(brokerAddress, brokerProperties);
-            var topicConfiguration = new QuixStreams.Kafka.ProducerTopicConfiguration(this.topicName, partition);
+            var publisherConfiguration = new ProducerConfiguration(brokerAddress, brokerProperties);
+            var topicConfiguration = partitioner == null
+                ? new ProducerTopicConfiguration(this.topicName, partition)
+                : new ProducerTopicConfiguration(this.topicName, partitioner);
 
             this.kafkaProducer = new KafkaProducer(publisherConfiguration, topicConfiguration);
         }
-
+        
         /// <summary>
         /// Initializes a new instance of <see cref="RawTopicProducer"/>
         /// </summary>

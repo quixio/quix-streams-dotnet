@@ -65,7 +65,8 @@ namespace QuixStreams.Kafka
                 // Example:  [WAKEUP] [thrd:main]: 127.0.0.1:53631/0: Wake-up: ready to fetch
                 if (logMessage.Level != SyslogLevel.Debug) return false;
                 if (!string.Equals("WAKEUP", logMessage.Facility, StringComparison.InvariantCultureIgnoreCase)) return false;
-                if (!logMessage.Message.Contains("Wake-up: ready to fetch")) return false;
+                if (!logMessage.Message.Contains("Wake-up: ready to fetch")
+                    && !logMessage.Message.Contains("Wake-up: fetch start")) return false;
                 readyToFetch = true;
                 return true;
             }

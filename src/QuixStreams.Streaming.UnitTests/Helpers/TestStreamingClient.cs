@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
@@ -43,6 +44,11 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
         public ITopicProducer GetTopicProducer()
         {
             return GetTopicProducer("DEFAULT");
+        }   
+
+        public IRawTopicProducer GetRawTopicProducer(string topic, QuixPartitionerDelegate partitioner)
+        {
+            return GetRawTopicProducer(topic);
         }
 
         public ITopicProducer GetTopicProducer(string topic)
@@ -67,115 +73,95 @@ namespace QuixStreams.Streaming.UnitTests.Helpers
             this.brokers[topic] = broker;
             return broker;
         }
-
-        ITopicConsumer IQuixStreamingClient.GetTopicConsumer(string topicIdOrName, string consumerGroup, CommitOptions options, AutoOffsetReset autoOffset)
-        {
-            return GetTopicConsumer(topicIdOrName);
-        }
-
-        ITopicConsumer IQuixStreamingClient.GetTopicConsumer(string topicIdOrName, PartitionOffset offset, string consumerGroup, CommitOptions options = null)
-        {
-            return GetTopicConsumer(topicIdOrName);
-        }
         
-        IRawTopicConsumer IKafkaStreamingClient.GetRawTopicConsumer(string topic, string consumerGroup, AutoOffsetReset? autoOffset)
+        public IRawTopicConsumer GetRawTopicConsumer(string topic, string consumerGroup, AutoOffsetReset? autoOffset, ICollection<Partition> partitions = null)
         {
             throw new NotImplementedException();
         }
 
-        IRawTopicProducer IKafkaStreamingClient.GetRawTopicProducer(string topic)
+        public IRawTopicProducer GetRawTopicProducer(string topic)
         {
             throw new NotImplementedException();
         }
 
-        IRawTopicProducer IKafkaStreamingClient.GetRawTopicProducer(string topic, int partitionId)
+        public IRawTopicProducer GetRawTopicProducer(string topic, Partition partition)
         {
-            throw new NotImplementedException();
+            return GetRawTopicProducer(topic);
         }
 
-        ITopicProducer IKafkaStreamingClient.GetTopicProducer(string topic)
+        public ITopicProducer GetTopicProducer(string topic, Partition partition)
         {
             return GetTopicProducer(topic);
         }
 
-        ITopicProducer IKafkaStreamingClient.GetTopicProducer(string topic, int partitionId)
+        public ITopicProducer GetTopicProducer(string topic, StreamPartitionerDelegate partitioner)
         {
             return GetTopicProducer(topic);
         }
 
-        ITopicConsumer IKafkaStreamingClient.GetTopicConsumer(string topic, string consumerGroup, CommitOptions options, AutoOffsetReset autoOffset)
+        public ITopicConsumer GetTopicConsumer(string topic, string consumerGroup, CommitOptions options, AutoOffsetReset autoOffset, ICollection<Partition> partitions)
         {
             return GetTopicConsumer(topic);
         }
         
-        ITopicConsumer IKafkaStreamingClient.GetTopicConsumer(string topic, PartitionOffset partitionOffset, string consumerGroup, CommitOptions options)
+        public ITopicConsumer GetTopicConsumer(string topic, PartitionOffset partitionOffset, string consumerGroup, CommitOptions options)
         {
             return GetTopicConsumer(topic);
         }
 
-        IRawTopicConsumer IQuixStreamingClient.GetRawTopicConsumer(string topicIdOrName, string consumerGroup,
-            AutoOffsetReset? autoOffset)
-        {
-            throw new NotImplementedException();
-        }
-
-        IRawTopicProducer IQuixStreamingClient.GetRawTopicProducer(string topicIdOrName)
-        {
-            throw new NotImplementedException();
-        }
-
-        IRawTopicProducer IQuixStreamingClient.GetRawTopicProducer(string topicIdOrName, int partitionId)
-        {
-            throw new NotImplementedException();
-        }
-
-        ITopicProducer IQuixStreamingClient.GetTopicProducer(string topicIdOrName)
-        {
-            return GetTopicProducer(topicIdOrName);
-        }
-
-        Task<ITopicConsumer> IQuixStreamingClientAsync.GetTopicConsumerAsync(
+        public Task<ITopicConsumer> GetTopicConsumerAsync(
             string topicIdOrName,
             string consumerGroup,
             CommitOptions options,
-            AutoOffsetReset autoOffset)
+            AutoOffsetReset autoOffset,
+            ICollection<Partition> partitions)
         {
-            return Task.FromResult(((IQuixStreamingClient)this).GetTopicConsumer(topicIdOrName, consumerGroup, options, autoOffset));
+            return Task.FromResult(GetTopicConsumer(topicIdOrName, consumerGroup, options, autoOffset, partitions));
         }
         
         
-        Task<ITopicConsumer> IQuixStreamingClientAsync.GetTopicConsumerAsync(
+        public Task<ITopicConsumer> GetTopicConsumerAsync(
             string topicIdOrName,
             PartitionOffset offset,
             string consumerGroup,
             CommitOptions options)
         {
-            return Task.FromResult(((IQuixStreamingClient)this).GetTopicConsumer(topicIdOrName, consumerGroup, options));
+            return Task.FromResult(GetTopicConsumer(topicIdOrName, offset, consumerGroup, options));
         }
 
-        Task<IRawTopicConsumer> IQuixStreamingClientAsync.GetRawTopicConsumerAsync(string topicIdOrName, string consumerGroup, AutoOffsetReset? autoOffset)
+        public Task<IRawTopicConsumer> GetRawTopicConsumerAsync(string topicIdOrName, string consumerGroup, AutoOffsetReset? autoOffset, ICollection<Partition> partitions)
         {
-            return Task.FromResult(((IQuixStreamingClient)this).GetRawTopicConsumer(topicIdOrName, consumerGroup, autoOffset));
+            return Task.FromResult(GetRawTopicConsumer(topicIdOrName, consumerGroup, autoOffset));
         }
 
-        Task<IRawTopicProducer> IQuixStreamingClientAsync.GetRawTopicProducerAsync(string topicIdOrName)
+        public Task<IRawTopicProducer> GetRawTopicProducerAsync(string topicIdOrName)
         {
-            return Task.FromResult(((IQuixStreamingClient)this).GetRawTopicProducer(topicIdOrName));
+            return Task.FromResult(GetRawTopicProducer(topicIdOrName));
         }
 
-        Task<IRawTopicProducer> IQuixStreamingClientAsync.GetRawTopicProducerAsync(string topicIdOrName, int partitionId)
+        public Task<IRawTopicProducer> GetRawTopicProducerAsync(string topicIdOrName, Partition partition)
         {
-            return Task.FromResult(((IQuixStreamingClient)this).GetRawTopicProducer(topicIdOrName, partitionId));
+            return Task.FromResult(GetRawTopicProducer(topicIdOrName, partition));
         }
 
-        Task<ITopicProducer> IQuixStreamingClientAsync.GetTopicProducerAsync(string topicIdOrName)
+        public Task<IRawTopicProducer> GetRawTopicProducerAsync(string topicIdOrName, QuixPartitionerDelegate partitioner)
         {
-            return Task.FromResult(((IQuixStreamingClient)this).GetTopicProducer(topicIdOrName));
+            return Task.FromResult(GetRawTopicProducer(topicIdOrName, partitioner));
         }
 
-        Task<ITopicProducer> IQuixStreamingClientAsync.GetTopicProducerAsync(string topicIdOrName, int partitionId)
+        public Task<ITopicProducer> GetTopicProducerAsync(string topicIdOrName)
         {
-            return Task.FromResult(((IQuixStreamingClient)this).GetTopicProducer(topicIdOrName, partitionId));
+            return Task.FromResult(GetTopicProducer(topicIdOrName));
+        }
+
+        public Task<ITopicProducer> GetTopicProducerAsync(string topicIdOrName, Partition partition)
+        {
+            return Task.FromResult(GetTopicProducer(topicIdOrName, partition));
+        }
+
+        public Task<ITopicProducer> GetTopicProducerAsync(string topicIdOrName, StreamPartitionerDelegate partitioner)
+        {
+            return Task.FromResult(GetTopicProducer(topicIdOrName, partitioner));
         }
     }
 }

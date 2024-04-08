@@ -44,7 +44,8 @@ namespace QuixStreams.Kafka
         /// </summary>
         private const int DefaultMaxMessageSize = 1000000;
 
-        private readonly ProduceDelegate produce;
+        private ProducerDelegate internalProducer;
+        private Dictionary<string, int> topicPartitionCount = new Dictionary<string, int>();
 
         private long lastFlush = -1;
         private IProducer<byte[], byte[]> producer;
@@ -62,36 +63,61 @@ namespace QuixStreams.Kafka
             this.config = this.GetKafkaProducerConfig(producerConfiguration);
             this.producerConfiguration = producerConfiguration;
             SetConfigId(topicConfiguration);
-            if (topicConfiguration.Partition == Partition.Any)
-            {
-                this.produce = (msg, handler, _) =>
-                {
-                    this.producer.Produce(topicConfiguration.Topic,
-                            new Message<byte[], byte[]>
-                            {
-                                Key = msg.Key,
-                                Value = msg.Value,
-                                Headers = msg.ConfluentHeaders,
-                                Timestamp = (Timestamp)msg.Timestamp
-                            }, handler);
-                };
-            }
-            else
-            {
-                var topicPartition = new TopicPartition(topicConfiguration.Topic, topicConfiguration.Partition);
-                this.produce = (msg, handler, _) => this.producer.Produce(topicPartition,
-                    new Message<byte[], byte[]>
-                    {
-                        Key = msg.Key,
-                        Value = msg.Value,
-                        Headers = msg.ConfluentHeaders,
-                        Timestamp = (Timestamp)msg.Timestamp
-                    }, handler);
-            }
-            
+            ConfigureProduceDelegate();
+
             Open();
         }
-        
+
+        private void ConfigureProduceDelegate()
+        {
+            // When we have a delegate to decide the partition
+            if (topicConfiguration.Partitioner != null)
+            {
+                this.internalProducer = (msg, handler, _) =>
+                {
+                    var maxPartition = GetPartitionCount(topicConfiguration.Topic);
+                    var partition = topicConfiguration.Partitioner(topicConfiguration.Topic, maxPartition, msg);
+                    this.producer.Produce(new TopicPartition(topicConfiguration.Topic, partition),
+                        new Message<byte[], byte[]>
+                        {
+                            Key = msg.Key,
+                            Value = msg.Value,
+                            Headers = msg.ConfluentHeaders,
+                            Timestamp = (Timestamp)msg.Timestamp
+                        }, handler);
+                };
+                return;
+            }
+
+            // When Any partition is good
+            if (topicConfiguration.Partition == Partition.Any)
+            {
+                this.internalProducer = (msg, handler, _) =>
+                {
+                    this.producer.Produce(topicConfiguration.Topic,
+                        new Message<byte[], byte[]>
+                        {
+                            Key = msg.Key,
+                            Value = msg.Value,
+                            Headers = msg.ConfluentHeaders,
+                            Timestamp = (Timestamp)msg.Timestamp
+                        }, handler);
+                };
+                return;
+            }
+
+            // When must be a specific partition
+            var topicPartition = new TopicPartition(topicConfiguration.Topic, topicConfiguration.Partition);
+            this.internalProducer = (msg, handler, _) => this.producer.Produce(topicPartition,
+                new Message<byte[], byte[]>
+                {
+                    Key = msg.Key,
+                    Value = msg.Value,
+                    Headers = msg.ConfluentHeaders,
+                    Timestamp = (Timestamp)msg.Timestamp
+                }, handler);
+        }
+
         private ProducerConfig GetKafkaProducerConfig(ProducerConfiguration producerConfiguration)
         {
             var config = producerConfiguration.ToProducerConfig();
@@ -110,6 +136,45 @@ namespace QuixStreams.Kafka
             config.Debug = "broker";
 
             return config;
+        }
+
+        private int GetPartitionCount(string topic)
+        {
+            if (this.topicPartitionCount.TryGetValue(topic, out var partitionCount)) return partitionCount;
+            lock (this.topicPartitionCount)
+            {
+                if (this.topicPartitionCount.TryGetValue(topic, out partitionCount)) return partitionCount;
+
+                this.logger.LogTrace("[{0}] Creating admin client to retrieve partition count for topic {1}", this.configId, topic);
+
+                void NullLoggerForAdminLogs(IAdminClient adminClient, LogMessage logMessage)
+                {
+                    // Log nothing
+                }
+
+                using var adminClient = new AdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build();
+
+                var metadata = adminClient.GetMetadata(topic, TimeSpan.FromSeconds(10));
+                if (metadata == null)
+                {
+                    throw new OperationCanceledException($"[{this.configId}] Topic '{topic}' metadata timed out while retrieving maximum partition count"); // Maybe a more specific exception ?
+                }
+
+                this.logger.LogTrace("[{0}] Retrieved metadata for topic {1}", this.configId, topic);
+                var topicMetaData = metadata.Topics.FirstOrDefault(x => x.Topic == topic);
+                if (topicMetaData == null)
+                {
+                    throw new Exception($"[{this.configId}] Failed to retrieve metadata for topic '{topic}' to determine maximum partition count."); // Maybe a more specific exception ?
+                }
+
+                if (topicMetaData.Partitions.Count == 0)
+                {
+                    throw new OperationCanceledException($"[{this.configId}] Found no partition information for topic '{topic}'. The topic may not exist or lacking permission to use it"); // Maybe a more specific exception ?
+                }
+
+                this.topicPartitionCount[topic] = topicMetaData.Partitions.Count;
+                return topicMetaData.Partitions.Count;
+            }
         }
 
         private async Task UpdateMaxMessageSize(TimeSpan maxWait)
@@ -214,7 +279,9 @@ namespace QuixStreams.Kafka
             logBuilder.AppendLine();
             logBuilder.AppendLine("=================== Kafka Producer Configuration =====================");
             logBuilder.AppendLine("= Configuration Id: " + this.configId);
-            logBuilder.AppendLine($"= Topic: {topicConfiguration.Topic}{topicConfiguration.Partition}");
+            logBuilder.AppendLine(topicConfiguration.Partitioner != null
+                ? $"= Topic: {topicConfiguration.Topic} with partitioner"
+                : $"= Topic: {topicConfiguration.Topic}{topicConfiguration.Partition}");
             foreach (var keyValuePair in this.config)
             {
                 if (keyValuePair.Key?.IndexOf("password", StringComparison.InvariantCultureIgnoreCase) > -1 ||
@@ -257,10 +324,10 @@ namespace QuixStreams.Kafka
                 lastReportedBrokerDownMessage = string.Empty;
                 checkBrokerStateBeforeSend = false;
 
-                this.producer = new ProducerBuilder<byte[], byte[]>(this.config)
+                var builder = new ProducerBuilder<byte[], byte[]>(this.config)
                     .SetErrorHandler(this.ErrorHandler)
-                    .SetLogHandler(this.ProducerLogHandler)
-                    .Build();
+                    .SetLogHandler(this.ProducerLogHandler);
+                this.producer = builder.Build();
             }
         }
 
@@ -386,7 +453,7 @@ namespace QuixStreams.Kafka
         /// <inheritdoc/>
         public Task Publish(KafkaMessage message, CancellationToken cancellationToken = default)
         {
-            return this.SendInternal(message, this.produce, cancellationToken);
+            return this.SendInternal(message, this.internalProducer, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -398,7 +465,7 @@ namespace QuixStreams.Kafka
                 foreach (var kafkaMessage in messages)
                 {
                     if (cancellationToken.IsCancellationRequested) return Task.FromCanceled(cancellationToken);
-                    lastTask = this.SendInternal(kafkaMessage, this.produce, cancellationToken);
+                    lastTask = this.SendInternal(kafkaMessage, this.internalProducer, cancellationToken);
                 }
             }
 
@@ -406,7 +473,7 @@ namespace QuixStreams.Kafka
         }
 
 
-        private Task SendInternal(KafkaMessage message, ProduceDelegate handler,  CancellationToken cancellationToken = default, object state = null)
+        private Task SendInternal(KafkaMessage message, ProducerDelegate handler,  CancellationToken cancellationToken = default, object state = null)
         {
             if (cancellationToken.IsCancellationRequested) return Task.FromCanceled(cancellationToken);
             if (this.producer == null)
@@ -527,6 +594,6 @@ namespace QuixStreams.Kafka
             this.Close();
         }
 
-        private delegate void ProduceDelegate(KafkaMessage message, Action<DeliveryReport<byte[], byte[]>> deliveryHandler, object state);
+        private delegate void ProducerDelegate(KafkaMessage message, Action<DeliveryReport<byte[], byte[]>> deliveryHandler, object state);
     }
 }

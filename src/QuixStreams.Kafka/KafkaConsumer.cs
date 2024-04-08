@@ -307,7 +307,7 @@ namespace QuixStreams.Kafka
                     }
                 }
                 
-                this.consumer = consumerBuilder.Build();
+                this.consumer = consumerBuilder.Build();                
                 
                 if (partitions != null)
                 {
@@ -356,7 +356,7 @@ namespace QuixStreams.Kafka
 
         private void ConsumerLogHandler(IConsumer<byte[], byte[]> consumer, LogMessage msg)
         {
-            if (!this.connectionEstablishedEvent.IsSet && KafkaHelper.TryParseWakeup(msg, out var ready) && ready)
+            if (this.VerifyBrokerConnection && !this.connectionEstablishedEvent.IsSet && KafkaHelper.TryParseWakeup(msg, out var ready) && ready)
             {
                 this.connectionEstablishedEvent.Set();
             }
@@ -478,7 +478,7 @@ namespace QuixStreams.Kafka
                 this.lastRevokeCancelAction?.Invoke();
 
                 var assignedPartitions = topicPartitions.ToList(); // Just in case source doesn't like us modifying this list
-                if (!this.connectionEstablishedEvent.IsSet && assignedPartitions.Count > 0)
+                if (this.VerifyBrokerConnection && !this.connectionEstablishedEvent.IsSet && assignedPartitions.Count > 0)
                 {
                     this.connectionEstablishedEvent.Set();
                 }
@@ -733,6 +733,8 @@ namespace QuixStreams.Kafka
 
                             logger.LogTrace("[{0}] Polled for msg", this.configId);
                             if (cr == null) continue;
+                            
+                            if (this.VerifyBrokerConnection && !this.connectionEstablishedEvent.IsSet) connectionEstablishedEvent.Set();
                             currentPackageProcessTime.Restart();
                             await this.AddMessage(cr);
                             currentPackageProcessTime.Stop();

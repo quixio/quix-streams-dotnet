@@ -138,9 +138,7 @@ namespace QuixStreams.Streaming
                 };
 
                 this.OnEventData?.Invoke(this, ev);
-                return;
             }
-
 
             this.logger.LogTrace("StreamConsumer: OnStreamPackageReceived");
             this.OnPackageReceived?.Invoke(this, new PackageReceivedEventArgs(this.topicConsumer, this, package));
