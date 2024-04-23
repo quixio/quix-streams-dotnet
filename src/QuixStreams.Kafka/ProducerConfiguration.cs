@@ -36,7 +36,7 @@ namespace QuixStreams.Kafka
 
         /// <summary>
         /// Maximum total message size sum allowed on the queue. This property has higher priority than <see cref="QueueBufferingMaxMessages" />
-        /// default: 1048576
+        /// default: 103424 (101MB)
         /// </summary>
         public int? QueueBufferingMaxKbytes { get; set; }
 
@@ -112,6 +112,11 @@ namespace QuixStreams.Kafka
             if (!producerProperties.ContainsKey("log_level"))
             {
                 producerProperties["log_level"] = "0";
+            }
+
+            if (!producerProperties.ContainsKey("queue.buffering.max.kbytes") && !QueueBufferingMaxKbytes.HasValue)
+            {
+                QueueBufferingMaxKbytes = 103424;
             }
 
             var config = new ProducerConfig(producerProperties);

@@ -121,6 +121,11 @@ namespace QuixStreams.Kafka
         private ProducerConfig GetKafkaProducerConfig(ProducerConfiguration producerConfiguration)
         {
             var config = producerConfiguration.ToProducerConfig();
+            if (string.IsNullOrWhiteSpace(config.DeliveryReportFields))
+            {
+                config.DeliveryReportFields = "none";
+            }
+
             config.Debug = config.Debug;
             if (!string.IsNullOrWhiteSpace(config.Debug))
             {
@@ -492,7 +497,7 @@ namespace QuixStreams.Kafka
                 return Task.FromCanceled<DeliveryResult<byte[], byte[]>>(cancellationToken);
             }
 
-            var taskSource = new TaskCompletionSource<DeliveryResult<byte[], byte[]>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var taskSource = new TaskCompletionSource<TopicPartitionOffset>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             void DeliveryHandler(DeliveryReport<byte[], byte[]> report)
             {
@@ -500,11 +505,11 @@ namespace QuixStreams.Kafka
                 {
                     this.logger.LogTrace("[{0}] {1} {2}", this.configId, report.Error.Code, report.Error.Reason);
                     var wrappedError = new Error(report.Error.Code, $"[{this.configId}] {report.Error.Reason}", report.Error.IsFatal);
-                    taskSource.SetException(new ProduceException<byte[], byte[]>(wrappedError, report));
+                    taskSource.SetException(new KafkaException(wrappedError));
                     return;
                 }
 
-                taskSource.SetResult(report);
+                taskSource.SetResult(report.TopicPartitionOffset);
             }
 
             var success = false;
