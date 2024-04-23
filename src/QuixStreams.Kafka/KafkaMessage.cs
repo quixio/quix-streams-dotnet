@@ -31,12 +31,12 @@ namespace QuixStreams.Kafka
         protected internal Headers ConfluentHeaders { get; protected set; }
         
         /// <summary>
-        /// The estimated message size including header, key, value
+        /// The estimated message size in bytes including header, key, value
         /// </summary>
         public int MessageSize { get; protected set; }
         
         /// <summary>
-        /// The estimated (worst case) size of the message headers
+        /// The estimated (worst case) size of the message headers in bytes
         /// </summary>
         public int HeaderSize { get; protected set; }
         
