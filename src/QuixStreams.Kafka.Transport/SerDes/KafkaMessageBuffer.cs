@@ -167,7 +167,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
                     var kickOut = groupBuffers.OrderBy(x => x.LastUpdate).First();
                     indexToUse = Array.IndexOf(groupBuffers, kickOut);
                     this.logger.LogWarning("Concurrent split message track count reached, dropping oldest msg with segments. Group key: {0}, msg id: {1}", kickOut.BufferId.Key, kickOut.BufferId.MessageId);
-                    this.OnMessagePurged?.Invoke(new MessagePurgedEventArgs(bufferId));
+                    this.OnMessagePurged?.Invoke(new MessagePurgedEventArgs(kickOut.BufferId));
                 }
 
                 msgBuffer = new BufferedValue(bufferId, totalMessageCount);
@@ -237,12 +237,19 @@ namespace QuixStreams.Kafka.Transport.SerDes
                         var insideCutoff = msgSegment.LastUpdate > cutoff;
                         if (insideCutoff && insideDelta) continue; // not old enough
                         msgGroupBuffer.Value[index] = null;
-                        if (!insideCutoff) this.logger.LogWarning("Message segment expired, only a part of the message was received within allowed time. Group key: {0}, msg id: {1}.",
+                        if (!insideCutoff)
+                        {
+                            this.logger.LogWarning(
+                                "Message segment expired, only a part of the message was received within allowed time. Group key: {0}, msg id: {1}.",
                                 msgSegment.BufferId.Key, msgSegment.BufferId.MessageId);
+                        }
                         else
-                            this.logger.LogWarning("Message segment expired, only a part of the message was received within offset delta {0}. Group key: {1}, msg id: {2}.",
+                        {
+                            this.logger.LogWarning(
+                                "Message segment expired, only a part of the message was received within offset delta {0}. Group key: {1}, msg id: {2}.",
                                 offsetDelta, msgSegment.BufferId.Key, msgSegment.BufferId.MessageId);
-                        
+                        }
+
                         purged.Add(msgSegment.BufferId);
                     }
                 }
@@ -256,10 +263,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
                 }
             }
 
-            foreach (var bufferId in purged)
-            {
-                this.OnMessagePurged?.Invoke(new MessagePurgedEventArgs(bufferId));
-            }
+            this.OnMessagePurged?.Invoke(new MessagePurgedEventArgs(purged));
         }
 
         /// <summary>
@@ -327,7 +331,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             /// <summary>
             /// Message group key
             /// </summary>
-            public readonly MergerBufferId BufferId;
+            public readonly ICollection<MergerBufferId> BufferIds;
 
             /// <summary>
             /// Initializes a new instance of <see cref="MessagePurgedEventArgs"/>
@@ -335,7 +339,16 @@ namespace QuixStreams.Kafka.Transport.SerDes
             /// <param name="bufferId">Message group key</param>
             public MessagePurgedEventArgs(MergerBufferId bufferId)
             {
-                this.BufferId = bufferId;
+                this.BufferIds = new MergerBufferId[] { bufferId };
+            }
+            
+            /// <summary>
+            /// Initializes a new instance of <see cref="MessagePurgedEventArgs"/>
+            /// </summary>
+            /// <param name="bufferIds">Message group keys</param>
+            public MessagePurgedEventArgs(ICollection<MergerBufferId> bufferIds)
+            {
+                this.BufferIds = bufferIds;
             }
         }
     }

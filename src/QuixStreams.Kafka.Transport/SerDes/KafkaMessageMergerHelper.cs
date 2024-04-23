@@ -27,7 +27,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             this.logger = logger ?? NullLogger.Instance;
             this.buffer.OnMessagePurged += (ea) =>
             {
-                this.OnMessageSegmentsPurged?.Invoke(ea.BufferId);
+                this.OnMessageSegmentsPurged?.Invoke(ea.BufferIds);
             };
         }
 
@@ -69,7 +69,10 @@ namespace QuixStreams.Kafka.Transport.SerDes
                 return MessageMergeResult.Unmerged;
             }
 
-            var messageId = Convert.ToBase64String(messageIdBytes); // Whether it is guid or not, doesn't matter, uniqueness matters
+            
+            var messageId = messageIdBytes.Length == 4 
+                ? BitConverter.ToInt16(messageIdBytes, 0).ToString() 
+                : Convert.ToBase64String(messageIdBytes); // Whether it is guid or not, doesn't matter, uniqueness matters
             var messageIndex = BitConverter.ToInt32(messageIndexBytes, 0);
             var messageCount = BitConverter.ToInt32(messageCountBytes, 0);
 
@@ -137,7 +140,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
         }
 
         /// <inheritdoc />
-        public event Action<MergerBufferId> OnMessageSegmentsPurged;
+        public event Action<ICollection<MergerBufferId>> OnMessageSegmentsPurged;
 
         private MergedKafkaMessage AssembleMessage(MergerBufferId bufferId, ref MergerBufferId messageGroupId)
         {

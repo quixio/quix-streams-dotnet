@@ -32,9 +32,9 @@ namespace QuixStreams.Kafka.Transport.SerDes
         public KafkaMessageMerger(KafkaMessageBuffer messageBuffer)
         {
             this.helper = new KafkaMessageMergerHelper(messageBuffer, this.logger);
-            this.helper.OnMessageSegmentsPurged += (bufferId) =>
+            this.helper.OnMessageSegmentsPurged += (bufferIds) =>
             {
-                if (this.RemoveFromBuffer(bufferId, false))
+                if (this.RemoveFromBuffer(bufferIds, false) > 0)
                 {
                     RaiseNextPackageIfReady().GetAwaiter().GetResult();
                 }
@@ -215,8 +215,27 @@ namespace QuixStreams.Kafka.Transport.SerDes
         {
             if (bufferId.Equals(default)) return false;
             if (!pendingMessages.TryRemove(bufferId, out _)) return false;
+            
+            // Remove from order entry. In general this is expected to be early in the list so no full scan
+            var orderEntry = this.packageOrder.FirstOrDefault(y => y.Value.Equals(bufferId));
+            if (!orderEntry.Equals(default(KeyValuePair<long, MergerBufferId>)))
+            {
+                this.packageOrder.Remove(orderEntry.Key);
+                if (this.packageOrder.Count == 0) bufferCounter = 1;
+            }
             if (purge) this.helper.Purge(bufferId);
             return true;
+        }
+        
+        private int RemoveFromBuffer(ICollection<MergerBufferId> bufferIds, bool purge = true)
+        {
+            var counter = 0;
+            foreach (var bufferId in bufferIds)
+            {
+                counter += this.RemoveFromBuffer(bufferId, purge) ? 1 : 0;
+            }
+
+            return counter;
         }
 
         public void HandleRevoked(RevokedEventArgs args)
