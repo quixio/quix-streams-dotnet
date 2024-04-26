@@ -253,7 +253,7 @@ namespace QuixStreams.Kafka
                                     {
                                         // Log nothing
                                     }
-                                    adminClient = new AdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build();
+                                    adminClient = GetAdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build();
                                 }
                                 var metadata = adminClient.GetMetadata(partition.Topic, TimeSpan.FromSeconds(5));
                                 if (metadata == null)
@@ -341,6 +341,18 @@ namespace QuixStreams.Kafka
 
                 this.logger.LogTrace("[{0}] Open finished", this.configId);       
             }
+        }
+        
+        private AdminClientBuilder GetAdminClientBuilder(ConsumerConfig config)
+        {
+            var filteredConfig = config.Where(prop =>
+                    !prop.Key.StartsWith("dotnet.producer.") &&
+                    !prop.Key.StartsWith("dotnet.consumer."))
+                .ToDictionary(k => k.Key, v => v.Value);
+            
+            var adminConfig = new ConsumerConfig(filteredConfig);
+
+            return new AdminClientBuilder(adminConfig);
         }
 
         private void AutomaticOffsetsCommittedHandler(IConsumer<byte[], byte[]> consumer, CommittedOffsets offsets)
