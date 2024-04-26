@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Streaming.Configuration;
@@ -236,6 +237,14 @@ namespace QuixStreams.Streaming
         /// Gets or sets the token validation configuration
         /// </summary>
         public TokenValidationConfiguration TokenValidationConfig { get; set; } = new TokenValidationConfiguration();
+
+        private static JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
+        {
+            Converters = new List<JsonConverter>()
+            {
+                new SafeEnumConverter()
+            }
+        };
 
         /// <summary>
         /// Initializes a new instance of <see cref="KafkaStreamingClient"/> that is capable of creating topic consumer and producers
@@ -871,7 +880,7 @@ namespace QuixStreams.Streaming
             var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             try
             {
-                var converted = JsonConvert.DeserializeObject<Topic>(content);
+                var converted = JsonConvert.DeserializeObject<Topic>(content, jsonSerializerSettings);
                 return converted;
             }
             catch
@@ -901,7 +910,7 @@ namespace QuixStreams.Streaming
                     var cid = String.Empty;
                     try
                     {
-                        var error = JsonConvert.DeserializeObject<QuixApi.Portal.PortalException>(responseContent);
+                        var error = JsonConvert.DeserializeObject<QuixApi.Portal.PortalException>(responseContent, jsonSerializerSettings);
                         msg = error.Message;
                         cid = error.CorrelationId;
                     }
@@ -941,7 +950,7 @@ namespace QuixStreams.Streaming
             this.logger.LogTrace("Request {0} had {1} response:{2}{3}", uri.AbsolutePath, response.StatusCode, Environment.NewLine, responseContent);
             try
             {
-                var converted = JsonConvert.DeserializeObject<T>(responseContent);
+                var converted = JsonConvert.DeserializeObject<T>(responseContent, jsonSerializerSettings);
 
                 return converted;
             }
@@ -1036,6 +1045,31 @@ namespace QuixStreams.Streaming
             /// Whether to warn if the provided token is not PAT token. Defaults to <c>true</c>.
             /// </summary>
             public bool WarnAboutNonPatToken = true;
+        }
+        
+        private class SafeEnumConverter: StringEnumConverter
+        {
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                try
+                {
+                    if (reader.TokenType == JsonToken.Null) return null;
+                    var enumText = reader.Value.ToString();
+                    if (string.IsNullOrEmpty(enumText)) return null;
+
+                    return base.ReadJson(reader, objectType, existingValue, serializer);
+                }
+                catch
+                {
+                    // Return the default 'Unknown' value when an exception occurs
+                    if (Enum.GetNames(objectType).Contains("Unknown", StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        return Enum.Parse(objectType, "Unknown", true);
+                    }
+
+                    throw;
+                }
+            }
         }
     }
 

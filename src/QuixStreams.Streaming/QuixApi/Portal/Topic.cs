@@ -54,6 +54,11 @@ namespace QuixStreams.Streaming.QuixApi.Portal
     internal enum TopicStatus
     {
         /// <summary>
+        /// Unknown
+        /// </summary>
+        Unknown,
+        
+        /// <summary>
         /// The topic is currently being created
         /// </summary>
         Creating,
@@ -71,7 +76,12 @@ namespace QuixStreams.Streaming.QuixApi.Portal
         /// <summary>
         /// The topic has encountered an error
         /// </summary>
-        Error
+        Error,
+        
+        /// <summary>
+        /// The topic is being updated
+        /// </summary>
+        Updating
     }
 
 }
