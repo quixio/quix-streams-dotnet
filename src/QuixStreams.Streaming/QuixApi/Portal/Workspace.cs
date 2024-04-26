@@ -91,6 +91,11 @@ namespace QuixStreams.Streaming.QuixApi.Portal
     internal enum BrokerSecurityMode
     {
         /// <summary>
+        /// Unknown
+        /// </summary>
+        Unknown,
+        
+        /// <summary>
         /// SSL authorized without ACL.
         /// </summary>
         Ssl,
@@ -116,6 +121,11 @@ namespace QuixStreams.Streaming.QuixApi.Portal
     /// </summary>
     internal enum BrokerSaslMechanism
     {
+        /// <summary>
+        /// Unknown
+        /// </summary>
+        Unknown,
+        
         /// <summary>
         /// GSSAPI
         /// </summary>
@@ -147,6 +157,8 @@ namespace QuixStreams.Streaming.QuixApi.Portal
     /// </summary>
     internal enum WorkspaceStatus
     {
+        Unknown,
+        
         /// <summary>
         /// The workspace is currently being created
         /// </summary>
