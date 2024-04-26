@@ -157,7 +157,7 @@ namespace QuixStreams.Kafka
                     // Log nothing
                 }
 
-                using var adminClient = new AdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build();
+                using var adminClient = GetAdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build();
 
                 var metadata = adminClient.GetMetadata(topic, TimeSpan.FromSeconds(10));
                 if (metadata == null)
@@ -182,6 +182,18 @@ namespace QuixStreams.Kafka
             }
         }
 
+        private AdminClientBuilder GetAdminClientBuilder(ProducerConfig config)
+        {
+            var filteredConfig = config.Where(prop =>
+                    !prop.Key.StartsWith("dotnet.producer.") &&
+                    !prop.Key.StartsWith("dotnet.consumer."))
+                .ToDictionary(k => k.Key, v => v.Value);
+            
+            var adminConfig = new ProducerConfig(filteredConfig);
+
+            return new AdminClientBuilder(adminConfig);
+        }
+
         private async Task UpdateMaxMessageSize(TimeSpan maxWait)
         {
             var max = DateTime.UtcNow.Add(maxWait);
@@ -192,7 +204,7 @@ namespace QuixStreams.Kafka
                     // Log nothing
                 }
                 
-                using (var adminClient = new AdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build())
+                using (var adminClient = GetAdminClientBuilder(this.config).SetLogHandler(NullLoggerForAdminLogs).Build())
                 {
                     var maxRequestTimeTopic = max - DateTime.UtcNow;
                     var topicConfig = await adminClient.DescribeConfigsAsync(new ConfigResource[]
