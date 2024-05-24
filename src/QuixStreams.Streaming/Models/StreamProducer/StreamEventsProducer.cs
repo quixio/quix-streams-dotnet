@@ -15,7 +15,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
     /// </summary>
     public class StreamEventsProducer : IStreamEventsProducer
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<StreamEventsProducer>();
+        private readonly ILogger logger = Logging.CreateLogger<StreamEventsProducer>();
         private readonly IStreamProducerInternal streamProducer;
 
         private long epoch = 0;
@@ -148,13 +148,13 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             return builder;
         }
 
-        internal QuixStreams.Telemetry.Models.EventDefinition CreateDefinition(string location, string eventId, string name, string description)
+        internal Telemetry.Models.EventDefinition CreateDefinition(string location, string eventId, string name, string description)
         {
             if (isDisposed)
             {
                 throw new ObjectDisposedException(nameof(StreamEventsProducer));
             }
-            var eventDefinition = new QuixStreams.Telemetry.Models.EventDefinition
+            var eventDefinition = new Telemetry.Models.EventDefinition
             {
                 Id = eventId,
                 Name = name,
@@ -242,7 +242,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             this.logger.Log(LogLevel.Trace, "{0} event(s) sent.", events.Count);
         }
 
-        internal void Publish(ICollection<QuixStreams.Telemetry.Models.EventDataRaw> events)
+        internal void Publish(ICollection<EventDataRaw> events)
         {
             if (isDisposed)
             {

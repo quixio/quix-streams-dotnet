@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using QuixStreams.Kafka.Transport.SerDes.Codecs;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
 
 namespace QuixStreams.Kafka.Transport.Tests.Helpers
@@ -9,8 +10,8 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
     {
         static TestModel()
         {
-            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(typeof(TestModel), new DefaultJsonCodec<TestModel>());
-            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(typeof(TestModel[]), new DefaultJsonCodec<TestModel[]>());
+            CodecRegistry.RegisterCodec(typeof(TestModel), new DefaultJsonCodec<TestModel>());
+            CodecRegistry.RegisterCodec(typeof(TestModel[]), new DefaultJsonCodec<TestModel[]>());
         }
 
         public string StringProp { get; set; }

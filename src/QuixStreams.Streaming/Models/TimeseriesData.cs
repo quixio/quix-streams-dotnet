@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Streaming.Utils;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
@@ -14,8 +13,8 @@ namespace QuixStreams.Streaming.Models
     /// </summary>
     public class TimeseriesData
     {
-        private static Lazy<ILogger> logger = new Lazy<ILogger>(() => QuixStreams.Logging.CreateLogger<TimeseriesData>());
-        internal QuixStreams.Telemetry.Models.TimeseriesDataRaw rawData;
+        private static Lazy<ILogger> logger = new Lazy<ILogger>(() => Logging.CreateLogger<TimeseriesData>());
+        internal TimeseriesDataRaw rawData;
         internal Dictionary<string, TimeseriesDataParameter> parameterList;
         internal List<int> timestampsList;
 
@@ -44,7 +43,7 @@ namespace QuixStreams.Streaming.Models
         /// <param name="parametersFilter">List of parameters to filter</param>
         /// <param name="merge">Merge duplicated timestamps</param>
         /// <param name="clean">Clean timestamps without values</param>
-        public TimeseriesData(QuixStreams.Telemetry.Models.TimeseriesDataRaw rawData, string[] parametersFilter = null, bool merge = true, bool clean = true)
+        public TimeseriesData(TimeseriesDataRaw rawData, string[] parametersFilter = null, bool merge = true, bool clean = true)
         {
             this.rawData = rawData;
             this.epochsIncluded = new bool[rawData.Timestamps.Count()];
@@ -78,7 +77,7 @@ namespace QuixStreams.Streaming.Models
             return data;
         }
 
-        private void CloneFrom(Streaming.Models.TimeseriesData data, string[] parametersFilter = null)
+        private void CloneFrom(TimeseriesData data, string[] parametersFilter = null)
         {
             this.rawData = data.rawData.Clone();
             this.epochsIncluded = (bool[])data.epochsIncluded.Clone();
@@ -285,7 +284,7 @@ namespace QuixStreams.Streaming.Models
             }
         }
 
-        internal QuixStreams.Telemetry.Models.TimeseriesDataRaw ConvertToTimeseriesDataRaw(bool merge = true, bool clean = true)
+        internal TimeseriesDataRaw ConvertToTimeseriesDataRaw(bool merge = true, bool clean = true)
         {
             if (merge)
             {

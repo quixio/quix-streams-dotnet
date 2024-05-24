@@ -25,7 +25,7 @@ namespace QuixStreams.Transport.Kafka.Tests
         {
             this.output = output;
             this.kafkaDockerTestFixture = kafkaDockerTestFixture;
-            QuixStreams.Logging.Factory = output.CreateLoggerFactory();
+            Logging.Factory = output.CreateLoggerFactory();
             output.WriteLine($"Created client with brokerlist '{kafkaDockerTestFixture.BrokerList}'");
         }
         

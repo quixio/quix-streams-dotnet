@@ -16,7 +16,7 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs
         /// </summary>
         protected Codec()
         {
-            logger = QuixStreams.Logging.CreateLogger(this.GetType());
+            logger = Logging.CreateLogger(this.GetType());
         }
         
         /// <inheritdoc />

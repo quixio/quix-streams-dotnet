@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using QuixStreams.Telemetry.Models;
 
 namespace QuixStreams.Streaming.Models.StreamProducer
 {
@@ -10,7 +11,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         private readonly StreamEventsProducer streamEventsProducer;
         private readonly long timestampNanoseconds;
 
-        private readonly List<QuixStreams.Telemetry.Models.EventDataRaw> events = new List<QuixStreams.Telemetry.Models.EventDataRaw>();
+        private readonly List<EventDataRaw> events = new List<EventDataRaw>();
         private readonly Dictionary<string, string> tags;
 
         /// <summary>
@@ -33,7 +34,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         /// <returns></returns>
         public EventDataBuilder AddValue(string eventId, string value)
         {
-            var @event = new QuixStreams.Telemetry.Models.EventDataRaw()
+            var @event = new EventDataRaw()
             {
                 Id = eventId,
                 Timestamp = timestampNanoseconds,

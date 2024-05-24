@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using FluentAssertions;
 using Quix.TestBase.Extensions;
-using QuixStreams;
 using QuixStreams.Streaming.Models;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,7 +13,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
     {
         public TimeseriesBufferShould(ITestOutputHelper helper)
         {
-            QuixStreams.Logging.Factory = helper.CreateLoggerFactory();
+            Logging.Factory = helper.CreateLoggerFactory();
         }
 
         [Fact]
@@ -34,7 +33,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
                 CustomTriggerBeforeEnqueue = null
             };
             var buffer = new TimeseriesBuffer(bufferConfiguration);
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -65,7 +64,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
                 CustomTriggerBeforeEnqueue = null
             };
             var buffer = new TimeseriesBuffer(bufferConfiguration);
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -105,7 +104,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             if (initialConfig) bufferConfiguration.PacketSize = 2;
             var buffer = new TimeseriesBuffer(bufferConfiguration);
             if (!initialConfig) buffer.PacketSize = 2;
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -140,7 +139,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             if (initialConfig) bufferConfiguration.TimeSpanInMilliseconds = 200;
             var buffer = new TimeseriesBuffer(bufferConfiguration);
             if (!initialConfig) buffer.TimeSpanInMilliseconds = 200;
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -176,7 +175,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             if (initialConfig) bufferConfiguration.TimeSpanInNanoseconds = 200 * (long) 1e6;
             var buffer = new TimeseriesBuffer(bufferConfiguration);
             if (!initialConfig) buffer.TimeSpanInNanoseconds = 200 * (long) 1e6;
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -207,7 +206,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
                 CustomTriggerBeforeEnqueue = null
             };
             var buffer = new TimeseriesBuffer(bufferConfiguration);
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -247,7 +246,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             if (initialConfig) bufferConfiguration.Filter = (timestamp) => timestamp.Parameters["param2"].NumericValue == 2;
             var buffer = new TimeseriesBuffer(bufferConfiguration);
             if (!initialConfig) buffer.Filter = (timestamp) => timestamp.Parameters["param2"].NumericValue == 2;
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -283,7 +282,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             if (initialConfig) bufferConfiguration.BufferTimeout = 100;
             var buffer = new TimeseriesBuffer(bufferConfiguration);
             if (!initialConfig) buffer.BufferTimeout = 100;
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -319,7 +318,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             if (initialConfig) bufferConfiguration.CustomTrigger = (fdata) => fdata.Timestamps.Count == 2;
             var buffer = new TimeseriesBuffer(bufferConfiguration);
             if (!initialConfig) buffer.CustomTrigger = (fdata) => fdata.Timestamps.Count == 2;
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {
@@ -356,7 +355,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             if (initialConfig) bufferConfiguration.CustomTriggerBeforeEnqueue = timestamp => timestamp.Tags["tag2"] == "value2";
             var buffer = new TimeseriesBuffer(bufferConfiguration);
             if (!initialConfig) buffer.CustomTriggerBeforeEnqueue = timestamp => timestamp.Tags["tag2"] == "value2";
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
+            var receivedData = new List<TimeseriesData>();
 
             buffer.OnDataReleased += (sender, args) =>
             {

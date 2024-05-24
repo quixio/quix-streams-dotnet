@@ -97,7 +97,7 @@ namespace QuixStreams.Streaming
         /// <param name="topicConsumer">The topic consumer associated with the event.</param>
         /// <param name="consumer">The stream consumer associated with the event.</param>
         /// <param name="package">The stream package that was received.</param>
-        public PackageReceivedEventArgs(ITopicConsumer topicConsumer, IStreamConsumer consumer, QuixStreams.Telemetry.Models.StreamPackage package)
+        public PackageReceivedEventArgs(ITopicConsumer topicConsumer, IStreamConsumer consumer, StreamPackage package)
         {
             this.TopicConsumer = topicConsumer;
             this.Stream = consumer;
@@ -117,7 +117,7 @@ namespace QuixStreams.Streaming
         /// <summary>
         /// Gets the stream package that was received.
         /// </summary>
-        public QuixStreams.Telemetry.Models.StreamPackage Package { get; }
+        public StreamPackage Package { get; }
     }
 
     /// <summary>

@@ -1,7 +1,6 @@
 ﻿﻿using System;
  using System.Threading;
  using QuixStreams.Kafka;
- using QuixStreams.Kafka.Transport;
  using QuixStreams.Kafka.Transport.SerDes;
  using QuixStreams.Kafka.Transport.SerDes.Legacy.MessageValue;
  using QuixStreams.Telemetry.Kafka;

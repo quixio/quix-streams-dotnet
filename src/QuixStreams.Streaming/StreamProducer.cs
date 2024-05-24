@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
+using Newtonsoft.Json;
 using QuixStreams.Streaming.Exceptions;
 using QuixStreams.Streaming.Models.StreamProducer;
 using QuixStreams.Telemetry;
@@ -21,7 +21,7 @@ namespace QuixStreams.Streaming
     internal class StreamProducer: StreamPipeline, IStreamProducerInternal
     {
         public event Action<Type> OnBeforeSend;
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<StreamProducer>();
+        private readonly ILogger logger = Logging.CreateLogger<StreamProducer>();
         private readonly StreamPropertiesProducer streamPropertiesProducer;
         private readonly StreamTimeseriesProducer streamTimeseriesProducer;
         private readonly StreamEventsProducer streamEventsProducer;
@@ -95,14 +95,14 @@ namespace QuixStreams.Streaming
         public IStreamEventsProducer Events => streamEventsProducer;
 
         /// <inheritdoc />
-        public void Publish(QuixStreams.Telemetry.Models.StreamProperties properties)
+        public void Publish(StreamProperties properties)
         {
             CheckIfClosed();
             this.Send(properties);
         }
 
         /// <inheritdoc />
-        public void Publish(QuixStreams.Telemetry.Models.TimeseriesDataRaw rawData)
+        public void Publish(TimeseriesDataRaw rawData)
         {
             CheckIfClosed();
             var send = this.Send(rawData);
@@ -120,7 +120,7 @@ namespace QuixStreams.Streaming
         }
 
         /// <inheritdoc />
-        public void Publish(List<QuixStreams.Telemetry.Models.TimeseriesDataRaw> data)
+        public void Publish(List<TimeseriesDataRaw> data)
         {
             CheckIfClosed();
             foreach(var d in data)
@@ -130,11 +130,11 @@ namespace QuixStreams.Streaming
         }
 
         /// <inheritdoc />
-        public void Publish(QuixStreams.Telemetry.Models.ParameterDefinitions definitions)
+        public void Publish(ParameterDefinitions definitions)
         {
             CheckIfClosed();
             definitions.Validate();
-            var hash = Newtonsoft.Json.JsonConvert.SerializeObject(definitions).GetHashCode();
+            var hash = JsonConvert.SerializeObject(definitions).GetHashCode();
             if (this.lastParameterDefinitionHash == hash) return;
             this.lastParameterDefinitionHash = hash;
             var send = this.Send(definitions);
@@ -153,7 +153,7 @@ namespace QuixStreams.Streaming
         }
 
         /// <inheritdoc />
-        public void Publish(QuixStreams.Telemetry.Models.EventDataRaw eventDataRaw)
+        public void Publish(EventDataRaw eventDataRaw)
         {
             CheckIfClosed();
             if (eventDataRaw == null) throw new ArgumentNullException(nameof(eventDataRaw));
@@ -162,7 +162,7 @@ namespace QuixStreams.Streaming
         }
 
         /// <inheritdoc />
-        public void Publish(ICollection<QuixStreams.Telemetry.Models.EventDataRaw> events)
+        public void Publish(ICollection<EventDataRaw> events)
         {
             CheckIfClosed();
             if (events == null) throw new ArgumentNullException(nameof(events));
@@ -182,11 +182,11 @@ namespace QuixStreams.Streaming
         }
 
         /// <inheritdoc />
-        public void Publish(QuixStreams.Telemetry.Models.EventDefinitions definitions)
+        public void Publish(EventDefinitions definitions)
         {
             CheckIfClosed();
             definitions.Validate();
-            var hash = Newtonsoft.Json.JsonConvert.SerializeObject(definitions).GetHashCode();
+            var hash = JsonConvert.SerializeObject(definitions).GetHashCode();
             if (this.lastEventDefinitionHash == hash) return;
             this.lastEventDefinitionHash = hash;
             var send = this.Send(definitions);
@@ -234,7 +234,7 @@ namespace QuixStreams.Streaming
         }        
 
         /// <inheritdoc />
-        public void Close(QuixStreams.Telemetry.Models.StreamEndType streamState = QuixStreams.Telemetry.Models.StreamEndType.Closed)
+        public void Close(StreamEndType streamState = StreamEndType.Closed)
         {
             lock (this.closeLock)
             {

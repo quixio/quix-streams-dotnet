@@ -15,7 +15,7 @@ namespace QuixStreams.Kafka
     /// </summary>
     public class KafkaConsumer : IKafkaConsumer
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<KafkaConsumer>();
+        private readonly ILogger logger = Logging.CreateLogger<KafkaConsumer>();
         private bool disableKafkaLogsByConnectWorkaround = false; // if enabled, no actual kafka logs should be shown
         private readonly ConsumerConfig config;
 

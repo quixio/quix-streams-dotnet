@@ -48,7 +48,7 @@ namespace QuixStreams.Streaming
         /// <param name="subscribe">Whether the consumer defined should be automatically subscribed to start receiving messages</param>
         public static void Run(CancellationToken cancellationToken = default, Action beforeShutdown = null, bool subscribe = true)
         {
-            var logger = QuixStreams.Logging.CreateLogger<object>();
+            var logger = Logging.CreateLogger<object>();
             var waitForProcessShutdownStart = new ManualResetEventSlim();
             var waitForMainExit = new ManualResetEventSlim();
             Action actualBeforeShutdown = () =>
@@ -234,11 +234,11 @@ namespace QuixStreams.Streaming
         /// <param name="stateStorage">The state storage to use for app's state manager</param>
         public static void SetStateStorageType(StateStorageTypes type)
         {
-            if (App.stateStorageType != null) throw new InvalidOperationException("State storage type may only be set once");
+            if (stateStorageType != null) throw new InvalidOperationException("State storage type may only be set once");
 
             if (type == StateStorageTypes.RocksDb || type == StateStorageTypes.InMemory)
             {
-                App.stateStorageType = type;
+                stateStorageType = type;
             }
             else
             {
@@ -248,8 +248,8 @@ namespace QuixStreams.Streaming
         
         public static StateStorageTypes GetStateStorageType()
         {
-            if (App.stateStorageType == null) SetStateStorageType(StateStorageTypes.RocksDb);
-            return App.stateStorageType.Value;
+            if (stateStorageType == null) SetStateStorageType(StateStorageTypes.RocksDb);
+            return stateStorageType.Value;
         }
         
         /// <summary>
@@ -258,8 +258,8 @@ namespace QuixStreams.Streaming
         /// <param name="path">The state storage path to use for states</param>
         public static void SetStateStorageRootDir(string path)
         {
-            if (App.stateStorageRootDir != null) throw new InvalidOperationException("State storage root dir is already set");
-            App.stateStorageRootDir = path;
+            if (stateStorageRootDir != null) throw new InvalidOperationException("State storage root dir is already set");
+            stateStorageRootDir = path;
         }
 
         /// <summary>
@@ -268,8 +268,8 @@ namespace QuixStreams.Streaming
         /// <returns></returns>
         public static string GetStateStorageRootDir()
         {
-            if (App.stateStorageRootDir == null) SetStateStorageRootDir(Path.Combine(".", "state"));
-            return App.stateStorageRootDir;
+            if (stateStorageRootDir == null) SetStateStorageRootDir(Path.Combine(".", "state"));
+            return stateStorageRootDir;
         }
 
         internal static void Register(TopicConsumer topicConsumer)

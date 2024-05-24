@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using QuixStreams.Telemetry.Models;
 
 namespace QuixStreams.Streaming
 {
@@ -22,40 +23,40 @@ namespace QuixStreams.Streaming
         /// <summary>
         /// Publish a stream properties to the stream
         /// </summary>
-        void Publish(QuixStreams.Telemetry.Models.StreamProperties properties);
+        void Publish(StreamProperties properties);
 
         /// <summary>
         /// Publish a single Timeseries data package to the stream
         /// </summary>
-        void Publish(QuixStreams.Telemetry.Models.TimeseriesDataRaw rawData);
+        void Publish(TimeseriesDataRaw rawData);
 
         /// <summary>
         /// Publish a set of Timeseries data packages to the stream
         /// </summary>
-        void Publish(List<QuixStreams.Telemetry.Models.TimeseriesDataRaw> data);
+        void Publish(List<TimeseriesDataRaw> data);
 
         /// <summary>
         /// Publish the optional Parameter definition properties describing the hierarchical grouping of parameters
         /// Please note, new calls will not result in merged set with previous calls. New calls supersede previously sent values.
         /// </summary>
-        void Publish(QuixStreams.Telemetry.Models.ParameterDefinitions definitions);
+        void Publish(ParameterDefinitions definitions);
 
         /// <summary>
         /// Publish a single event to the stream
         /// </summary>
         /// <param name="eventDataRaw">Event to send</param>
-        void Publish(QuixStreams.Telemetry.Models.EventDataRaw eventDataRaw);
+        void Publish(EventDataRaw eventDataRaw);
 
         /// <summary>
         /// Publish a set of events to the stream 
         /// </summary>
         /// <param name="events">Events to send</param>
-        void Publish(ICollection<QuixStreams.Telemetry.Models.EventDataRaw> events);
+        void Publish(ICollection<EventDataRaw> events);
 
         /// <summary>
         /// Publish the optional Event definition properties describing the hierarchical grouping of events
         /// Please note, new calls will not result in merged set with previous calls. New calls supersede previously sent values.
         /// </summary>
-        void Publish(QuixStreams.Telemetry.Models.EventDefinitions definitions);
+        void Publish(EventDefinitions definitions);
     }
 }

@@ -28,7 +28,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
             this.streamConsumer.OnEventData += OnEventDataHandler;
         }
 
-        private void OnEventDataHandler(IStreamConsumer sender, QuixStreams.Telemetry.Models.EventDataRaw eventDataRaw)
+        private void OnEventDataHandler(IStreamConsumer sender, EventDataRaw eventDataRaw)
         {
             var data = new EventData(eventDataRaw);
 
@@ -51,7 +51,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
         /// <inheritdoc/>
         public IList<EventDefinition> Definitions { get; private set; } 
 
-        private void LoadFromTelemetryDefinitions(QuixStreams.Telemetry.Models.EventDefinitions definitions)
+        private void LoadFromTelemetryDefinitions(EventDefinitions definitions)
         {
             // Create a new list instead of modifying publicly available list to avoid threading issues like
             // user iterating the list then us changing it during it
@@ -65,7 +65,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
             this.Definitions = defs;
         }
 
-        private List<EventDefinition> ConvertEventDefinitions(List<QuixStreams.Telemetry.Models.EventDefinition> eventDefinitions, string location)
+        private List<EventDefinition> ConvertEventDefinitions(List<Telemetry.Models.EventDefinition> eventDefinitions, string location)
         {
             var result = eventDefinitions.Select(d => new EventDefinition
             {
@@ -80,7 +80,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
             return result;
         }
 
-        private List<EventDefinition> ConvertGroupEventDefinitions(List<QuixStreams.Telemetry.Models.EventGroupDefinition> eventGroupDefinitions, string location)
+        private List<EventDefinition> ConvertGroupEventDefinitions(List<EventGroupDefinition> eventGroupDefinitions, string location)
         {
             var result = new List<EventDefinition>();
 

@@ -9,7 +9,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using QuixStreams.Kafka.Transport.SerDes.Legacy;
 
 namespace QuixStreams.Kafka.Transport.SerDes
 {
@@ -18,7 +17,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
     /// </summary>
     public class KafkaMessageMerger
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<KafkaMessageMerger>();
+        private readonly ILogger logger = Logging.CreateLogger<KafkaMessageMerger>();
 
         private long bufferCounter = 0;
         private readonly ConcurrentDictionary<MergerBufferId, PendingKafkaMessage> pendingMessages = new ConcurrentDictionary<MergerBufferId, PendingKafkaMessage>(); // Messages that are queued up

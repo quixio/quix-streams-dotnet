@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NSubstitute;
+using QuixStreams.Streaming.Models;
+using QuixStreams.Streaming.Models.StreamProducer;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
 using Xunit;
+using EventDefinition = QuixStreams.Telemetry.Models.EventDefinition;
 
 namespace QuixStreams.Streaming.UnitTests.Models
 {
@@ -21,7 +24,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             streamProducer.Publish(Arg.Do<EventDataRaw>(x=> sentData.Add(x)));
             streamProducer.Publish(Arg.Do<ICollection<EventDataRaw>>(x => sentData.AddRange(x.ToList())));
 
-            var eventsWriter = new QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer(streamProducer);
+            var eventsWriter = new StreamEventsProducer(streamProducer);
             var epoch = new DateTime(2000, 01, 01);
             eventsWriter.Epoch = epoch;
 
@@ -78,7 +81,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             streamProducer.Publish(Arg.Do<EventDataRaw>(x => sentData.Add(x)));
             streamProducer.Publish(Arg.Do<ICollection<EventDataRaw>>(x => sentData.AddRange(x.ToList())));
 
-            var eventsProducer = new QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer(streamProducer);
+            var eventsProducer = new StreamEventsProducer(streamProducer);
             var epoch = new DateTime(2000, 01, 01);
             eventsProducer.Epoch = epoch;
 
@@ -156,7 +159,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             streamProducer.Publish(Arg.Do<EventDataRaw>(x => sentData.Add(x)));
             streamProducer.Publish(Arg.Do<ICollection<EventDataRaw>>(x => sentData.AddRange(x.ToList())));
 
-            var eventsWriter = new QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer(streamProducer);
+            var eventsWriter = new StreamEventsProducer(streamProducer);
             var epoch = new DateTime(2000, 01, 01);
             eventsWriter.Epoch = epoch;
 
@@ -213,22 +216,22 @@ namespace QuixStreams.Streaming.UnitTests.Models
             streamProducer.Publish(Arg.Do<EventDataRaw>(x => sentData.Add(x)));
             streamProducer.Publish(Arg.Do<ICollection<EventDataRaw>>(x => sentData.AddRange(x.ToList())));
 
-            var eventsWriter = new QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer(streamProducer);
+            var eventsWriter = new StreamEventsProducer(streamProducer);
             var epoch = new DateTime(2000, 01, 01);
             eventsWriter.Epoch = epoch;
 
             // Act
-            var data1 = new QuixStreams.Streaming.Models.EventData( "test_param1", new DateTime(1999, 01, 01), "1");
-            var data2 = new QuixStreams.Streaming.Models.EventData("test_param2", new DateTime(1999, 01, 01), "2");
-            eventsWriter.Publish(new QuixStreams.Streaming.Models.EventData[] { data1, data2 });
+            var data1 = new EventData( "test_param1", new DateTime(1999, 01, 01), "1");
+            var data2 = new EventData("test_param2", new DateTime(1999, 01, 01), "2");
+            eventsWriter.Publish(new EventData[] { data1, data2 });
 
             eventsWriter.DefaultTags["default1"] = "value1";
             eventsWriter.DefaultTags["default2"] = "value2";
 
-            var data3 = new QuixStreams.Streaming.Models.EventData("test_param2", new TimeSpan(01, 02, 03), "2").AddTag("extraTag", "value1");
+            var data3 = new EventData("test_param2", new TimeSpan(01, 02, 03), "2").AddTag("extraTag", "value1");
             eventsWriter.Publish(data3);
 
-            var data4 = new QuixStreams.Streaming.Models.EventData("test_param3", 300, "3");
+            var data4 = new EventData("test_param3", 300, "3");
             eventsWriter.Publish(data4);
 
             // Assert
@@ -281,12 +284,12 @@ namespace QuixStreams.Streaming.UnitTests.Models
             streamProducer.Publish(Arg.Do<EventDataRaw>(x => sentData.Add(x)));
             streamProducer.Publish(Arg.Do<ICollection<EventDataRaw>>(x => sentData.AddRange(x.ToList())));
 
-            var eventsWriter = new QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer(streamProducer);
+            var eventsWriter = new StreamEventsProducer(streamProducer);
             var epoch = new DateTime(2000, 01, 01);
             eventsWriter.Epoch = epoch;
 
             // Act
-            var data1 = new QuixStreams.Streaming.Models.EventData("test_param2", new TimeSpan(01, 02, 03), "2").AddTag("extraTag", "value1");
+            var data1 = new EventData("test_param2", new TimeSpan(01, 02, 03), "2").AddTag("extraTag", "value1");
 
             eventsWriter.Publish(data1);
             eventsWriter.Publish(data1);
@@ -322,7 +325,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var streamProducer = Substitute.For<IStreamProducerInternal>();
             var sentDefinitions = new List<EventDefinitions>();
             streamProducer.Publish(Arg.Do<EventDefinitions>(x => sentDefinitions.Add(x)));
-            var eventsWriter = new QuixStreams.Streaming.Models.StreamProducer.StreamEventsProducer(streamProducer);
+            var eventsWriter = new StreamEventsProducer(streamProducer);
 
             // Act
             eventsWriter.DefaultLocation = ""; // root

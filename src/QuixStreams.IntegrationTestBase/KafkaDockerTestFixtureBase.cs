@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Confluent.Kafka;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
@@ -28,11 +29,11 @@ namespace QuixStreams.IntegrationTestBase
             {
                 var builder = new Builder().UseContainer();
                 
-                if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
+                if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
                     builder = builder.UseImage("dougdonohoe/fast-data-dev:latest");
                 }
-                else if (System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X64)
+                else if (RuntimeInformation.OSArchitecture == Architecture.X64)
                 {
                     builder = builder.UseImage("lensesio/fast-data-dev:3.3.1");
                 }

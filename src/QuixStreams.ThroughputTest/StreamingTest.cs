@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using QuixStreams.Streaming;
-using QuixStreams.Telemetry.Models;
-
-namespace QuixStreams.ThroughputTest
+﻿namespace QuixStreams.ThroughputTest
 {
     /*
     public class StreamingTest

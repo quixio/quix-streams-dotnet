@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using QuixStreams.Kafka.Transport.SerDes;
 using Timer = System.Timers.Timer;
 
 namespace QuixStreams.Kafka.Transport.Samples.Samples

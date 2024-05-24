@@ -56,9 +56,9 @@
         /// Converts the Parameter definition to Telemetry layer structure
         /// </summary>
         /// <returns>Telemetry layer Parameter definition</returns>
-        internal QuixStreams.Telemetry.Models.ParameterDefinition ConvertToTelemetrysDefinition()
+        internal Telemetry.Models.ParameterDefinition ConvertToTelemetrysDefinition()
         {
-            return new QuixStreams.Telemetry.Models.ParameterDefinition 
+            return new Telemetry.Models.ParameterDefinition 
             {
                 Id = this.Id,
                 Name = this.Name,

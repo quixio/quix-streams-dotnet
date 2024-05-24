@@ -62,7 +62,7 @@ namespace QuixStreams.Streaming.Models
         /// Create a new Event Data instance loading data from <see cref="EventDataRaw"/> type instance
         /// </summary>
         /// <param name="rawData">Event Data to load from</param>
-        internal EventData(QuixStreams.Telemetry.Models.EventDataRaw rawData)
+        internal EventData(EventDataRaw rawData)
         {
             this.LoadFromEventDataRaw(rawData);
         }
@@ -72,7 +72,7 @@ namespace QuixStreams.Streaming.Models
             this.Tags = newTags;
         }
 
-        private void LoadFromEventDataRaw(QuixStreams.Telemetry.Models.EventDataRaw rawData)
+        private void LoadFromEventDataRaw(EventDataRaw rawData)
         {
             this.EpochIncluded = true;
             this.TimestampNanoseconds = rawData.Timestamp;
@@ -82,7 +82,7 @@ namespace QuixStreams.Streaming.Models
 
         }
 
-        private void CopyFrom(Streaming.Models.EventData data)
+        private void CopyFrom(EventData data)
         {
             this.EpochIncluded = data.EpochIncluded;
             this.TimestampNanoseconds = data.TimestampNanoseconds;
@@ -91,9 +91,9 @@ namespace QuixStreams.Streaming.Models
             this.SetTags(data.Tags.ToDictionary(kv => kv.Key, kv => kv.Value));
         }
 
-        internal QuixStreams.Telemetry.Models.EventDataRaw ConvertToEventDataRaw()
+        internal EventDataRaw ConvertToEventDataRaw()
         {
-            return new QuixStreams.Telemetry.Models.EventDataRaw
+            return new EventDataRaw
             {
                 Timestamp = this.TimestampNanoseconds,
                 Id = this.Id,

@@ -59,7 +59,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             if (bufferPerMessageGroupKey < 1) throw new ArgumentOutOfRangeException(nameof(bufferPerMessageGroupKey), "Value must be at least 1");
             this.timeToLive = timeToLive;
             this.bufferPerMessageGroupKey = bufferPerMessageGroupKey;
-            this.logger = QuixStreams.Logging.CreateLogger(typeof(KafkaMessageBuffer));
+            this.logger = Logging.CreateLogger(typeof(KafkaMessageBuffer));
         }
 
         /// <summary>

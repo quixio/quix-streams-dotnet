@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Streaming.Exceptions;
 using QuixStreams.Telemetry.Managers;
+using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
 
 namespace QuixStreams.Streaming.Models.StreamProducer
@@ -16,7 +16,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
     {
         private readonly IStreamProducerInternal streamProducer;
 
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<StreamTimeseriesProducer>();
+        private readonly ILogger logger = Logging.CreateLogger<StreamTimeseriesProducer>();
 
         private string location;
         private readonly ParameterDefinitionsManager parameterDefinitionsManager = new ParameterDefinitionsManager();
@@ -71,7 +71,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         }
         
         /// <inheritdoc/>
-        public void Publish(QuixStreams.Telemetry.Models.TimeseriesDataRaw data)
+        public void Publish(TimeseriesDataRaw data)
         {
             if (isDisposed)
             {
@@ -93,7 +93,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
                 updatedTimestamps[i] = data.Timestamps[i] + epochDiff;
             }
 
-            QuixStreams.Telemetry.Models.TimeseriesDataRaw newData = new QuixStreams.Telemetry.Models.TimeseriesDataRaw(
+            TimeseriesDataRaw newData = new TimeseriesDataRaw(
                 data.Epoch, 
                 updatedTimestamps, 
                 data.NumericValues, 
@@ -179,13 +179,13 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             return builder;
         }
 
-        internal QuixStreams.Telemetry.Models.ParameterDefinition CreateDefinition(string location, string parameterId, string name, string description)
+        internal Telemetry.Models.ParameterDefinition CreateDefinition(string location, string parameterId, string name, string description)
         {
             if (isDisposed)
             {
                 throw new ObjectDisposedException(nameof(StreamTimeseriesProducer));
             }
-            var parameterDefinition = new QuixStreams.Telemetry.Models.ParameterDefinition
+            var parameterDefinition = new Telemetry.Models.ParameterDefinition
             {
                 Id = parameterId,
                 Name = name,

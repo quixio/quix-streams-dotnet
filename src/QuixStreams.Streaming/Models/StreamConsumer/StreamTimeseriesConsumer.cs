@@ -71,7 +71,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
         /// </summary>
         internal List<TimeseriesBufferConsumer> Buffers { get; private set; } = new List<TimeseriesBufferConsumer>();
 
-        private void LoadFromTelemetryDefinitions(QuixStreams.Telemetry.Models.ParameterDefinitions definitions)
+        private void LoadFromTelemetryDefinitions(ParameterDefinitions definitions)
         {
             var defs = new List<ParameterDefinition>();
             
@@ -83,7 +83,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
             this.Definitions = defs;
         }
 
-        private List<ParameterDefinition> ConvertParameterDefinitions(List<QuixStreams.Telemetry.Models.ParameterDefinition> parameterDefinitions, string location)
+        private List<ParameterDefinition> ConvertParameterDefinitions(List<Telemetry.Models.ParameterDefinition> parameterDefinitions, string location)
         {
             var result = parameterDefinitions.Select(d => new ParameterDefinition
             {
@@ -101,7 +101,7 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
             return result;
         }
 
-        private List<ParameterDefinition> ConvertGroupParameterDefinitions(List<QuixStreams.Telemetry.Models.ParameterGroupDefinition> parameterGroupDefinitions, string location)
+        private List<ParameterDefinition> ConvertGroupParameterDefinitions(List<ParameterGroupDefinition> parameterGroupDefinitions, string location)
         {
             var result = new List<ParameterDefinition>();
 
@@ -116,14 +116,14 @@ namespace QuixStreams.Streaming.Models.StreamConsumer
             return result;
         }
 
-        private void OnTimeseriesDataEventHandler(IStreamConsumer streamConsumer, QuixStreams.Telemetry.Models.TimeseriesDataRaw timeseriesDataRaw)
+        private void OnTimeseriesDataEventHandler(IStreamConsumer streamConsumer, TimeseriesDataRaw timeseriesDataRaw)
         {
             if (this.OnDataReceived == null) return;
             var tsdata = new TimeseriesData(timeseriesDataRaw, null, false, false);
             this.OnDataReceived?.Invoke(streamConsumer, new TimeseriesDataReadEventArgs(this.topicConsumer, streamConsumer, tsdata));
         }
 
-        private void OnTimeseriesDataRawEventHandler(IStreamConsumer streamConsumer, QuixStreams.Telemetry.Models.TimeseriesDataRaw timeseriesDataRaw)
+        private void OnTimeseriesDataRawEventHandler(IStreamConsumer streamConsumer, TimeseriesDataRaw timeseriesDataRaw)
         {
             this.OnRawReceived?.Invoke(streamConsumer, new TimeseriesDataRawReadEventArgs(this.topicConsumer, streamConsumer, timeseriesDataRaw));
         }

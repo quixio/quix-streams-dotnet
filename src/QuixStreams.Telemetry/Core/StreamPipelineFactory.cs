@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;
-using QuixStreams;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Telemetry.Models;
-
 
 namespace QuixStreams.Telemetry
 {
@@ -18,7 +15,7 @@ namespace QuixStreams.Telemetry
     /// </summary>
     internal class StreamPipelineFactory
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<StreamPipelineFactory>();
+        private readonly ILogger logger = Logging.CreateLogger<StreamPipelineFactory>();
         private readonly object openCloseLock = new object();
         private bool isOpen;
         private IKafkaTransportConsumer kafkaTransportConsumer;

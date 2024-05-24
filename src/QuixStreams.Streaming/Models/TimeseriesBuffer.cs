@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Streaming.Models.StreamConsumer;
 using QuixStreams.Telemetry.Models;
 
@@ -18,7 +14,7 @@ namespace QuixStreams.Streaming.Models
     public class TimeseriesBuffer: IDisposable
     {
         private bool isDisposed = false;
-        private ILogger logger = QuixStreams.Logging.CreateLogger(typeof(TimeseriesDataRaw));
+        private ILogger logger = Logging.CreateLogger(typeof(TimeseriesDataRaw));
 
         // Configuration of the buffer
         private int? bufferTimeout = null;
@@ -246,7 +242,7 @@ namespace QuixStreams.Streaming.Models
         /// Writes a chunck of data into the buffer
         /// </summary>
         /// <param name="timeseriesDataRaw">Data in <see cref="OnDataReleased"/> format</param>
-        protected internal void WriteChunk(QuixStreams.Telemetry.Models.TimeseriesDataRaw timeseriesDataRaw)
+        protected internal void WriteChunk(TimeseriesDataRaw timeseriesDataRaw)
         {
             if (isDisposed)
             {
@@ -436,7 +432,7 @@ namespace QuixStreams.Streaming.Models
                     this.InvokeOnRawReceived(this, new TimeseriesDataRawReadEventArgs(null, null, newPdrw));
 
                     if (this.OnDataReleased == null) return;
-                    var data = new Streaming.Models.TimeseriesData(newPdrw, this.parametersFilter, false, false);
+                    var data = new TimeseriesData(newPdrw, this.parametersFilter, false, false);
                     this.InvokeOnReceive(this, new TimeseriesDataReadEventArgs(null, null, data));
                 }
 
@@ -480,7 +476,7 @@ namespace QuixStreams.Streaming.Models
         {
             var filteredRows = new List<int>();
 
-            var timeseriesData = new Streaming.Models.TimeseriesData(data, null, false, false);
+            var timeseriesData = new TimeseriesData(data, null, false, false);
             
             // Indexes of elements which ran over the filter
             for (var i = 0; i < timeseriesData.Timestamps.Count; i++)

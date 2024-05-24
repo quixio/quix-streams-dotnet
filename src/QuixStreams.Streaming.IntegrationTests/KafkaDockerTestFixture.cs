@@ -1,15 +1,9 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
-using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Extensions;
-using Ductus.FluentDocker.Services;
 using QuixStreams.IntegrationTestBase;
-using QuixStreams.Streaming.Configuration;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace QuixStreams.Streaming.IntegrationTests
 {

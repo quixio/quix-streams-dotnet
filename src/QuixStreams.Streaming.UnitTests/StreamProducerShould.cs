@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using FluentAssertions;
 using NSubstitute;
-using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.Tests.Helpers;
 using QuixStreams.Streaming.Models;
 using QuixStreams.Streaming.UnitTests.Helpers;

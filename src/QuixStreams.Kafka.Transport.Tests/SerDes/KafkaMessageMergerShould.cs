@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
-using NSubstitute;
 using QuixStreams.Kafka.Transport.SerDes;
 using Xunit;
 
@@ -50,7 +47,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             // then the outcome is [Message1_merged] [Message2_merged] [Message3]
             
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = mode;
+            PackageSerializationSettings.Mode = mode;
             var merger = new KafkaMessageMerger(new KafkaMessageBuffer());
             
             var message1Segments = this.CreateSplitMessage(2, out var message1);
@@ -98,7 +95,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             // then the outcome is [Message2], [Message3], as segment 2 should be discarded
             
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = mode;
+            PackageSerializationSettings.Mode = mode;
             var buffer = new KafkaMessageBuffer();
             var merger = new KafkaMessageMerger(buffer);
             var message1Segments = this.CreateSplitMessage(2, out var message1);
@@ -141,7 +138,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         public void Modify_MergeReturnsNull_ShouldNotRaisePackageAndReturnCompletedTask(PackageSerializationMode mode)
         {
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = mode;
+            PackageSerializationSettings.Mode = mode;
             var buffer = new KafkaMessageBuffer();
             var merger = new KafkaMessageMerger(buffer);
             
@@ -171,7 +168,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             // disappear then should raise [Message2] and [Message3]
             
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = mode;
+            PackageSerializationSettings.Mode = mode;
             var buffer = new KafkaMessageBuffer();
             var merger = new KafkaMessageMerger(buffer);
             var message1Segments = this.CreateSplitMessage(3, out var message1);

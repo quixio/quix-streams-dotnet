@@ -158,7 +158,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
                 }
             }
 
-            var newData = new QuixStreams.Telemetry.Models.TimeseriesDataRaw(
+            var newData = new TimeseriesDataRaw(
                 data.Epoch, 
                 updatedTimestamps ?? data.Timestamps, 
                 data.NumericValues, 

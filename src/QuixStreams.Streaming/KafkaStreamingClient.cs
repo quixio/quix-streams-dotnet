@@ -11,6 +11,7 @@ using QuixStreams.Streaming.Utils;
 using QuixStreams.Telemetry.Configuration;
 using QuixStreams.Telemetry.Kafka;
 using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
+using SaslMechanism = Confluent.Kafka.SaslMechanism;
 
 namespace QuixStreams.Streaming
 {
@@ -99,7 +100,7 @@ namespace QuixStreams.Streaming
     /// </summary>
     public class KafkaStreamingClient : IKafkaStreamingClient
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<KafkaStreamingClient>();
+        private readonly ILogger logger = Logging.CreateLogger<KafkaStreamingClient>();
         private readonly string brokerAddress;
         private readonly Dictionary<string, string> brokerProperties;
         
@@ -138,7 +139,7 @@ namespace QuixStreams.Streaming
 
                 if (securityOptions.UseSasl)
                 {
-                    if (!Enum.TryParse(securityOptions.SaslMechanism.ToString(), true, out Confluent.Kafka.SaslMechanism parsed))
+                    if (!Enum.TryParse(securityOptions.SaslMechanism.ToString(), true, out SaslMechanism parsed))
                     {
                         throw new ArgumentOutOfRangeException(nameof(securityOptions.SaslMechanism), "Unsupported sasl mechanism " + securityOptions.SaslMechanism);
                     }

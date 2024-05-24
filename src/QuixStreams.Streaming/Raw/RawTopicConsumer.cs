@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;
-using QuixStreams;
-using QuixStreams.Kafka.Transport;
 using QuixStreams.Telemetry.Kafka;
 using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
 
@@ -100,7 +98,7 @@ namespace QuixStreams.Streaming.Raw
         {
             if (connectionStarted)
             {
-                var logger = QuixStreams.Logging.CreateLogger<RawTopicConsumer>();
+                var logger = Logging.CreateLogger<RawTopicConsumer>();
                 logger.LogWarning("Attempted to subscribe to topic {0} more than once.", this.topicName);
                 return;
             }

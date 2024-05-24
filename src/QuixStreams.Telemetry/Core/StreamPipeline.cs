@@ -14,7 +14,7 @@ namespace QuixStreams.Telemetry
     /// </summary>
     public class StreamPipeline : IStreamPipeline, IDisposable
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<StreamPipeline>();
+        private readonly ILogger logger = Logging.CreateLogger<StreamPipeline>();
         
         private readonly CancellationToken cancellationToken;
         private readonly List<StreamComponent> componentsList = new List<StreamComponent>();

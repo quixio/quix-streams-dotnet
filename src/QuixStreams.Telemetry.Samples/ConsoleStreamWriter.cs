@@ -9,7 +9,7 @@ namespace QuixStreams.Telemetry.Samples
     /// </summary>
     public class ConsoleStreamWriter : StreamComponent
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<ConsoleStreamWriter>();
+        private readonly ILogger logger = Logging.CreateLogger<ConsoleStreamWriter>();
 
         public ConsoleStreamWriter()
         {

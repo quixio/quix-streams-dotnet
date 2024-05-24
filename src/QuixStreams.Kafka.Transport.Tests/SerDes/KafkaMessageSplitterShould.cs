@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using FluentAssertions;
+using Newtonsoft.Json;
 using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.SerDes.Legacy;
 using Xunit;
@@ -16,7 +16,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         public void Split_WithDataOutsideAbsoluteMaxSize_ShouldThrowSerializationException()
         {
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = PackageSerializationMode.LegacyValue;
+            PackageSerializationSettings.Mode = PackageSerializationMode.LegacyValue;
             const int maxMsgLength = 50;
             var splitter = new KafkaMessageSplitter(maxMsgLength);
             var length = maxMsgLength * byte.MaxValue + 10;
@@ -37,7 +37,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         public void SplitLegacy_WithDataOutsideAllowedMessageSizeButWithinAbsoluteMaxSize_ShouldReturnSplitBytes()
         {
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = PackageSerializationMode.LegacyValue;
+            PackageSerializationSettings.Mode = PackageSerializationMode.LegacyValue;
             const int maxMsgLength = 50;
             var splitter = new KafkaMessageSplitter(maxMsgLength);
             var length = 10199; // just a bit less than max (10200), but greater because of split info.
@@ -88,7 +88,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         public void Split_GreaterThanSupportedByLegacy_ShouldReturnSplitBytes()
         {
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = PackageSerializationMode.Header; 
+            PackageSerializationSettings.Mode = PackageSerializationMode.Header; 
             int maxMsgLength = KafkaMessageSplitter.ExpectedHeaderSplitInfoSize + 50;
             var splitter = new KafkaMessageSplitter(maxMsgLength);
             var length = 40000; // legacy would die around 10200 in this config
@@ -142,7 +142,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         public void Split_WithDataWithinAllowedMessageSize_ShouldReturnSameBytes(PackageSerializationMode mode)
         {
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = mode;
+            PackageSerializationSettings.Mode = mode;
             var splitter = new KafkaMessageSplitter(50);
             var data = new byte[50];
             var random = new Random();
@@ -163,7 +163,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
         public void Split_WithDataWithinAllowedMessageSizeUsingHeaderAndKey_ShouldReturnSameBytes(PackageSerializationMode mode)
         {
             // Arrange
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = mode;
+            PackageSerializationSettings.Mode = mode;
             var splitter = new KafkaMessageSplitter(50);
             var data = new byte[5];
             var random = new Random();
@@ -194,7 +194,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
                 data[ii] = $"Some_value_that_should_get_compressed_{ii}";
             }
 
-            var dataBytes = Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
+            var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
 
             var key = Encoding.UTF8.GetBytes("My super key");
             var testCodecId = "Stuff";
@@ -232,7 +232,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
                 data[ii] = $"Some_value_that_should_get_compressed_{ii}";
             }
 
-            var dataBytes = Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
+            var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
 
             var key = Encoding.UTF8.GetBytes("My super key");
             var message = new KafkaMessage(key, dataBytes);

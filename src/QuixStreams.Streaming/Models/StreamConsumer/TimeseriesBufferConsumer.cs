@@ -1,4 +1,6 @@
-﻿namespace QuixStreams.Streaming.Models.StreamConsumer
+﻿using QuixStreams.Telemetry.Models;
+
+namespace QuixStreams.Streaming.Models.StreamConsumer
 {
     /// <summary>
     /// Represents a class for consuming data from a stream in a buffered manner.
@@ -38,7 +40,7 @@
         /// </summary>
         /// <param name="streamConsumer">The stream consumer associated with the event.</param>
         /// <param name="timeseriesDataRaw">Data received in TimeseriesDataRaw format .</param>
-        private void OnTimeseriesDataEventHandler(IStreamConsumer streamConsumer, QuixStreams.Telemetry.Models.TimeseriesDataRaw timeseriesDataRaw)
+        private void OnTimeseriesDataEventHandler(IStreamConsumer streamConsumer, TimeseriesDataRaw timeseriesDataRaw)
         {
             this.WriteChunk(timeseriesDataRaw);
         }

@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using FluentAssertions;
 using NSubstitute;
+using QuixStreams.Streaming.Models;
+using QuixStreams.Streaming.Models.StreamConsumer;
 using QuixStreams.Streaming.UnitTests.Helpers;
 using QuixStreams.Telemetry.Models;
 using Xunit;
+using EventDefinition = QuixStreams.Telemetry.Models.EventDefinition;
 
 namespace QuixStreams.Streaming.UnitTests.Models
 {
@@ -17,8 +20,8 @@ namespace QuixStreams.Streaming.UnitTests.Models
 
             // Arrange
             var streamConsumer = Substitute.For<IStreamConsumerInternal>();
-            var receivedData = new List<QuixStreams.Streaming.Models.EventData>();
-            var eventsReader = new QuixStreams.Streaming.Models.StreamConsumer.StreamEventsConsumer(new TestStreamingClient().GetTopicConsumer(), streamConsumer);
+            var receivedData = new List<EventData>();
+            var eventsReader = new StreamEventsConsumer(new TestStreamingClient().GetTopicConsumer(), streamConsumer);
 
             eventsReader.OnDataReceived += (sender, args) =>
             {
@@ -28,7 +31,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             //Act
             for (var i = 0; i < NumberEventsTest; i++)
             {
-                var eventData = new QuixStreams.Streaming.Models.EventData($"event{i}", 100 * i, $"test_event_value{i}")
+                var eventData = new EventData($"event{i}", 100 * i, $"test_event_value{i}")
                     .AddTag($"tag{i}", $"{i}");
 
                 streamConsumer.OnEventData += Raise.Event<Action<IStreamConsumer, EventDataRaw>>(streamConsumer, eventData.ConvertToEventDataRaw());
@@ -53,7 +56,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
         {
             // Arrange
             var streamConsumer = Substitute.For<IStreamConsumerInternal>();
-            var eventsReader = new QuixStreams.Streaming.Models.StreamConsumer.StreamEventsConsumer(new TestStreamingClient().GetTopicConsumer(), streamConsumer);
+            var eventsReader = new StreamEventsConsumer(new TestStreamingClient().GetTopicConsumer(), streamConsumer);
 
             var eventDefinitions = new EventDefinitions
             {
@@ -139,9 +142,9 @@ namespace QuixStreams.Streaming.UnitTests.Models
                 }
             };
 
-            var expectedDefinitions = new List<QuixStreams.Streaming.Models.EventDefinition>
+            var expectedDefinitions = new List<Streaming.Models.EventDefinition>
             {
-                new QuixStreams.Streaming.Models.EventDefinition
+                new Streaming.Models.EventDefinition
                 {
                     Id = "Event1",
                     Name = "Event One",
@@ -150,33 +153,33 @@ namespace QuixStreams.Streaming.UnitTests.Models
                     Location = "",
                     Level = EventLevel.Critical
                 },
-                new QuixStreams.Streaming.Models.EventDefinition
+                new Streaming.Models.EventDefinition
                 {
                     Id = "event2",
                     Location = "/some/nested/group"
                 },
-                new QuixStreams.Streaming.Models.EventDefinition
+                new Streaming.Models.EventDefinition
                 {
                     Id = "event3",
                     Location = "/some/nested/group"
 
                 },
-                new QuixStreams.Streaming.Models.EventDefinition
+                new Streaming.Models.EventDefinition
                 {
                     Id = "event4",
                     Location = "/some/nested/group"
                 },
-                new QuixStreams.Streaming.Models.EventDefinition
+                new Streaming.Models.EventDefinition
                 {
                     Id = "event5",
                     Location = "/some/nested/group2"
                 },
-                new QuixStreams.Streaming.Models.EventDefinition
+                new Streaming.Models.EventDefinition
                 {
                     Id = "event6",
                     Location = "/some/nested/group2"
                 },
-                new QuixStreams.Streaming.Models.EventDefinition
+                new Streaming.Models.EventDefinition
                 {
                     Id = "event7",
                     Location = "/some/nested/group2/startswithtest"

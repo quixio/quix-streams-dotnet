@@ -1,5 +1,6 @@
 using System;
 using QuixStreams.Streaming.Models.StreamProducer;
+using QuixStreams.Telemetry.Models;
 
 namespace QuixStreams.Streaming
 {
@@ -43,7 +44,7 @@ namespace QuixStreams.Streaming
         /// Close the stream and flush the pending data to stream.
         /// </summary>
         /// <param name="streamState">Stream closing state</param>
-        void Close(QuixStreams.Telemetry.Models.StreamEndType streamState = QuixStreams.Telemetry.Models.StreamEndType.Closed);
+        void Close(StreamEndType streamState = StreamEndType.Closed);
         
         /// <summary>
         /// Event raised when an exception occurred during the publishing processes

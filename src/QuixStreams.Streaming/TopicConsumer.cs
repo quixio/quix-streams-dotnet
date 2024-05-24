@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Streaming.Models;
 using QuixStreams.Streaming.States;
 using QuixStreams.Telemetry;
@@ -15,7 +13,7 @@ namespace QuixStreams.Streaming
     /// </summary>
     public class TopicConsumer : ITopicConsumer
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<StreamConsumer>();
+        private readonly ILogger logger = Logging.CreateLogger<StreamConsumer>();
         private readonly TelemetryKafkaConsumer telemetryKafkaConsumer;
         private bool isDisposed = false;
         private readonly object stateLock = new object();

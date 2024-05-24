@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using FluentAssertions;
 using NSubstitute;
+using QuixStreams.Streaming.Models;
+using QuixStreams.Streaming.Models.StreamConsumer;
 using QuixStreams.Streaming.UnitTests.Helpers;
 using QuixStreams.Telemetry.Models;
 using Xunit;
+using ParameterDefinition = QuixStreams.Telemetry.Models.ParameterDefinition;
 
 namespace QuixStreams.Streaming.UnitTests.Models
 {
@@ -19,8 +22,8 @@ namespace QuixStreams.Streaming.UnitTests.Models
 
             // Arrange
             var streamConsumer = Substitute.For<IStreamConsumerInternal>();
-            var receivedData = new List<QuixStreams.Streaming.Models.TimeseriesData>();
-            var parametersReader = new QuixStreams.Streaming.Models.StreamConsumer.StreamTimeseriesConsumer(new TestStreamingClient().GetTopicConsumer(), streamConsumer);
+            var receivedData = new List<TimeseriesData>();
+            var parametersReader = new StreamTimeseriesConsumer(new TestStreamingClient().GetTopicConsumer(), streamConsumer);
 
             var buffer = parametersReader.CreateBuffer();
             buffer.OnDataReleased += (sender, args) =>
@@ -32,7 +35,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             //Act
             for (var i = 1; i <= NumberTimestampsTest; i++)
             {
-                var timeseriesData = new QuixStreams.Streaming.Models.TimeseriesData();
+                var timeseriesData = new TimeseriesData();
                 timeseriesData.AddTimestampNanoseconds(100 * i)
                     .AddValue($"test_numeric_param{i}", i)
                     .AddValue($"test_string_param{i}", $"{i}")
@@ -61,7 +64,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
         {
             // Arrange
             var streamConsumer = Substitute.For<IStreamConsumerInternal>();
-            var parametersReader = new QuixStreams.Streaming.Models.StreamConsumer.StreamTimeseriesConsumer(new TestStreamingClient().GetTopicConsumer(), streamConsumer);
+            var parametersReader = new StreamTimeseriesConsumer(new TestStreamingClient().GetTopicConsumer(), streamConsumer);
 
             var parameterDefinitions = new ParameterDefinitions
             {
@@ -150,9 +153,9 @@ namespace QuixStreams.Streaming.UnitTests.Models
                 }
             };
 
-            var expectedDefinitions = new List<QuixStreams.Streaming.Models.ParameterDefinition>
+            var expectedDefinitions = new List<Streaming.Models.ParameterDefinition>
             {
-                new QuixStreams.Streaming.Models.ParameterDefinition
+                new Streaming.Models.ParameterDefinition
                 {
                     Id = "Param1",
                     Name = "Parameter One",
@@ -164,33 +167,33 @@ namespace QuixStreams.Streaming.UnitTests.Models
                     CustomProperties = "custom prop",
                     Location = ""
                 },
-                new QuixStreams.Streaming.Models.ParameterDefinition
+                new Streaming.Models.ParameterDefinition
                 {
                     Id = "param2",
                     Location = "/some/nested/group"
                 },
-                new QuixStreams.Streaming.Models.ParameterDefinition
+                new Streaming.Models.ParameterDefinition
                 {
                     Id = "param3",
                     Location = "/some/nested/group"
 
                 },
-                new QuixStreams.Streaming.Models.ParameterDefinition
+                new Streaming.Models.ParameterDefinition
                 {
                     Id = "param4",
                     Location = "/some/nested/group"
                 },
-                new QuixStreams.Streaming.Models.ParameterDefinition
+                new Streaming.Models.ParameterDefinition
                 {
                     Id = "param5",
                     Location = "/some/nested/group2"
                 },
-                new QuixStreams.Streaming.Models.ParameterDefinition
+                new Streaming.Models.ParameterDefinition
                 {
                     Id = "param6",
                     Location = "/some/nested/group2"
                 },
-                new QuixStreams.Streaming.Models.ParameterDefinition
+                new Streaming.Models.ParameterDefinition
                 {
                     Id = "param7",
                     Location = "/some/nested/group2/startswithtest"

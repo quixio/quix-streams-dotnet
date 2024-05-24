@@ -7,11 +7,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using FluentAssertions;
-using FluentAssertions.Extensions;
 using Quix.TestBase.Extensions;
 using QuixStreams.Kafka;
-using QuixStreams.Telemetry;
 using QuixStreams.Streaming.Models;
+using QuixStreams.Telemetry;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
 using RocksDbSharp;
@@ -34,7 +33,7 @@ namespace QuixStreams.Streaming.IntegrationTests
         {
             this.output = output;
             this.kafkaDockerTestFixture = kafkaDockerTestFixture;
-            QuixStreams.Logging.Factory = output.CreateLoggerFactory();
+            Logging.Factory = output.CreateLoggerFactory();
             client = new KafkaStreamingClient(kafkaDockerTestFixture.BrokerList, null);
             output.WriteLine($"Created client with brokerlist '{kafkaDockerTestFixture.BrokerList}'");
         }

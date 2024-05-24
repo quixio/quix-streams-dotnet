@@ -1,4 +1,6 @@
-﻿namespace QuixStreams.Streaming.Models
+﻿using QuixStreams.Telemetry.Models;
+
+namespace QuixStreams.Streaming.Models
 {
 
     /// <summary>
@@ -35,15 +37,15 @@
         /// <summary>
         /// Gets the level of the event. Defaults to <see cref="Telemetry.Models.EventLevel.Information"/>
         /// </summary>
-        public QuixStreams.Telemetry.Models.EventLevel Level { get; internal set; } = QuixStreams.Telemetry.Models.EventLevel.Information;
+        public EventLevel Level { get; internal set; } = EventLevel.Information;
 
         /// <summary>
         /// Converts the Event definition to Telemetry layer structure
         /// </summary>
         /// <returns>Telemetry layer Event definition</returns>
-        internal QuixStreams.Telemetry.Models.EventDefinition ConvertToTelemetryDefinition()
+        internal Telemetry.Models.EventDefinition ConvertToTelemetryDefinition()
         {
-            return new QuixStreams.Telemetry.Models.EventDefinition 
+            return new Telemetry.Models.EventDefinition 
             {
                 Id = this.Id,
                 Name = this.Name,

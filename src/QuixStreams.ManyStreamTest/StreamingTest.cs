@@ -2,6 +2,7 @@
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Streaming;
+using QuixStreams.Streaming.Models;
 
 namespace QuixStreams.ManyStreamTest
 {
@@ -40,7 +41,7 @@ namespace QuixStreams.ManyStreamTest
             while (!ct.IsCancellationRequested)
             {
                 var stream = topicProducer.CreateStream();
-                var data = new QuixStreams.Streaming.Models.TimeseriesData();
+                var data = new TimeseriesData();
                 data.AddTimestampNanoseconds(10).AddValue("test", DateTime.UtcNow.ToBinary());
                 stream.Timeseries.Buffer.Publish(data);
                 stream.Events.AddTimestampNanoseconds(10).AddValue("test1", "val1");
