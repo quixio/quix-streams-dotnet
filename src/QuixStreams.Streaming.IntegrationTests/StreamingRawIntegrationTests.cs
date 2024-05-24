@@ -7,7 +7,6 @@ using Confluent.Kafka;
 using FluentAssertions;
 using Quix.TestBase.Extensions;
 using QuixStreams.Kafka;
-using QuixStreams;
 using Xunit;
 using Xunit.Abstractions;
 using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
@@ -25,7 +24,7 @@ namespace QuixStreams.Streaming.IntegrationTests
         {
             this.output = output;
             this.kafkaDockerTestFixture = kafkaDockerTestFixture;
-            QuixStreams.Logging.Factory = output.CreateLoggerFactory();
+            Logging.Factory = output.CreateLoggerFactory();
             client = new KafkaStreamingClient(kafkaDockerTestFixture.BrokerList, null);
         }
 

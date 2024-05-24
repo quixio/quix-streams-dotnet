@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using QuixStreams.State;
 using QuixStreams.State.Storage;
@@ -14,7 +13,7 @@ namespace QuixStreams.Streaming.States
         /// <summary>
         /// The underlying state storage for this StreamState, responsible for managing the actual value.
         /// </summary>
-        private readonly State.ScalarState scalarState;
+        private readonly ScalarState scalarState;
 
         /// <summary>
         /// Raised immediately before a flush operation is performed.
@@ -33,7 +32,7 @@ namespace QuixStreams.Streaming.States
         /// <param name="loggerFactory">The logger factory to use</param>
         internal StreamScalarState(IStateStorage storage, ILoggerFactory loggerFactory)
         {
-            this.scalarState = new State.ScalarState(storage, loggerFactory);
+            this.scalarState = new ScalarState(storage, loggerFactory);
         }
         
         /// <inheritdoc cref="IStreamState"/>
@@ -86,7 +85,7 @@ namespace QuixStreams.Streaming.States
         /// <summary>
         /// The underlying state storage for this StreamState, responsible for managing the actual value.
         /// </summary>
-        private readonly State.ScalarState<T> scalarState;
+        private readonly ScalarState<T> scalarState;
         
         /// <summary>
         /// A function that returns a default value of type T when the value has not been set yet.
@@ -111,7 +110,7 @@ namespace QuixStreams.Streaming.States
         /// <param name="loggerFactory">The logger factory to use</param>
         internal StreamScalarState(IStateStorage storage, StreamStateScalarDefaultValueDelegate<T> defaultValueFactory, ILoggerFactory loggerFactory)
         {
-            this.scalarState = new State.ScalarState<T>(storage, loggerFactory);
+            this.scalarState = new ScalarState<T>(storage, loggerFactory);
             this.defaultValueFactory = defaultValueFactory ?? (() => default(T));
         }
         

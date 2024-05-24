@@ -36,7 +36,7 @@ namespace QuixStreams.State.ParallelWriteTest
 
             int counter = 0;
 
-            var threads = new List<System.Threading.Thread>();
+            var threads = new List<Thread>();
             for (var i = 0; i < 15; ++i)
             {
                 var thread = new Thread(() =>

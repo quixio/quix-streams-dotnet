@@ -12,26 +12,26 @@ namespace QuixStreams.Streaming
         /// <summary>
         /// Event raised when the Stream Properties have changed.
         /// </summary>
-        event Action<IStreamConsumer, QuixStreams.Telemetry.Models.StreamProperties> OnStreamPropertiesChanged;
+        event Action<IStreamConsumer, StreamProperties> OnStreamPropertiesChanged;
 
         /// <summary>
         /// Event raised when the <see cref="Telemetry.Models.ParameterDefinitions"/> have been changed.
         /// </summary>
-        event Action<IStreamConsumer, QuixStreams.Telemetry.Models.ParameterDefinitions> OnParameterDefinitionsChanged;
+        event Action<IStreamConsumer, ParameterDefinitions> OnParameterDefinitionsChanged;
 
         /// <summary>
         /// Event raised when the <see cref="Telemetry.Models.EventDefinitions"/> have been changed.
         /// </summary>
-        event Action<IStreamConsumer, QuixStreams.Telemetry.Models.EventDefinitions> OnEventDefinitionsChanged;
+        event Action<IStreamConsumer, EventDefinitions> OnEventDefinitionsChanged;
 
         /// <summary>
         /// Event raised when a new package of <see cref="TimeseriesDataRaw"/> values have been received.
         /// </summary>
-        event Action<IStreamConsumer, QuixStreams.Telemetry.Models.TimeseriesDataRaw> OnTimeseriesData;
+        event Action<IStreamConsumer, TimeseriesDataRaw> OnTimeseriesData;
 
         /// <summary>
         /// Event raised when a new package of <see cref="EventDataRaw"/> values have been received.
         /// </summary>
-        event Action<IStreamConsumer, QuixStreams.Telemetry.Models.EventDataRaw> OnEventData;
+        event Action<IStreamConsumer, EventDataRaw> OnEventData;
     }
 }

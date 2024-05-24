@@ -8,10 +8,10 @@ using ConsoleTables;
 using FluentAssertions.Extensions;
 using MathNet.Numerics.Statistics;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Streaming.UnitTests.Helpers;
 using QuixStreams.Telemetry.Models;
+using Timer = System.Timers.Timer;
 
 namespace QuixStreams.ThroughputTest
 {
@@ -20,17 +20,17 @@ namespace QuixStreams.ThroughputTest
         public const string TestName = "Baseline";
         public void Run(CancellationToken ct, bool useBuffer = false)
         {
-            var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+            var currentProcess = Process.GetCurrentProcess();
             // usage stuff
             
-            QuixStreams.Logging.UpdateFactory(LogLevel.Debug);
-            QuixStreams.Kafka.Transport.SerDes.PackageSerializationSettings.Mode = PackageSerializationMode.Header;
+            Logging.UpdateFactory(LogLevel.Debug);
+            PackageSerializationSettings.Mode = PackageSerializationMode.Header;
             var client = new TestStreamingClient(CodecType.Protobuf);
 
             var topicConsumer = client.GetTopicConsumer();
             var topicProducer = client.GetTopicProducer();
 
-            var timer = new System.Timers.Timer()
+            var timer = new Timer()
             {
                 Interval = 1000, Enabled = false, AutoReset = false
             };

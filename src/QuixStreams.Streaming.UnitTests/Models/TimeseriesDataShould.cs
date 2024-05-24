@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using FluentAssertions;
+using FluentAssertions.Common;
 using FluentAssertions.Equivalency;
 using QuixStreams.Streaming.Models;
+using QuixStreams.Telemetry.Models;
 using Xunit;
 
 namespace QuixStreams.Streaming.UnitTests.Models
@@ -89,7 +91,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             data.rawData.StringValues.Remove("param4");
             data.Timestamps.RemoveAt(1);
 
-            data.Should().BeEquivalentTo(filtered, options => options.Including(info => info.WhichGetterHas(FluentAssertions.Common.CSharpAccessModifier.Public)));
+            data.Should().BeEquivalentTo(filtered, options => options.Including(info => info.WhichGetterHas(CSharpAccessModifier.Public)));
         }
 
         [Fact]
@@ -168,7 +170,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
         public void LoadFromTimeseriesData_WithDuplicatedTimestamps_ShouldCreateInstanceAsExpected()
         {
             // Arrange
-            var dataDuplicatedTimestamps = new QuixStreams.Telemetry.Models.TimeseriesDataRaw()
+            var dataDuplicatedTimestamps = new TimeseriesDataRaw()
             {
                 Epoch = 0,
                 Timestamps = new long[] { 100, 100, 100, 200, 200 },
@@ -188,7 +190,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
                 }
             };
 
-            var dataWithoutDuplicatedTimestamps = new QuixStreams.Telemetry.Models.TimeseriesDataRaw()
+            var dataWithoutDuplicatedTimestamps = new TimeseriesDataRaw()
             {
                 Epoch = 0,
                 Timestamps = new long[] { 100 , 200, 200 },
@@ -214,14 +216,14 @@ namespace QuixStreams.Streaming.UnitTests.Models
             var data2 = new TimeseriesData(dataWithoutDuplicatedTimestamps);
 
             // Assert
-            data1.Should().BeEquivalentTo(data2, options => options.Including(info => info.WhichGetterHas(FluentAssertions.Common.CSharpAccessModifier.Public)));
+            data1.Should().BeEquivalentTo(data2, options => options.Including(info => info.WhichGetterHas(CSharpAccessModifier.Public)));
         }
 
         [Fact]
         public void LoadFromTimeseriesData_WithNullValues_ShouldCreateInstanceAsExpected()
         {
             // Arrange
-            var dataWithNulls = new QuixStreams.Telemetry.Models.TimeseriesDataRaw()
+            var dataWithNulls = new TimeseriesDataRaw()
             {
                 Epoch = 0,
                 Timestamps = new long[] { 100, 200, 300, 400, 500 },
@@ -336,7 +338,7 @@ namespace QuixStreams.Streaming.UnitTests.Models
             dataEpoch.Should().BeEquivalentTo(dataNoEpoch);
         }
 
-        private static QuixStreams.Streaming.Models.TimeseriesData GenerateTimeseriesData(int offset, int amount, int capacity = 0, long epoch = 0, bool includeEpoch = false)
+        private static TimeseriesData GenerateTimeseriesData(int offset, int amount, int capacity = 0, long epoch = 0, bool includeEpoch = false)
         {
             var tsdata = new TimeseriesData();
             if (capacity > 0)

@@ -179,7 +179,7 @@ namespace QuixStreams.Tester
 
                     var builder = stream.Events.AddTimestamp(DateTime.UtcNow);
 
-                    builder.AddValue("an_event", Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+                    builder.AddValue("an_event", JsonConvert.SerializeObject(obj));
 
                     if (random.Next(0, 2) == 1) builder.AddTag("Random_Tag", $"tag{random.Next(0, 10)}");
                     builder.Publish();
@@ -284,7 +284,7 @@ namespace QuixStreams.Tester
                     if (Configuration.ConsumerConfig.PrintTimeseries)
                     {
                         Console.WriteLine($"Received new timeseries data for {consumer.StreamId}");
-                        var asJson = Newtonsoft.Json.JsonConvert.SerializeObject(args.Data, Formatting.Indented);
+                        var asJson = JsonConvert.SerializeObject(args.Data, Formatting.Indented);
                         Console.WriteLine(asJson);
                     }
                 };
@@ -295,7 +295,7 @@ namespace QuixStreams.Tester
                     if (Configuration.ConsumerConfig.PrintEvents)
                     {
                         Console.WriteLine($"Received new event data for {consumer.StreamId}");
-                        var asJson = Newtonsoft.Json.JsonConvert.SerializeObject(args.Data, Formatting.Indented);
+                        var asJson = JsonConvert.SerializeObject(args.Data, Formatting.Indented);
                         Console.WriteLine(asJson);
                     }
                 };

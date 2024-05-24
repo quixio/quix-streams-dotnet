@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using FluentAssertions;
 using NSubstitute;
 using Quix.TestBase.Extensions;
-using QuixStreams;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Telemetry.Models;
 using Xunit;
@@ -18,7 +16,7 @@ namespace QuixStreams.Telemetry.UnitTests
     {
         public StreamPipelineFactoryShould(ITestOutputHelper outputHelper)
         {
-            QuixStreams.Logging.Factory = outputHelper.CreateLoggerFactory();
+            Logging.Factory = outputHelper.CreateLoggerFactory();
         }
         
         [Fact]

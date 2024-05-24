@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka;
-using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.SerDes.Codecs;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
 using Timer = System.Timers.Timer;

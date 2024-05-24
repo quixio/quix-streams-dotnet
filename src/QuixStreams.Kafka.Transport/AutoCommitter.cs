@@ -14,7 +14,7 @@ namespace QuixStreams.Kafka.Transport
     internal sealed class AutoCommitter 
     {
         private readonly Action<ICollection<TopicPartitionOffset>, Action> wrappingCommitCallback;
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<AutoCommitter>();
+        private readonly ILogger logger = Logging.CreateLogger<AutoCommitter>();
         private readonly Func<TransportPackage, CancellationToken, Task> onPublish = null;
         private Action closeAction = null;
         private bool closed = false;

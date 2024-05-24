@@ -9,7 +9,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
     {
         private readonly StreamTimeseriesProducer streamTimeseriesProducer;
         private readonly string location;
-        private QuixStreams.Telemetry.Models.ParameterDefinition definition;
+        private Telemetry.Models.ParameterDefinition definition;
 
         /// <summary>
         /// Initializes a new instance of <see cref="ParameterDefinitionBuilder"/>
@@ -17,7 +17,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         /// <param name="streamTimeseriesProducer">Parameters producer owner</param>
         /// <param name="location">Location selected for the Parameter definition builder</param>
         /// <param name="definition">Parameter definition instance managed by the builder</param>
-        public ParameterDefinitionBuilder(StreamTimeseriesProducer streamTimeseriesProducer, string location, QuixStreams.Telemetry.Models.ParameterDefinition definition = null)
+        public ParameterDefinitionBuilder(StreamTimeseriesProducer streamTimeseriesProducer, string location, Telemetry.Models.ParameterDefinition definition = null)
         {
             this.streamTimeseriesProducer = streamTimeseriesProducer;
             this.location = location;

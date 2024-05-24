@@ -51,7 +51,7 @@ namespace Quix.TestBase.Extensions
                     if (exception.StackTrace != null) this.helper.WriteLine(exception.StackTrace);
                 }
             }
-            catch (System.InvalidOperationException)
+            catch (InvalidOperationException)
             {
                 // I think this might happen with async tasks, but stop failing agent tests for this
             }
@@ -95,7 +95,7 @@ namespace Quix.TestBase.Extensions
                     if (exception.StackTrace != null) this.helper.WriteLine(exception.StackTrace);
                 }
             }
-            catch (System.InvalidOperationException)
+            catch (InvalidOperationException)
             {
                 // I think this might happen with async tasks, but stop failing agent tests for this
             }

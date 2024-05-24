@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Transactions;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Kafka;

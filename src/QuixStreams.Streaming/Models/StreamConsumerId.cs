@@ -1,5 +1,3 @@
-using System;
-
 namespace QuixStreams.Streaming.Models
 {
     public class StreamConsumerId

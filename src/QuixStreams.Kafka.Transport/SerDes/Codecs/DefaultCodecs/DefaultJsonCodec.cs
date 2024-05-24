@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
 {
@@ -21,7 +22,7 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
         public DefaultJsonCodec()
         {
             serializer = JsonSerializer.Create();
-            serializer.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+            serializer.Converters.Add(new StringEnumConverter());
             serializer.DefaultValueHandling = DefaultValueHandling.Ignore;
         }
 
@@ -74,7 +75,7 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
         private DefaultJsonCodec()
         {
             serializer = JsonSerializer.Create();
-            serializer.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+            serializer.Converters.Add(new StringEnumConverter());
             serializer.DefaultValueHandling = DefaultValueHandling.Ignore;
         }
 

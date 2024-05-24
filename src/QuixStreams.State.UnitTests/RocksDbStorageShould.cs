@@ -1,10 +1,10 @@
-using FluentAssertions;
-using Xunit;
-using QuixStreams.State.Storage;
-using System.Threading.Tasks;
 using System;
 using System.IO;
+using System.Threading.Tasks;
+using FluentAssertions;
+using QuixStreams.State.Storage;
 using RocksDbSharp;
+using Xunit;
 
 namespace QuixStreams.State.UnitTests
 {
@@ -263,7 +263,7 @@ namespace QuixStreams.State.UnitTests
         {
             // Cleanup
             storage.Dispose();
-            System.IO.Directory.Delete(this.dbDirectory, true);
+            Directory.Delete(this.dbDirectory, true);
         }
     }
 }

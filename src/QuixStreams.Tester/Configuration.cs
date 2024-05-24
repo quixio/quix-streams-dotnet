@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.Configuration;
 using QuixStreams.Streaming.Configuration;
-using Enum = System.Enum;
 
 namespace QuixStreams.Tester
 {
@@ -30,7 +29,7 @@ namespace QuixStreams.Tester
                 throw new Exception("Failed to parse Mode. Must be either Producer or Consumer");
             }
 
-            Configuration.Mode = mode;
+            Mode = mode;
             Console.WriteLine($"In {mode} setting.");
             
             ProducerConfig = new ProducerConfig();

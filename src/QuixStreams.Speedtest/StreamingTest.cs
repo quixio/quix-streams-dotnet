@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using QuixStreams.Streaming;
+using QuixStreams.Streaming.Models;
 
 namespace QuixStreams.Speedtest
 {
@@ -60,7 +61,7 @@ namespace QuixStreams.Speedtest
 
             while (!ct.IsCancellationRequested)
             {
-                var data = new QuixStreams.Streaming.Models.TimeseriesData();
+                var data = new TimeseriesData();
                 data.AddTimestampNanoseconds(10).AddValue(parameterName, DateTime.UtcNow.ToBinary());
                 stream.Timeseries.Buffer.Publish(data);
             }

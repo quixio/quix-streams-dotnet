@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using QuixStreams;
 using QuixStreams.Telemetry.Models;
 
 namespace QuixStreams.Streaming.Models.StreamProducer
@@ -30,7 +29,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
 
         private long lastHeartbeatRebroadcastTime = 0;  // in milliseconds
         private int heartbeatRebroadcastFlushInterval = 30*1000;
-        private readonly ILogger<StreamTimeseriesProducer> logger = QuixStreams.Logging.CreateLogger<StreamTimeseriesProducer>();
+        private readonly ILogger<StreamTimeseriesProducer> logger = Logging.CreateLogger<StreamTimeseriesProducer>();
 
         /// <inheritdoc/>
         public int FlushInterval
@@ -230,11 +229,11 @@ namespace QuixStreams.Streaming.Models.StreamProducer
                     {
                         return this.Parents.Distinct().ToList();
                     }
-                    catch (System.ArgumentException ex)
+                    catch (ArgumentException ex)
                     {
                         this.logger.LogTrace(ex, "Exception while trying to get stream metadata");
                     }
-                    catch (System.InvalidOperationException ex)
+                    catch (InvalidOperationException ex)
                     {
                         this.logger.LogTrace(ex, "Exception while trying to get stream parents");
                     }
@@ -252,11 +251,11 @@ namespace QuixStreams.Streaming.Models.StreamProducer
                     {
                         return this.Metadata.ToDictionary(kv => kv.Key, kv => kv.Value);
                     }
-                    catch (System.ArgumentException ex)
+                    catch (ArgumentException ex)
                     {
                         this.logger.LogTrace(ex, "Exception while trying to get stream metadata");
                     }
-                    catch (System.InvalidOperationException ex)
+                    catch (InvalidOperationException ex)
                     {
                         this.logger.LogTrace(ex, "Exception while trying to get stream metadata");
                     }

@@ -206,7 +206,7 @@ namespace QuixStreams.Streaming
     /// </summary>
     public class QuixStreamingClient : IQuixStreamingClient
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<QuixStreamingClient>();
+        private readonly ILogger logger = Logging.CreateLogger<QuixStreamingClient>();
         private readonly IDictionary<string, string> brokerProperties;
         private readonly string token;
         private readonly string workspaceId;
@@ -521,7 +521,7 @@ namespace QuixStreams.Streaming
                 };
                 
                 // Hacky workaround to an issue that Kafka client can't be left with no GroupId, but it still uses it for ACL checks.
-                QuixStreams.Kafka.ConsumerConfiguration.ConsumerGroupIdWhenNotSet = ws.WorkspaceId + "-" + Guid.NewGuid().ToString("N").Substring(0, 10);
+                ConsumerConfiguration.ConsumerGroupIdWhenNotSet = ws.WorkspaceId + "-" + Guid.NewGuid().ToString("N").Substring(0, 10);
                 return (null, newCommitOptions);
             }
             
@@ -910,7 +910,7 @@ namespace QuixStreams.Streaming
                     var cid = String.Empty;
                     try
                     {
-                        var error = JsonConvert.DeserializeObject<QuixApi.Portal.PortalException>(responseContent, jsonSerializerSettings);
+                        var error = JsonConvert.DeserializeObject<PortalException>(responseContent, jsonSerializerSettings);
                         msg = error.Message;
                         cid = error.CorrelationId;
                     }

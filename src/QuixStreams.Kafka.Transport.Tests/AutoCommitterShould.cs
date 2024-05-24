@@ -18,7 +18,7 @@ namespace QuixStreams.Kafka.Transport.Tests
 
         public CommitModifierShould(ITestOutputHelper helper)
         {
-            QuixStreams.Logging.Factory = helper.CreateLoggerFactory();
+            Logging.Factory = helper.CreateLoggerFactory();
             this.helper = helper;
         }
          

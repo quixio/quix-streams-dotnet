@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using QuixStreams.Telemetry.Models;
 
 namespace QuixStreams.Streaming.Models.StreamProducer
 {
@@ -30,7 +31,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         /// Publish data in TimeseriesDataRaw format without any buffering
         /// </summary>
         /// <param name="data">Timeseries data to publish</param>
-        void Publish(QuixStreams.Telemetry.Models.TimeseriesDataRaw data);
+        void Publish(TimeseriesDataRaw data);
 
         /// <summary>
         /// Publish single timestamp to stream without any buffering

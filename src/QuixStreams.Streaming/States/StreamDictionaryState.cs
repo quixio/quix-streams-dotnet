@@ -15,7 +15,7 @@ namespace QuixStreams.Streaming.States
         /// <summary>
         /// The underlying state storage for this StreamState, responsible for managing the actual key-value pairs.
         /// </summary>
-        private readonly State.DictionaryState dictionaryState;
+        private readonly DictionaryState dictionaryState;
 
         /// <summary>
         /// Raised immediately before a flush operation is performed.
@@ -34,7 +34,7 @@ namespace QuixStreams.Streaming.States
         /// <param name="loggerFactory">The logger factory to use</param>
         internal StreamDictionaryState(IStateStorage storage, ILoggerFactory loggerFactory)
         {
-            this.dictionaryState = new State.DictionaryState(storage, loggerFactory);
+            this.dictionaryState = new DictionaryState(storage, loggerFactory);
         }
 
         /// <inheritdoc/>
@@ -207,7 +207,7 @@ namespace QuixStreams.Streaming.States
         /// <summary>
         /// The underlying state storage for this StreamState, responsible for managing the actual key-value pairs.
         /// </summary>
-        private readonly State.DictionaryState<T> dictionaryState;
+        private readonly DictionaryState<T> dictionaryState;
         /// <summary>
         /// Returns whether the cache keys are case-sensitive
         /// </summary>
@@ -236,7 +236,7 @@ namespace QuixStreams.Streaming.States
         /// <param name="loggerFactory">The logger factory to use</param>
         internal StreamDictionaryState(IStateStorage storage, StreamStateDefaultValueDelegate<T> defaultValueFactory, ILoggerFactory loggerFactory)
         {
-            this.dictionaryState = new State.DictionaryState<T>(storage, loggerFactory);
+            this.dictionaryState = new DictionaryState<T>(storage, loggerFactory);
             this.defaultValueFactory = defaultValueFactory ?? (s => throw new KeyNotFoundException("The specified key was not found and there was no default value factory set."));
         }
 

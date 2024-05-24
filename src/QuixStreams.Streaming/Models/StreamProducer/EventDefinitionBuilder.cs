@@ -10,7 +10,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
     {
         private readonly StreamEventsProducer streamEventsProducer;
         private readonly string location;
-        private QuixStreams.Telemetry.Models.EventDefinition properties;
+        private Telemetry.Models.EventDefinition properties;
 
         /// <summary>
         /// Initializes a new instance of <see cref="EventDefinitionBuilder"/>
@@ -18,7 +18,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
         /// <param name="streamEventsProducer">Events producer owner</param>
         /// <param name="location">Location selected for the Event definition builder</param>
         /// <param name="properties">Events definition instance managed by the builder</param>
-        public EventDefinitionBuilder(StreamEventsProducer streamEventsProducer, string location, QuixStreams.Telemetry.Models.EventDefinition properties = null)
+        public EventDefinitionBuilder(StreamEventsProducer streamEventsProducer, string location, Telemetry.Models.EventDefinition properties = null)
         {
             this.streamEventsProducer = streamEventsProducer;
             this.location = location;

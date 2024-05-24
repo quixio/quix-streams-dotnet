@@ -22,7 +22,7 @@ namespace QuixStreams.Kafka
         private readonly object sendLock = new object();
 
         private readonly object openLock = new object();
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<KafkaProducer>();
+        private readonly ILogger logger = Logging.CreateLogger<KafkaProducer>();
         private IDictionary<string, string> brokerStates = new Dictionary<string, string>();
         private bool checkBrokerStateBeforeSend = false;
         private bool logOnNextBrokerStateUp = false;

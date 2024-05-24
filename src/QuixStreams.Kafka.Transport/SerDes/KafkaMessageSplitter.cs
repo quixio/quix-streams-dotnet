@@ -50,7 +50,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// </summary>
         private static int MovingWarnAboveSize = 0;
         
-        private static readonly ILogger logger = QuixStreams.Logging.CreateLogger(typeof(KafkaMessageSplitter));
+        private static readonly ILogger logger = Logging.CreateLogger(typeof(KafkaMessageSplitter));
 
         /// <summary>
         /// The expected size of the the details to describe the split info

@@ -10,6 +10,7 @@ using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.UnitTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
+using CodecRegistry = QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry;
 
 namespace QuixStreams.Telemetry.UnitTests
 {
@@ -17,7 +18,7 @@ namespace QuixStreams.Telemetry.UnitTests
     {
         public KafkaConsumerProducerShould(ITestOutputHelper helper)
         {
-            QuixStreams.Logging.Factory = helper.CreateLoggerFactory();
+            Logging.Factory = helper.CreateLoggerFactory();
         }
         
         [Fact]
@@ -175,16 +176,16 @@ namespace QuixStreams.Telemetry.UnitTests
 
         private static void RegisterTestCodecs()
         {
-            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(typeof(StreamEnd).Name, new DefaultJsonCodec<StreamEnd>());
-            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(new ModelKey(typeof(TestModel1)), new DefaultJsonCodec<TestModel1>());
-            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.RegisterCodec(new ModelKey(typeof(TestModel2)), new DefaultJsonCodec<TestModel2>());
+            CodecRegistry.RegisterCodec(typeof(StreamEnd).Name, new DefaultJsonCodec<StreamEnd>());
+            CodecRegistry.RegisterCodec(new ModelKey(typeof(TestModel1)), new DefaultJsonCodec<TestModel1>());
+            CodecRegistry.RegisterCodec(new ModelKey(typeof(TestModel2)), new DefaultJsonCodec<TestModel2>());
         }
 
         private static void UnregisterTestCodecs()
         {
-            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.ClearCodecs(typeof(StreamEnd).Name);
-            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.ClearCodecs(new ModelKey(typeof(TestModel1)));
-            QuixStreams.Kafka.Transport.SerDes.Codecs.CodecRegistry.ClearCodecs(new ModelKey(typeof(TestModel2)));
+            CodecRegistry.ClearCodecs(typeof(StreamEnd).Name);
+            CodecRegistry.ClearCodecs(new ModelKey(typeof(TestModel1)));
+            CodecRegistry.ClearCodecs(new ModelKey(typeof(TestModel2)));
         }
 
     }

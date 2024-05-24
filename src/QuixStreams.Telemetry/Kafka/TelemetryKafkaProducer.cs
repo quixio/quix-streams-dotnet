@@ -13,7 +13,7 @@ namespace QuixStreams.Telemetry.Kafka
     /// </summary>
     public class TelemetryKafkaProducer : StreamComponent, IDisposable
     {
-        private readonly ILogger logger = QuixStreams.Logging.CreateLogger<TelemetryKafkaProducer>();
+        private readonly ILogger logger = Logging.CreateLogger<TelemetryKafkaProducer>();
 
         private readonly IKafkaTransportProducer kafkaTransportProducer;
 
@@ -34,7 +34,7 @@ namespace QuixStreams.Telemetry.Kafka
         /// <param name="streamId">Stream Id to use to generate the new Stream on Kafka. If not specified, it generates a new Guid.</param>
         public TelemetryKafkaProducer(IKafkaProducer producer, string streamId = null)
         {
-            this.kafkaTransportProducer = new QuixStreams.Kafka.Transport.KafkaTransportProducer(producer);
+            this.kafkaTransportProducer = new KafkaTransportProducer(producer);
 
             this.InitializeStreaming(streamId);
         }

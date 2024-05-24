@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Quix.TestBase.Extensions;
-using QuixStreams;
 using QuixStreams.Streaming.UnitTests.Helpers;
 using QuixStreams.Telemetry.Models;
 using Xunit;
@@ -18,7 +16,7 @@ namespace QuixStreams.Streaming.UnitTests
     {
         public StreamingClientTests(ITestOutputHelper helper)
         {
-            QuixStreams.Logging.Factory = helper.CreateLoggerFactory();
+            Logging.Factory = helper.CreateLoggerFactory();
         }
         
         private static TimeseriesDataRaw GenerateTimeseriesData(int offset)
