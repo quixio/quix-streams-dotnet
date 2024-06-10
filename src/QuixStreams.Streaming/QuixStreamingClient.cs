@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -232,11 +231,6 @@ namespace QuixStreams.Streaming
         public TimeSpan CachePeriod = TimeSpan.FromMinutes(1);
 
         private bool tokenChecked;
-        
-        /// <summary>
-        /// Gets or sets the token validation configuration
-        /// </summary>
-        public TokenValidationConfiguration TokenValidationConfig { get; set; } = new TokenValidationConfiguration();
 
         private static JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
         {
@@ -536,7 +530,7 @@ namespace QuixStreams.Streaming
 
         private async Task<(KafkaStreamingClient client, string topicId, Workspace ws)> ValidateTopicAndCreateClient(string topicIdOrName)
         {
-            CheckToken(token);
+            if (string.IsNullOrWhiteSpace(token)) throw new ArgumentNullException(nameof(token));
             topicIdOrName = topicIdOrName.Trim();
             var sw = Stopwatch.StartNew();
             var ws = await GetWorkspaceFromConfiguration(topicIdOrName).ConfigureAwait(false);
@@ -958,93 +952,6 @@ namespace QuixStreams.Streaming
             {
                 throw new QuixApiException(uri.AbsolutePath, "Failed to serialize response.", String.Empty, HttpStatusCode.OK);
             }
-        }
-        
-
-        private void CheckToken(string token)
-        {
-            if (string.IsNullOrWhiteSpace(token)) throw new ArgumentNullException(nameof(token));
-            if (this.tokenChecked) return;
-            this.tokenChecked = true;
-            
-
-
-            if (TokenValidationConfig == null || !TokenValidationConfig.Enabled) return;
-            
-            var handler = new JwtSecurityTokenHandler();
-            if (!handler.CanReadToken(token))
-            {
-                // Possibly a quix token
-                return;
-            }
-            
-            JwtSecurityToken jwt;
-            try
-            {
-                jwt = handler.ReadJwtToken(token);
-            }
-            catch
-            {
-                this.logger.LogWarning("Provided token is not a valid JWT token. It will probably not function.");
-                return;
-            }
-
-            if (DateTime.UtcNow <= jwt.ValidFrom)
-            {
-                this.logger.LogWarning($"Provided token is only valid from {jwt.ValidFrom}. It will probably not function yet.");
-                return;
-            }
-            
-            
-            var expires = jwt.ValidTo;
-            if (jwt.Payload != null
-                && jwt.Payload.TryGetValue("https://quix.io/exp", out var customExpiry)
-                && customExpiry is string value
-                && long.TryParse(value, out var customExpirySeconds))
-            {
-                expires = new DateTime(1970, 01, 01, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(customExpirySeconds);
-            }
-            
-            if (DateTime.UtcNow > expires)
-            {
-                this.logger.LogWarning("Provided token expired at {0}. It will probably not function.", expires);
-                return;
-            }
-            
-            if (TokenValidationConfig.WarningBeforeExpiry.HasValue && DateTime.UtcNow.Add(TokenValidationConfig.WarningBeforeExpiry.Value) > expires)
-            {
-                this.logger.LogWarning("Provided token will expire soon, at {0}. Consider replacing it. You can disable this warning in {1}.", expires, nameof(TokenValidationConfig));
-                return;
-            }
-            
-            if (TokenValidationConfig.WarnAboutNonPatToken && jwt.Payload != null && !jwt.Payload.Sub.StartsWith(jwt.Payload.Azp))
-            {
-                this.logger.LogWarning("Provided token is not a PAT token. Consider replacing it for non-development environments. You can disable this warning in {1}.", nameof(TokenValidationConfig));
-                return;
-            }
-
-            this.logger.LogTrace($"Provided token passed sanity checks.");
-        }
-
-        /// <summary>
-        /// Token Validation configuration
-        /// </summary>
-        public class TokenValidationConfiguration
-        {
-            /// <summary>
-            /// Whether token validation and warnings are enabled. Defaults to <c>true</c>.
-            /// </summary>
-            public bool Enabled = true;
-            
-            /// <summary>
-            /// If the token expires within this period, a warning will be displayed. Defaults to <c>2 days</c>. Set to null to disable the check
-            /// </summary>
-            public TimeSpan? WarningBeforeExpiry = TimeSpan.FromDays(2);
-            
-            /// <summary>
-            /// Whether to warn if the provided token is not PAT token. Defaults to <c>true</c>.
-            /// </summary>
-            public bool WarnAboutNonPatToken = true;
         }
         
         private class SafeEnumConverter: StringEnumConverter
