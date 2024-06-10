@@ -58,7 +58,7 @@ namespace QuixStreams.Kafka
         /// <summary>
         /// The partition to select the partition for the message
         /// </summary>
-        public QuixPartitionerDelegate Partitioner { get; }
+        public QuixPartitionerDelegate? Partitioner { get; }
     }
 
     public sealed class ConsumerTopicConfiguration
@@ -206,12 +206,12 @@ namespace QuixStreams.Kafka
         /// <summary>
         /// The topics
         /// </summary>
-        public IReadOnlyCollection<string> Topics { get; }
+        public IReadOnlyCollection<string>? Topics { get; }
 
         /// <summary>
         /// The topics with partition offsets
         /// </summary>
-        public IReadOnlyCollection<TopicPartitionOffset> Partitions { get; }
+        public IReadOnlyCollection<TopicPartitionOffset>? Partitions { get; }
     }
 
     /// <summary>

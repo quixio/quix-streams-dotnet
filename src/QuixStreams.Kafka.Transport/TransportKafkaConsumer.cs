@@ -105,7 +105,7 @@ namespace QuixStreams.Kafka.Transport
                 };
                 closeAction = () => commitModifier.Close();
 
-                commitModifier.OnPackageAvailable += package => this.OnPackageReceived?.Invoke(package);
+                commitModifier.OnPackageAvailable += package => this.OnPackageReceived?.Invoke(package) ?? Task.CompletedTask;
 
                 kafkaConsumer.OnRevoked += (sender, args) =>
                 {
@@ -161,7 +161,7 @@ namespace QuixStreams.Kafka.Transport
                 merger.OnMessageAvailable += message =>
                 {
                     var package = deserializer.Deserialize(message);
-                    return this.OnPackageReceived?.Invoke(package);
+                    return this.OnPackageReceived?.Invoke(package) ?? Task.CompletedTask;
                 };
                 
                 kafkaConsumer.OnCommitted += (sender, args) =>

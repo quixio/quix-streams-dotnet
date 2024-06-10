@@ -13,7 +13,7 @@ namespace QuixStreams.Kafka
         /// <summary>
         /// The key of the message. Can be null.
         /// </summary>
-        public byte[] Key { get; protected set; }
+        public byte[]? Key { get; protected set; }
         
         /// <summary>
         /// The value of the message.
@@ -23,12 +23,12 @@ namespace QuixStreams.Kafka
         /// <summary>
         /// The headers of the message. Can be null.
         /// </summary>
-        public KafkaHeader[] Headers { get; protected set; }
+        public KafkaHeader[]? Headers { get; protected set; }
 
         /// <summary>
         /// Confluent kafka headers
         /// </summary>
-        protected internal Headers ConfluentHeaders { get; protected set; }
+        protected internal Headers? ConfluentHeaders { get; protected set; }
         
         /// <summary>
         /// The estimated message size in bytes including header, key, value
@@ -43,7 +43,7 @@ namespace QuixStreams.Kafka
         /// <summary>
         /// The topic partition offset associated with the message. Null when the message is not read from broker.
         /// </summary>
-        public TopicPartitionOffset TopicPartitionOffset { get; protected set; }
+        public TopicPartitionOffset? TopicPartitionOffset { get; protected set; }
         
         /// <summary>
         /// The message time
@@ -58,7 +58,7 @@ namespace QuixStreams.Kafka
         /// <param name="headers">The headers of the message. Specify null for no </param>
         /// <param name="timestamp">The optional message time. Defaults to utc now</param>
         /// <param name="topicPartitionOffset">The topic and partition with the specified offset this message is representing</param>
-        public KafkaMessage(byte[] key, byte[] value, KafkaHeader[] headers = null, Timestamp? timestamp = null, TopicPartitionOffset topicPartitionOffset = null)
+        public KafkaMessage(byte[] key, byte[] value, KafkaHeader[]? headers = null, Timestamp? timestamp = null, TopicPartitionOffset? topicPartitionOffset = null)
         {
             Key = key;
             MessageSize += key?.Length ?? 0;
@@ -86,7 +86,7 @@ namespace QuixStreams.Kafka
             TopicPartitionOffset = topicPartitionOffset;
         }
         
-        internal KafkaMessage(ConsumeResult<byte[], byte[]> consumeResult)
+        internal KafkaMessage(ConsumeResult<byte[]?, byte[]> consumeResult)
         {
             
             Key = consumeResult.Message.Key;

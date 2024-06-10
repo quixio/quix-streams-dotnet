@@ -24,7 +24,7 @@ namespace QuixStreams.Kafka
         private readonly ConsumerTopicConfiguration consumerTopicConfiguration;
         private readonly object workerThreadLock = new object();
 
-        private IConsumer<byte[], byte[]> consumer;
+        private IConsumer<byte[]?, byte[]>? consumer;
         private bool disposed;
         private bool closing;
         private bool disconnected; // connection is deemed dead
@@ -32,23 +32,23 @@ namespace QuixStreams.Kafka
         private DateTime? lastReconnect = null;
         private readonly TimeSpan minimumReconnectDelay = TimeSpan.FromSeconds(30); // the absolute minimum time between two reconnect attempts
 
-        private Task workerTask;
-        private TaskCompletionSource<object> workerTaskPollFinished; // Resolved when WorkerTask's polling loop is completed. Used for stopping more efficiently
-        private CancellationTokenSource workerTaskCts;
+        private Task? workerTask;
+        private TaskCompletionSource<object?>? workerTaskPollFinished; // Resolved when WorkerTask's polling loop is completed. Used for stopping more efficiently
+        private CancellationTokenSource? workerTaskCts;
         private readonly Stopwatch currentPackageProcessTime = new Stopwatch();
         private readonly bool consumerGroupSet;
-        private List<TopicPartitionOffset> lastRevokingState;
-        private Action lastRevokeCompleteAction = null;
-        private Action lastRevokeCancelAction = null;
+        private List<TopicPartitionOffset>? lastRevokingState;
+        private Action? lastRevokeCompleteAction = null;
+        private Action? lastRevokeCancelAction = null;
         private ShouldSkipConsumeResult seekFunc = (cr) => false; // return true if consume result should be dropped
         private const int RevokeTimeoutPeriodInMs = 5000; // higher number should only mean up to this seconds of delay if you are never going to get new assignments,
                                                           // but should not prove to cause any other issue
         
-        private ManualResetEventSlim connectionEstablishedEvent = new ManualResetEventSlim(false);
+        private readonly ManualResetEventSlim connectionEstablishedEvent = new ManualResetEventSlim(false);
 
         
         private readonly bool checkForKeepAlivePackets;   // Enables the check for keep alive messages from Quix
-        private string configId; // Hash to use in logs, so it is easier to detect what is experiencing an issue
+        private readonly string configId; // Hash to use in logs, so it is easier to detect what is experiencing an issue
 
         /// <summary>
         /// Enables the custom re-assigned logic for when partition is revoked and then reassigned.
@@ -58,47 +58,117 @@ namespace QuixStreams.Kafka
         public bool EnableReAssignedLogic { get; set; } = true;
 
         /// <inheritdoc />
-        public event EventHandler<Exception> OnErrorOccurred;
+        public event EventHandler<Exception>? OnErrorOccurred;
 
         /// <inheritdoc/>
         public Func<KafkaMessage, Task> OnMessageReceived { get; set; }
 
         /// <inheritdoc/>
-        public event EventHandler<CommittedEventArgs> OnCommitted;
+        public event EventHandler<CommittedEventArgs>? OnCommitted;
         
         
         /// <inheritdoc/>
-        public event EventHandler<CommittingEventArgs> OnCommitting;
+        public event EventHandler<CommittingEventArgs>? OnCommitting;
         
         /// <summary>
         /// Raised when consumer is losing access to subscribed source depending on implementation
         /// Argument is the state which describes what is being revoked. State is of type <see cref="List{TopicPartitionOffset}"/>
         /// </summary>
-        public event EventHandler<RevokingEventArgs> OnRevoking;
+        public event EventHandler<RevokingEventArgs>? OnRevoking;
         
         /// <summary>
         /// Raised when consumer lost access to subscribed source depending on implementation
         /// Argument is the state which describes what got revoked. State is of type <see cref="List{TopicPartitionOffset}"/>
         /// </summary>
-        public event EventHandler<RevokedEventArgs> OnRevoked;
+        public event EventHandler<RevokedEventArgs>? OnRevoked;
 
         /// <summary>
-        /// If set to false it wont wait for the broker verification
+        /// If set to false it won't wait for the broker verification
         /// </summary>
         public bool VerifyBrokerConnection { get; set; } = true;
-        
+
         /// <summary>
         /// Initializes a new instance of <see cref="KafkaConsumer"/>
         /// </summary>
         /// <param name="consumerConfiguration">The subscriber configuration to use</param>
         /// <param name="consumerTopicConfiguration">The topic configuration to use</param>
-        public KafkaConsumer(ConsumerConfiguration consumerConfiguration, ConsumerTopicConfiguration consumerTopicConfiguration)
+        public KafkaConsumer(ConsumerConfiguration consumerConfiguration,
+            ConsumerTopicConfiguration consumerTopicConfiguration)
         {
             this.consumerTopicConfiguration = consumerTopicConfiguration;
             this.config = GetKafkaConsumerConfig(consumerConfiguration);
             this.consumerGroupSet = consumerConfiguration.ConsumerGroupSet;
             this.checkForKeepAlivePackets = consumerConfiguration.CheckForKeepAlivePackets;
-            SetConfigId();
+            this.configId = GetConfigId();
+
+            this.OnMessageReceived = message => Task.CompletedTask; 
+            
+            // Helpers
+            string GetConfigId()
+            {
+                var logBuilder = new StringBuilder();
+                var configId = Guid.NewGuid().GetHashCode().ToString("X8");
+                logBuilder.AppendLine();
+                logBuilder.AppendLine("=================== Kafka Consumer Configuration =====================");
+                logBuilder.AppendLine("= Configuration Id: " + configId);
+                if (consumerTopicConfiguration.Partitions != null && consumerTopicConfiguration.Partitions.Any())
+                {
+                    if (consumerTopicConfiguration.Partitions.Count == 1)
+                    {
+                        logBuilder.AppendLine(
+                            $"= Topic with partition: {consumerTopicConfiguration.Partitions.First()}");
+                    }
+                    else
+                    {
+                        logBuilder.AppendLine("= Topics with partitions");
+                        foreach (var topicConfigurationPartition in consumerTopicConfiguration.Partitions)
+                        {
+                            logBuilder.AppendLine(
+                                $"=   |_{topicConfigurationPartition.Topic}[{topicConfigurationPartition.Partition.Value} | {topicConfigurationPartition.Offset}]");
+                        }
+                    }
+                }
+
+                if (consumerTopicConfiguration.Topics != null && consumerTopicConfiguration.Topics.Any())
+                {
+                    if (consumerTopicConfiguration.Topics.Count == 1)
+                    {
+                        logBuilder.AppendLine($"= Topic: {consumerTopicConfiguration.Topics.First()}");
+                    }
+                    else
+                    {
+                        logBuilder.AppendLine("= Topics");
+                        foreach (var topic in consumerTopicConfiguration.Topics)
+                        {
+                            logBuilder.AppendLine($"=   |_{topic}");
+                        }
+                    }
+                }
+
+                if (this.consumerGroupSet)
+                {
+                    logBuilder.AppendLine($"= ConsumerGroup: {this.config.GroupId}");
+                    if (!string.IsNullOrWhiteSpace(this.config.GroupInstanceId))
+                    {
+                        logBuilder.AppendLine($"= ConsumerInstanceId: {this.config.GroupInstanceId}");
+                    }
+                }
+
+                foreach (var keyValuePair in this.config)
+                {
+                    if (keyValuePair.Key?.IndexOf("password", StringComparison.InvariantCultureIgnoreCase) > -1 ||
+                        keyValuePair.Key?.IndexOf("username", StringComparison.InvariantCultureIgnoreCase) > -1)
+                    {
+                        logBuilder.AppendLine($"= {keyValuePair.Key}: [REDACTED]");
+                    }
+                    else logBuilder.AppendLine($"= {keyValuePair.Key}: {keyValuePair.Value}");
+                }
+
+                logBuilder.Append("======================================================================");
+                this.logger.LogDebug(logBuilder.ToString());
+
+                return configId;
+            }
         }
 
         private ConsumerConfig GetKafkaConsumerConfig(ConsumerConfiguration consumerConfiguration)
@@ -120,66 +190,6 @@ namespace QuixStreams.Kafka
 
             return config;
         }
-
-        private void SetConfigId()
-        {
-            var logBuilder = new StringBuilder();
-            this.configId = Guid.NewGuid().GetHashCode().ToString("X8");
-            logBuilder.AppendLine();
-            logBuilder.AppendLine("=================== Kafka Consumer Configuration =====================");
-            logBuilder.AppendLine("= Configuration Id: " + this.configId);
-            if (consumerTopicConfiguration.Partitions != null && consumerTopicConfiguration.Partitions.Any())
-            {
-                if (consumerTopicConfiguration.Partitions.Count == 1)
-                {
-                    logBuilder.AppendLine($"= Topic with partition: {consumerTopicConfiguration.Partitions.First()}");
-                }
-                else
-                {
-                    logBuilder.AppendLine("= Topics with partitions");
-                    foreach (var topicConfigurationPartition in consumerTopicConfiguration.Partitions)
-                    {
-                        logBuilder.AppendLine($"=   |_{topicConfigurationPartition.Topic}[{topicConfigurationPartition.Partition.Value} | {topicConfigurationPartition.Offset}]");
-                    }
-                }
-            }
-            if (consumerTopicConfiguration.Topics != null && consumerTopicConfiguration.Topics.Any())
-            {
-                if (consumerTopicConfiguration.Topics.Count == 1)
-                {
-                    logBuilder.AppendLine($"= Topic: {consumerTopicConfiguration.Topics.First()}");
-                }
-                else
-                {
-                    logBuilder.AppendLine("= Topics");
-                    foreach (var topic in consumerTopicConfiguration.Topics)
-                    {
-                        logBuilder.AppendLine($"=   |_{topic}");
-                    }
-                }
-            }
-
-            if (this.consumerGroupSet)
-            {
-                logBuilder.AppendLine($"= ConsumerGroup: {this.config.GroupId}");
-                if (!string.IsNullOrWhiteSpace(this.config.GroupInstanceId))
-                {
-                    logBuilder.AppendLine($"= ConsumerInstanceId: {this.config.GroupInstanceId}");    
-                }
-            }
-
-            foreach (var keyValuePair in this.config)
-            {
-                if (keyValuePair.Key?.IndexOf("password", StringComparison.InvariantCultureIgnoreCase) > -1 ||
-                    keyValuePair.Key?.IndexOf("username", StringComparison.InvariantCultureIgnoreCase) > -1)
-                {
-                    logBuilder.AppendLine($"= {keyValuePair.Key}: [REDACTED]");
-                }
-                else logBuilder.AppendLine($"= {keyValuePair.Key}: {keyValuePair.Value}");
-            }
-            logBuilder.Append("======================================================================");
-            this.logger.LogDebug(logBuilder.ToString());
-        }
         
         /// <inheritdoc />
         public void Open()
@@ -196,7 +206,7 @@ namespace QuixStreams.Kafka
                 this.logger.LogTrace("[{0}] Open started", this.configId);
                 closing = false;
                 this.lastRevokeCancelAction?.Invoke();
-                var consumerBuilder = new ConsumerBuilder<byte[], byte[]>(this.config);
+                var consumerBuilder = new ConsumerBuilder<byte[]?, byte[]>(this.config);
                 consumerBuilder.SetErrorHandler(this.ConsumerErrorHandler);
                 consumerBuilder.SetOffsetsCommittedHandler(this.AutomaticOffsetsCommittedHandler);
                 consumerBuilder.SetStatisticsHandler(this.ConsumerStatisticsHandler);
@@ -228,14 +238,16 @@ namespace QuixStreams.Kafka
                             default:
                                 throw new ArgumentOutOfRangeException();
                         }
-                        partitions = this.consumerTopicConfiguration.Topics.Select(x => new TopicPartitionOffset(x, Partition.Any, selectedOffset)).ToList(); // doing unset instead of end, so we get nice logs below
+                        partitions = this.consumerTopicConfiguration.Topics?.Select(x => new TopicPartitionOffset(x, Partition.Any, selectedOffset)).ToList(); // doing unset instead of end, so we get nice logs below
                     }
+
+                    if (partitions == null) throw new InvalidOperationException("The configuration for kafka consumer is not valid. Must define either topic or partition at least.");
 
                     // convert all "Partition Any" to explicit list of partition because Any doesn't work. // See https://github.com/confluentinc/confluent-kafka-dotnet/issues/917
                     if (partitions.Any(x => x.Partition == Partition.Any))
                     {
                         var newPartitions = new List<TopicPartitionOffset>();
-                        IAdminClient adminClient = null;
+                        IAdminClient? adminClient = null;
                         try
                         {
                             foreach (var partition in partitions)
@@ -325,7 +337,7 @@ namespace QuixStreams.Kafka
                 disconnected = false;
                 connectionEstablishedEvent.Reset();
                 var connectSw = Stopwatch.StartNew();
-                this.StartWorkerThread();
+                this.StartWorkerThread(this.consumer);
                 if (VerifyBrokerConnection)
                 {
                     if (connectionEstablishedEvent.Wait(TimeSpan.FromSeconds(5)))
@@ -355,7 +367,7 @@ namespace QuixStreams.Kafka
             return new AdminClientBuilder(adminConfig);
         }
 
-        private void AutomaticOffsetsCommittedHandler(IConsumer<byte[], byte[]> consumer, CommittedOffsets offsets)
+        private void AutomaticOffsetsCommittedHandler(IConsumer<byte[]?, byte[]> consumer, CommittedOffsets offsets)
         {
             if (this.logger.IsEnabled(LogLevel.Trace))
             {
@@ -366,7 +378,7 @@ namespace QuixStreams.Kafka
             }
         }
 
-        private void ConsumerLogHandler(IConsumer<byte[], byte[]> consumer, LogMessage msg)
+        private void ConsumerLogHandler(IConsumer<byte[]?, byte[]> consumer, LogMessage msg)
         {
             if (this.VerifyBrokerConnection && !this.connectionEstablishedEvent.IsSet && KafkaHelper.TryParseWakeup(msg, out var ready) && ready)
             {
@@ -401,7 +413,7 @@ namespace QuixStreams.Kafka
             } 
         }
         
-        private void PartitionsLostHandler(IConsumer<byte[], byte[]> consumer, List<TopicPartitionOffset> topicPartitionOffsets)
+        private void PartitionsLostHandler(IConsumer<byte[]?, byte[]> consumer, List<TopicPartitionOffset> topicPartitionOffsets)
         {
             try
             {
@@ -425,7 +437,7 @@ namespace QuixStreams.Kafka
             }
         }
 
-        private void PartitionsRevokedHandler(IConsumer<byte[], byte[]> consumer, List<TopicPartitionOffset> topicPartitionOffsets)
+        private void PartitionsRevokedHandler(IConsumer<byte[]?, byte[]> consumer, List<TopicPartitionOffset> topicPartitionOffsets)
         {
             try
             {
@@ -482,8 +494,9 @@ namespace QuixStreams.Kafka
             }
         }
 
-        private void PartitionsAssignedHandler(IConsumer<byte[], byte[]> consumer, List<TopicPartition> topicPartitions)
+        private void PartitionsAssignedHandler(IConsumer<byte[]?, byte[]> consumer, List<TopicPartition> topicPartitions)
         {
+            if (consumer == null) throw new ArgumentNullException(nameof(consumer));
             try
             {
                 var lrs = this.lastRevokingState;
@@ -502,7 +515,7 @@ namespace QuixStreams.Kafka
                     var seekFuncs = new List<ShouldSkipConsumeResult>();
                     foreach (var topicPartitionOffset in sameTopicPartitions)
                     {
-                        var currentPosition = this.consumer.Position(topicPartitionOffset.TopicPartition);
+                        var currentPosition = consumer.Position(topicPartitionOffset.TopicPartition);
                         if (currentPosition != topicPartitionOffset.Offset)
                         {
                             if (!topicPartitionOffset.Offset.IsSpecial)
@@ -510,7 +523,7 @@ namespace QuixStreams.Kafka
                                 seekFuncs.Add((cr) =>
                                 {
                                     this.logger.LogDebug("[{0}] Seeking partition: {1}", this.configId, topicPartitionOffset.ToString());
-                                    this.consumer.Seek(topicPartitionOffset);
+                                    consumer.Seek(topicPartitionOffset);
                                     this.logger.LogDebug("[{0}] Seeked partition: {1}", this.configId, topicPartitionOffset.ToString());
                                     return cr.TopicPartition == topicPartitionOffset.TopicPartition && cr.Offset <= topicPartitionOffset.Offset;
                                 });
@@ -581,12 +594,12 @@ namespace QuixStreams.Kafka
             }
         }
 
-        private void ConsumerStatisticsHandler(IConsumer<byte[], byte[]> consumer, string statisticsJson)
+        private void ConsumerStatisticsHandler(IConsumer<byte[]?, byte[]> consumer, string statisticsJson)
         {
             //
         }
 
-        private void ConsumerErrorHandler(IConsumer<byte[], byte[]> consumer, Error error)
+        private void ConsumerErrorHandler(IConsumer<byte[]?, byte[]> consumer, Error error)
         {
             this.OnErrorOccurredHandler(new KafkaException(error));
         }
@@ -667,7 +680,7 @@ namespace QuixStreams.Kafka
         public void Close()
         {
             if (this.consumer == null) return;
-            IConsumer<byte[], byte[]> cons;
+            IConsumer<byte[]?, byte[]> cons;
             lock (this.consumerLock)
             {
                 cons = this.consumer;
@@ -688,7 +701,7 @@ namespace QuixStreams.Kafka
             try
             {
                 this.logger.LogTrace("[{0}] Waiting for workerTaskPoll to finish", this.configId);
-                this.workerTaskPollFinished.Task?.Wait(-1); // length of the wait depends on how long each message takes to get processed
+                this.workerTaskPollFinished?.Task?.Wait(-1); // length of the wait depends on how long each message takes to get processed
                 this.workerTask = null;
                 this.workerTaskPollFinished = null;
                 this.logger.LogTrace("[{0}] Finished workerTaskPoll", this.configId);
@@ -720,7 +733,7 @@ namespace QuixStreams.Kafka
             this.logger.LogTrace("[{0}] Close Finished", this.configId);
         }
 
-        private async Task PollingWork(CancellationToken workerCt)
+        private async Task PollingWork(IConsumer<byte[]?, byte[]> consumer, CancellationToken workerCt)
         {
             try
             {
@@ -734,7 +747,7 @@ namespace QuixStreams.Kafka
                         try
                         {
                             logger.LogTrace("[{0}] Polling msg", this.configId);
-                            var cr = this.consumer.Consume(linkedCts.Token);
+                            var cr = consumer.Consume(linkedCts.Token);
                             if (seekFunc(cr))
                             {
                                 logger.LogDebug(
@@ -781,7 +794,7 @@ namespace QuixStreams.Kafka
                     }
                 }
 
-                this.workerTaskPollFinished.SetResult(null);
+                this.workerTaskPollFinished?.SetResult(null);
 
                 reconnect = reconnect && !closing && !disposed;
                 if (!reconnect)
@@ -898,6 +911,7 @@ namespace QuixStreams.Kafka
                 }
                 else
                 {
+                    Debug.Assert(this.consumerTopicConfiguration.Partitions != null, "Partitions must not be null");
                     invalidTopics = partitionOffsets.Where(x => this.consumerTopicConfiguration.Partitions.All(y => y.TopicPartition != x.TopicPartition)).Select(x => x.Topic).Distinct().ToList();
                 }
                 if (invalidTopics.Count > 0)
@@ -931,18 +945,20 @@ namespace QuixStreams.Kafka
         }
 
 
-        private CommittedOffsets GetCommittedOffsets(ICollection<TopicPartitionOffset> offsets, TopicPartitionOffsetException ex)
+        private CommittedOffsets GetCommittedOffsets(ICollection<TopicPartitionOffset>? offsets, TopicPartitionOffsetException? ex)
         {
             if (offsets != null)
             {
                 return new CommittedOffsets(offsets.Select(y => new TopicPartitionOffsetError(y, new Error(ErrorCode.NoError))).ToList(), new Error(ErrorCode.NoError));      
             }
 
+            if (ex == null) throw new ArgumentNullException(nameof(ex), "Must provide either offset or exception");
+
             return new CommittedOffsets(ex.Results, ex.Error);
         }
 
 
-        private async Task AddMessage(ConsumeResult<byte[], byte[]> result)
+        private async Task AddMessage(ConsumeResult<byte[]?, byte[]> result)
         {
             var args = new KafkaMessage(result);
             try
@@ -954,8 +970,7 @@ namespace QuixStreams.Kafka
                 }
 
                 this.logger.LogTrace("[{0}] KafkaConsumer: raising MessageReceived", this.configId);
-                var task = this.OnMessageReceived?.Invoke(args);
-                if (task == null) return;
+                var task = this.OnMessageReceived?.Invoke(args) ?? Task.CompletedTask;
                 await task;
                 this.logger.LogTrace("[{0}] KafkaConsumer: raised MessageReceived", this.configId);
             }
@@ -972,7 +987,7 @@ namespace QuixStreams.Kafka
             }
         }
 
-        private void StartWorkerThread()
+        private void StartWorkerThread(IConsumer<byte[]?, byte[]> consumer)
         {
             if (this.workerTask != null)
             {
@@ -987,8 +1002,8 @@ namespace QuixStreams.Kafka
                 }
                 
                 this.workerTaskCts = new CancellationTokenSource();
-                this.workerTask = Task.Run(async () => { await this.PollingWork(this.workerTaskCts.Token); });
-                this.workerTaskPollFinished = new TaskCompletionSource<object>();
+                this.workerTaskPollFinished = new TaskCompletionSource<object?>();
+                this.workerTask = Task.Run(async () => { await this.PollingWork(consumer, this.workerTaskCts.Token); });
             }
         }
 
@@ -1001,6 +1016,6 @@ namespace QuixStreams.Kafka
         }
 
         
-        private delegate bool ShouldSkipConsumeResult(ConsumeResult<byte[], byte[]> consumeResult);
+        private delegate bool ShouldSkipConsumeResult(ConsumeResult<byte[]?, byte[]> consumeResult);
     }
 }

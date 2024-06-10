@@ -11,8 +11,8 @@ namespace QuixStreams.Kafka
         
         public static bool TryParseBrokerNameChange(LogMessage logMessage, out string oldName, out string newName)
         {
-            oldName = null;
-            newName = null;
+            oldName = string.Empty;
+            newName = string.Empty;
             try
             {
                 // UPDATE [thrd:127.0.0.1:9092/bootstrap]: 127.0.0.1:9092/0: Name changed from 127.0.0.1:9092/bootstrap to 127.0.0.1:9092/0
@@ -35,8 +35,8 @@ namespace QuixStreams.Kafka
 
         public static bool TryParseBrokerState(LogMessage logMessage, out string broker, out string state)
         {
-            broker = null;
-            state = null;
+            broker = string.Empty;
+            state = string.Empty;
             try
             {
                 // Example:  Debug [thrd:sasl_ssl://IP:PORT/BROKERID]: sasl_ssl://IP:PORT/BROKERID: Broker changed state DOWN -> INIT
