@@ -9,7 +9,9 @@ using Confluent.Kafka;
 using FluentAssertions;
 using Quix.TestBase.Extensions;
 using QuixStreams.Kafka;
+using QuixStreams.Kafka.Transport;
 using QuixStreams.Streaming.Models;
+using QuixStreams.Streaming.Raw;
 using QuixStreams.Telemetry;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
@@ -595,16 +597,224 @@ namespace QuixStreams.Streaming.IntegrationTests
         }
         
         [Fact]
+        public async Task CommitManual_AfterFewMessages_ShouldContinueAtExpectedOffset()
+        {
+            var topic = nameof(CommitManual_AfterFewMessages_ShouldContinueAtExpectedOffset);
+            
+            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
+            
+
+            ITopicConsumer rawTopicConsumer = null;
+            var messagesRead = new List<StreamPackage>();
+            SetupConsumer();
+
+            void SetupConsumer()
+            {
+                var cons = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Earliest, commitMode: CommitMode.Manual);
+                rawTopicConsumer = cons;
+
+                var disposed = false;
+                cons.OnStreamReceived += (sender, stream) =>
+                {
+                    stream.OnPackageReceived += (o, args) =>
+                    {
+                        if (disposed) return;
+                        messagesRead.Add(args.Package);
+                        if (messagesRead.Count % 11 == 0)
+                        {
+                            disposed = true;
+                            cons.Commit();
+                            Task.Run(() =>
+                            {
+                                cons.Unsubscribe();
+                                cons.Dispose();
+                            }).ContinueWith(t => SetupConsumer());
+                        }
+                    };
+                };
+                cons.Subscribe();
+            }
+            
+            var topicProducer = client.GetTopicProducer(topic, 0);
+
+            for (var ii = 0; ii < 5; ii++)
+            {
+                using (var stream = topicProducer.CreateStream())
+                {
+                    output.WriteLine($"New stream created: {stream.StreamId}");
+
+                    stream.Properties.Name = "Volvo car telemetry";
+                    stream.Properties.Location = "Car telemetry/Vehicles/Volvo";
+                    stream.Properties.AddParent("1234");
+                    stream.Properties.Metadata["test_key"] = "test_value";
+
+                    stream.Timeseries.AddDefinition("p1", "P0 parameter", "Desc 1").SetRange(0, 10).SetUnit("kmh");
+                    stream.Timeseries.AddDefinition("p2", "P1 parameter", "Desc 2").SetRange(0, 10).SetUnit("kmh");
+
+                    stream.Events.AddDefinition("evid3", "evName3");
+                    stream.Events.AddDefinition("evid4", "evName4");
+
+                    var expectedData = new List<TimeseriesDataRaw>();
+                    expectedData.Add(GenerateTimeseriesData(0));
+                    expectedData.Add(GenerateTimeseriesData(10));
+
+                    stream.Timeseries.Buffer.Epoch = ((long)100000).FromUnixNanoseconds();
+                    stream.Timeseries.Buffer.PacketSize = 10;
+                    for (var i = 0; i < 20; i++)
+                    {
+                        stream.Timeseries.Buffer.AddTimestampNanoseconds(i)
+                            .AddValue("p0", i)
+                            .AddValue("p1", i)
+                            .AddValue("p2", i)
+                            .Publish();
+                    }
+
+                    stream.Close();
+                }
+            }
+
+            topicProducer.Dispose();
+
+            SpinWait.SpinUntil(() => messagesRead.Count == 30, 10000);
+            
+            rawTopicConsumer.Unsubscribe();
+            KafkaMessage previous = null;
+            foreach (var streamPackage in messagesRead)
+            {
+                var current = streamPackage.KafkaMessage;
+                if (previous != null)
+                {
+                    var prevOffset = previous.TopicPartitionOffset.Offset;
+                    var currOffset = current.TopicPartitionOffset.Offset;
+                    currOffset.Value.Should().NotBe(prevOffset.Value, "reading same offset is wrong");
+                    currOffset.Value.Should().Be(prevOffset.Value + 1, "should be reading next offset");
+
+                }
+
+                previous = current;
+            }
+
+            messagesRead.First().KafkaMessage.TopicPartitionOffset.Offset.Value.Should().Be(0);
+            messagesRead.Last().KafkaMessage.TopicPartitionOffset.Offset.Value.Should().Be(29);
+        }
+        
+        [Fact]
+        public async Task CommitAuto_AfterFewMessages_ShouldContinueAtExpectedOffset()
+        {
+            var topic = nameof(CommitAuto_AfterFewMessages_ShouldContinueAtExpectedOffset);
+            
+            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
+            
+
+            ITopicConsumer rawTopicConsumer = null;
+            var messagesRead = new List<StreamPackage>();
+            SetupConsumer();
+
+            void SetupConsumer()
+            {
+                var cons = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Earliest,
+                    options: new CommitOptions() { AutoCommitEnabled = true, CommitEvery = 11, CommitInterval = null});
+                rawTopicConsumer = cons;
+
+                var disposed = false;
+                cons.OnStreamReceived += (sender, stream) =>
+                {
+                    stream.OnPackageReceived += (o, args) =>
+                    {
+                        if (disposed) return;
+                        messagesRead.Add(args.Package);
+                        if (messagesRead.Count % 11 == 0)
+                        {
+                            disposed = true;
+                            Task.Run(() =>
+                            {
+                                cons.Unsubscribe();
+                                cons.Dispose();
+                            }).ContinueWith(t => SetupConsumer());
+                        }
+                    };
+                };
+
+                cons.Subscribe();
+            }
+
+            var topicProducer = client.GetTopicProducer(topic, 0);
+
+            for (var ii = 0; ii < 5; ii++)
+            {
+                using (var stream = topicProducer.CreateStream())
+                {
+                    output.WriteLine($"New stream created: {stream.StreamId}");
+
+                    stream.Properties.Name = "Volvo car telemetry";
+                    stream.Properties.Location = "Car telemetry/Vehicles/Volvo";
+                    stream.Properties.AddParent("1234");
+                    stream.Properties.Metadata["test_key"] = "test_value";
+
+                    stream.Timeseries.AddDefinition("p1", "P0 parameter", "Desc 1").SetRange(0, 10).SetUnit("kmh");
+                    stream.Timeseries.AddDefinition("p2", "P1 parameter", "Desc 2").SetRange(0, 10).SetUnit("kmh");
+
+                    stream.Events.AddDefinition("evid3", "evName3");
+                    stream.Events.AddDefinition("evid4", "evName4");
+
+                    var expectedData = new List<TimeseriesDataRaw>();
+                    expectedData.Add(GenerateTimeseriesData(0));
+                    expectedData.Add(GenerateTimeseriesData(10));
+
+                    stream.Timeseries.Buffer.Epoch = ((long)100000).FromUnixNanoseconds();
+                    stream.Timeseries.Buffer.PacketSize = 10;
+                    for (var i = 0; i < 20; i++)
+                    {
+                        stream.Timeseries.Buffer.AddTimestampNanoseconds(i)
+                            .AddValue("p0", i)
+                            .AddValue("p1", i)
+                            .AddValue("p2", i)
+                            .Publish();
+                    }
+
+                    stream.Close();
+                }
+            }
+
+            topicProducer.Dispose();
+
+            SpinWait.SpinUntil(() => messagesRead.Count == 30, 5000);
+
+            rawTopicConsumer.Unsubscribe();
+            KafkaMessage previous = null;
+            foreach (var streamPackage in messagesRead)
+            {
+                var current = streamPackage.KafkaMessage;
+                if (previous != null)
+                {
+                    var prevOffset = previous.TopicPartitionOffset.Offset;
+                    var currOffset = current.TopicPartitionOffset.Offset;
+                    currOffset.Value.Should().NotBe(prevOffset.Value, "reading same offset is wrong");
+                    currOffset.Value.Should().Be(prevOffset.Value + 1, "should be reading next offset");
+
+                }
+
+                previous = current;
+            }
+
+            messagesRead.First().KafkaMessage.TopicPartitionOffset.Offset.Value.Should().Be(0);
+            messagesRead.Last().KafkaMessage.TopicPartitionOffset.Offset.Value.Should().Be(30);
+        }
+        
+        [Fact]
         public async Task Stream_WithPartitionSpecified_ShouldReceiveExpectedMessages()
         {
             var topic = nameof(Stream_WithPartitionSpecified_ShouldReceiveExpectedMessages);
             
             await this.kafkaDockerTestFixture.EnsureTopic(topic, 4);
             
-            using var rawTopicConsumer = client.GetRawTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest, new List<Partition>() {new Partition(3)});
+            var rawTopicConsumer = client.GetRawTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest, new List<Partition>() {new Partition(3)});
             var messagesRead = new List<KafkaMessage>();
             rawTopicConsumer.Subscribe();
-            rawTopicConsumer.OnMessageReceived += (sender, message) => messagesRead.Add(message);
+            rawTopicConsumer.OnMessageReceived += (sender, message) =>
+            {
+                messagesRead.Add(message);
+            };
             var topicProducer = client.GetTopicProducer(topic, 3);
 
             for (var ii = 0; ii < 100; ii++)
@@ -638,46 +848,6 @@ namespace QuixStreams.Streaming.IntegrationTests
                             .AddValue("p2", i)
                             .Publish();
                     }
-
-                    var now = DateTime.UtcNow;
-                    // test events
-                    var inputEvents = new EventDataRaw[]
-                    {
-                        new EventDataRaw
-                        {
-                            Id = "abc",
-                            Tags = new Dictionary<string, string>()
-                            {
-                                { "one", "two" }
-                            },
-                            Value = "Iamvalue",
-                            Timestamp = 123456789
-                        },
-                        new EventDataRaw
-                        {
-                            Id = "efg",
-                            Tags = new Dictionary<string, string>()
-                            {
-                                { "three", "fwo" }
-                            },
-                            Value = "Iamvalue2",
-                            Timestamp = 123456790
-                        },
-                        new EventDataRaw
-                        {
-                            Id = "datetimetest",
-                            Tags = new Dictionary<string, string>() { },
-                            Value = "Iamvalue3",
-                            Timestamp = now.ToUnixNanoseconds()
-                        },
-                        new EventDataRaw
-                        {
-                            Id = "timespan",
-                            Tags = new Dictionary<string, string>() { },
-                            Value = "Iamvalue4",
-                            Timestamp = now.Add(TimeSpan.FromSeconds(10)).ToUnixNanoseconds()
-                        }
-                    };
 
                     stream.Events.AddTimestampNanoseconds(123456789)
                         .AddValue("abc", "Iamvalue")

@@ -933,7 +933,9 @@ namespace QuixStreams.Kafka
                 try
                 {
                     this.OnCommitting?.Invoke(this, new CommittingEventArgs(latestPartitionOffsets));
-                    this.consumer.Commit(latestPartitionOffsets);
+                    // When committing to kafka, one has to commit with one higher offset, see https://github.com/confluentinc/confluent-kafka-dotnet/blob/d5d85ea862581381fb318cdcff29e61a5cc72f8d/src/Confluent.Kafka/Consumer.cs#L459
+                    var offsets = latestPartitionOffsets.Select(y => new TopicPartitionOffset(y.TopicPartition, y.Offset + 1)).ToList();
+                    this.consumer.Commit(offsets);
                     this.OnCommitted?.Invoke(this, new CommittedEventArgs(GetCommittedOffsets(latestPartitionOffsets, null)));
                 }
                 catch (TopicPartitionOffsetException ex)
