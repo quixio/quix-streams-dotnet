@@ -912,6 +912,7 @@ namespace QuixStreams.Kafka
                     Debug.Assert(this.consumerTopicConfiguration.Partitions != null, "Partitions must not be null");
                     invalidTopics = partitionOffsets.Where(x => this.consumerTopicConfiguration.Partitions.All(y => y.TopicPartition != x.TopicPartition)).Select(x => x.Topic).Distinct().ToList();
                 }
+                
                 if (invalidTopics.Count > 0)
                 {
                     if (invalidTopics.Count == 0) throw new InvalidOperationException($"[{this.configId}] Topic {invalidTopics[0]} offset cannot be committed because topic is not subscribed to.");
