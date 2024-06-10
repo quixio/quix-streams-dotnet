@@ -798,7 +798,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             }
 
             messagesRead.First().KafkaMessage.TopicPartitionOffset.Offset.Value.Should().Be(0);
-            messagesRead.Last().KafkaMessage.TopicPartitionOffset.Offset.Value.Should().Be(30);
+            messagesRead.Last().KafkaMessage.TopicPartitionOffset.Offset.Value.Should().Be(29);
         }
         
         [Fact]
