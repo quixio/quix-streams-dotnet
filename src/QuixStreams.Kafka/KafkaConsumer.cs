@@ -880,8 +880,6 @@ namespace QuixStreams.Kafka
             }
         }
         
-        
-        
         /// <inheritdoc/>
         public void Commit(ICollection<TopicPartitionOffset> partitionOffsets)
         {

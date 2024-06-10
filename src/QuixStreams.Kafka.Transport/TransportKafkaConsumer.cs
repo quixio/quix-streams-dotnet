@@ -98,14 +98,14 @@ namespace QuixStreams.Kafka.Transport
             if (options.CommitOptions?.AutoCommitEnabled ?? false)
             {
                 var commitModifier = new AutoCommitter(options.CommitOptions, this.kafkaConsumer.Commit);
-                merger.OnMessageAvailable += message =>
+                merger.OnMessageAvailable = message =>
                 {
                     var package = deserializer.Deserialize(message);
                     return commitModifier.Publish(package);
                 };
                 closeAction = () => commitModifier.Close();
 
-                commitModifier.OnPackageAvailable += package => this.OnPackageReceived?.Invoke(package) ?? Task.CompletedTask;
+                commitModifier.OnPackageAvailable = package => this.OnPackageReceived?.Invoke(package) ?? Task.CompletedTask;
 
                 kafkaConsumer.OnRevoked += (sender, args) =>
                 {
@@ -158,7 +158,7 @@ namespace QuixStreams.Kafka.Transport
             }
             else
             {
-                merger.OnMessageAvailable += message =>
+                merger.OnMessageAvailable = message =>
                 {
                     var package = deserializer.Deserialize(message);
                     return this.OnPackageReceived?.Invoke(package) ?? Task.CompletedTask;
