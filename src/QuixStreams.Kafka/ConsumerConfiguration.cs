@@ -16,7 +16,7 @@ namespace QuixStreams.Kafka
         /// <param name="brokerList">The list of brokers as a comma separated list of broker host or host:port.</param>
         /// <param name="groupId">Client group id string. All clients sharing the same GroupId belong to the same group.</param>
         /// <param name="consumerProperties">List of broker and consumer kafka properties that overrides the default configuration values.</param>
-        public ConsumerConfiguration(string brokerList, string groupId = null, IDictionary<string, string> consumerProperties = null)
+        public ConsumerConfiguration(string brokerList, string? groupId = null, IDictionary<string, string>? consumerProperties = null)
         {
             if (string.IsNullOrWhiteSpace(brokerList))
             {
@@ -48,7 +48,7 @@ namespace QuixStreams.Kafka
         /// <summary>
         /// Client group id string. All clients sharing the same GroupId belong to the same group.
         /// </summary>
-        public string GroupId { get; }
+        public string? GroupId { get; }
 
         /// <summary>
         /// Whether the consumer group is set

@@ -14,7 +14,7 @@ namespace QuixStreams.Kafka
         /// </summary>
         /// <param name="brokerList">The list of brokers as a comma separated list of broker host or host:port.</param>
         /// <param name="producerProperties">List of broker and producer kafka properties that overrides the default configuration values.</param>
-        public ProducerConfiguration(string brokerList, IDictionary<string, string> producerProperties = null)
+        public ProducerConfiguration(string brokerList, IDictionary<string, string>? producerProperties = null)
         {
             if (string.IsNullOrWhiteSpace(brokerList))
                 throw new ArgumentOutOfRangeException(nameof(brokerList), "Cannot be null or empty");

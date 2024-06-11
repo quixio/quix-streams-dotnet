@@ -11,19 +11,23 @@ namespace QuixStreams
     {
         static Logging()
         {
-            UpdateFactory(LogLevel.Information);
+            Factory = CreateFactory(LogLevel.Information);
         }
         
-        // ReSharper disable once FieldCanBeMadeReadOnly.Global
-        // ReSharper disable once MemberCanBePrivate.Global
-        public static ILoggerFactory Factory = null;
+        /// <summary>
+        /// The configured factory
+        /// </summary>
+        public static ILoggerFactory Factory;
         
         /// <summary>
         /// Creates a logger factory that prefixes log messages with a specified string.
         /// </summary>
         /// <param name="prefix">The prefix to be added to the log messages.</param>
         /// <returns>A new instance of the <see cref="PrefixedLoggerFactory"/> class that prefixes log messages with the specified string.</returns>
-        public static ILoggerFactory CreatePrefixedFactory(string prefix) => new PrefixedLoggerFactory(Factory, prefix);
+        public static ILoggerFactory CreatePrefixedFactory(string prefix)
+        {
+            return new PrefixedLoggerFactory(Factory, prefix);
+        }
 
         /// <summary>
         /// Updates the factory with the specified log level.
@@ -32,7 +36,17 @@ namespace QuixStreams
         /// <param name="logLevel"></param>
         public static void UpdateFactory(LogLevel logLevel)
         {
-            Factory = LoggerFactory.Create(c =>
+            Factory = CreateFactory(logLevel);
+            
+            if (logLevel <= LogLevel.Debug)
+            {
+                CreateLogger(typeof(Logging)).LogDebug($"Quix Streams logging factory set to {logLevel} log level");
+            }
+        }
+
+        private static ILoggerFactory CreateFactory(LogLevel logLevel)
+        {
+            var factory = LoggerFactory.Create(c =>
             {
                 c.ClearProviders();
                 c.SetMinimumLevel(logLevel);
@@ -73,11 +87,8 @@ namespace QuixStreams
                 
                 SerilogWindowsConsole.EnableVirtualTerminalProcessing();
             });
-            
-            if (logLevel <= LogLevel.Debug)
-            {
-                CreateLogger(typeof(Logging)).LogDebug($"Quix Streams logging factory set to {logLevel} log level");
-            }
+
+            return factory;
         }
 
         /// <summary>
@@ -158,11 +169,19 @@ namespace QuixStreams
                 _prefix = prefix;
             }
 
+#if (NET7_0 || NET8_0) 
+            /// <inheritdoc/>
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+            {
+                return innerLogger.BeginScope(state);
+            }
+#else
             /// <inheritdoc/>
             public IDisposable BeginScope<TState>(TState state)
             {
                 return innerLogger.BeginScope(state);
             }
+#endif
 
             /// <inheritdoc/>
             public bool IsEnabled(LogLevel logLevel)
@@ -171,7 +190,7 @@ namespace QuixStreams
             }
 
             /// <inheritdoc/>
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
             {
                 var prefixedMessage = $"{_prefix} | {formatter(state, exception)}";
                 innerLogger.Log(logLevel, eventId, state, exception, (s, e) => prefixedMessage);
