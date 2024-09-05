@@ -11,33 +11,33 @@ namespace QuixStreams.Streaming.Models
         /// <summary>
         /// Gets the globally unique identifier of the event.
         /// </summary>
-        public string Id { get; internal set;  }
+        public string Id { get; set;  }
 
         /// <summary>
         /// Gets the display name of the event
         /// </summary>
-        public string Name { get; internal set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// Gets the description of the event
         /// </summary>
-        public string Description { get; internal set; }
+        public string Description { get; set; }
 
         /// <summary>
         /// Gets the location of the event within the Event hierarchy. Example: "/", "car/chassis/suspension".
         /// </summary>
-        public string Location { get; internal set; }
+        public string Location { get; set; }
 
         /// <summary>
         /// Gets the optional field for any custom properties that do not exist on the event.
         /// For example this could be a json string, describing all possible event values
         /// </summary>
-        public string CustomProperties { get; internal set; }
+        public string CustomProperties { get; set; }
 
         /// <summary>
         /// Gets the level of the event. Defaults to <see cref="Telemetry.Models.EventLevel.Information"/>
         /// </summary>
-        public EventLevel Level { get; internal set; } = EventLevel.Information;
+        public EventLevel Level { get; set; } = EventLevel.Information;
 
         /// <summary>
         /// Converts the Event definition to Telemetry layer structure
