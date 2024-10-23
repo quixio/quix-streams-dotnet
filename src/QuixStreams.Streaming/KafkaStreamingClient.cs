@@ -130,7 +130,14 @@ namespace QuixStreams.Streaming
 
                 if (securityOptions.UseSsl)
                 {
-                    securityOptionsBuilder.SetSslEncryption(securityOptions.SslCertificates);
+                    if (!string.IsNullOrWhiteSpace(securityOptions.SslCaContent))
+                    {
+                        securityOptionsBuilder.SetSslCaContent(securityOptions.SslCaContent);
+                    }
+                    else
+                    {
+                        securityOptionsBuilder.SetSslEncryption(securityOptions.SslCertificates);
+                    }
                 }
                 else
                 {

@@ -157,7 +157,8 @@ namespace QuixStreams.Kafka
                 foreach (var keyValuePair in this.config)
                 {
                     if (keyValuePair.Key?.IndexOf("password", StringComparison.InvariantCultureIgnoreCase) > -1 ||
-                        keyValuePair.Key?.IndexOf("username", StringComparison.InvariantCultureIgnoreCase) > -1)
+                        keyValuePair.Key?.IndexOf("username", StringComparison.InvariantCultureIgnoreCase) > -1 ||
+                        keyValuePair.Key?.IndexOf("ssl.ca.pem", StringComparison.InvariantCultureIgnoreCase) > -1)
                     {
                         logBuilder.AppendLine($"= {keyValuePair.Key}: [REDACTED]");
                     }
