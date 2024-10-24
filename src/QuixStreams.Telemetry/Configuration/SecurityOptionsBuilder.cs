@@ -39,6 +39,27 @@ namespace QuixStreams.Telemetry.Configuration
 
             return this;
         }
+        
+        /// <summary>
+        /// Configures the builder to use SSL encryption with CA content
+        /// This is the same as ssl.ca.pem in librdkafka
+        /// </summary>
+        /// <returns>The builder</returns>
+        public SecurityOptionsBuilder SetSslCaContent(string caContent = null)
+        {
+            encryptionSelected = EncryptionSelected.SSL;
+
+            if (caContent != null)
+            {
+                // validate file existence
+                sslEncryptionConfiguration = new SslEncryptionConfiguration
+                {
+                    CaContent = caContent
+                };
+            }
+
+            return this;
+        }
 
         /// <summary>
         /// Configures the builder to use PLAINTEXT (no encryption)
@@ -83,6 +104,8 @@ namespace QuixStreams.Telemetry.Configuration
         private class SslEncryptionConfiguration
         {
             public string CaLocation { get; set; }
+            
+            public string CaContent { get; set; }
         }
 
         private class SaslConfiguration
@@ -177,7 +200,14 @@ namespace QuixStreams.Telemetry.Configuration
             {
                 if (sslEncryptionConfiguration != null)
                 {
-                    kafkaConfiguration["ssl.ca.location"] = sslEncryptionConfiguration.CaLocation;
+                    if (!string.IsNullOrWhiteSpace(sslEncryptionConfiguration.CaContent))
+                    {
+                        kafkaConfiguration["ssl.ca.pem"] = sslEncryptionConfiguration.CaContent;
+                    }
+                    else
+                    {
+                        kafkaConfiguration["ssl.ca.location"] = sslEncryptionConfiguration.CaLocation;
+                    }
                 }
             }
 

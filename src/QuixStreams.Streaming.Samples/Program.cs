@@ -91,7 +91,24 @@ namespace QuixStreams.Streaming.Model.Samples
             var quixStreamClient = new QuixStreamingClient(QuixStreams.Streaming.Samples.Configuration.QuixStreamingClientConfig.Token);
             quixStreamClient.ApiUrl = new Uri(QuixStreams.Streaming.Samples.Configuration.QuixStreamingClientConfig.PortalApi);
 
-            var topicProducer = quixStreamClient.GetTopicConsumer("iddqd");
+            using var topicConsumer = quixStreamClient.GetTopicConsumer("test-topic-sdk");
+            using var topicProducer = quixStreamClient.GetTopicProducer("test-topic-sdk");
+
+            var packageReceived = 0;
+            topicConsumer.OnStreamReceived += (sender, consumer) =>
+            {
+                Console.WriteLine("Stream {0} received", consumer.StreamId);
+                consumer.OnPackageReceived += (o, args) =>
+                {
+                    packageReceived++;
+                };
+            };
+            topicConsumer.Subscribe();
+            var stream = topicProducer.GetOrCreateStream("test-stream");
+            stream.Timeseries.Buffer.AddTimestamp(DateTime.UtcNow).AddValue("parameter1", "somevalue").Publish();
+            stream.Flush();
+            stream.Close();
+            SpinWait.SpinUntil(() => packageReceived > 0, TimeSpan.FromSeconds(5));
         }
     }
 }

@@ -720,13 +720,19 @@ namespace QuixStreams.Streaming
                 }
                 logger.LogWarning("Workspace {0} is in state {1} instead of {2}.", ws.WorkspaceId, ws.Status, WorkspaceStatus.Ready);
             }
-
+            
             var securityOptions = new SecurityOptions();
 
             if (ws.Broker.SecurityMode == BrokerSecurityMode.Ssl || ws.Broker.SecurityMode == BrokerSecurityMode.SaslSsl)
             {
+                var librdKafkaConfig = await GetWorkspaceLibrdKafkaConfig(ws.WorkspaceId);
                 securityOptions.UseSsl = true;
-                securityOptions.SslCertificates = await GetWorkspaceCertificatePath(ws).ConfigureAwait(false);
+                if (librdKafkaConfig.TryGetValue("ssl.ca.cert", out var sslcacert))
+                {
+                    byte[] data = Convert.FromBase64String(sslcacert);
+                    string decodedString = System.Text.Encoding.UTF8.GetString(data);
+                    securityOptions.SslCaContent = decodedString;
+                }
                 if (!brokerProperties.ContainsKey("ssl.endpoint.identification.algorithm"))
                 {
                     brokerProperties["ssl.endpoint.identification.algorithm"] = "none"; // default back to None
@@ -770,78 +776,17 @@ namespace QuixStreams.Streaming
             var client = new KafkaStreamingClient(ws.Broker.Address, securityOptions, brokerProperties, debug);
             return wsToStreamingClientDict.GetOrAdd(ws.WorkspaceId, client);
         }
-
-        private async Task<string> GetWorkspaceCertificatePath(Workspace ws)
-        {
-            if (!ws.Broker.HasCertificate) return null;
-            var targetFolder = Path.Combine(Directory.GetCurrentDirectory(), "certificates", ws.WorkspaceId);
-            var certPath = Path.Combine(targetFolder, "ca.cert");
-            if (!File.Exists(certPath))
-            {
-                var wsLock = workspaceLocks.GetOrAdd(ws.WorkspaceId, new object());
-                lock (wsLock)
-                {
-                    if (!File.Exists(certPath))
-                    {
-                        async Task<string> HelperFunc()
-                        {
-                            Directory.CreateDirectory(targetFolder);
-                            this.logger.LogTrace("Certificate is not yet downloaded for workspace {0}.", ws.Name);
-                            var zipPath = Path.Combine(targetFolder, "certs.zip");
-                            if (!File.Exists(zipPath))
-                            {
-                                this.logger.LogTrace("Downloading certificate for workspace {0}.", ws.Name);
-                                var response = await this.SendRequestToApi(HttpMethod.Get, new Uri(ApiUrl, $"workspaces/{ws.WorkspaceId}/certificates")).ConfigureAwait(false);
-                                if (response.StatusCode == HttpStatusCode.NoContent)
-                                {
-                                    ws.Broker.HasCertificate = false;
-                                    return null;
-                                }
-
-                                using var fs = File.Open(zipPath, FileMode.Create);
-                                await response.Content.CopyToAsync(fs).ConfigureAwait(false);
-                            }
-
-                            var hasCert = false;
-
-                            using (var file = File.OpenRead(zipPath))
-                            using (var zip = new ZipArchive(file, ZipArchiveMode.Read))
-                            {
-                                foreach (var entry in zip.Entries)
-                                {
-                                    if (entry.Name != "ca.cert") continue;
-                                    using var stream = entry.Open();
-                                    using var fs = File.Open(certPath, FileMode.Create);
-                                    await stream.CopyToAsync(fs).ConfigureAwait(false);
-                                    hasCert = true;
-                                }
-                            }
-                            File.Delete(zipPath);
-                            this.logger.LogTrace("Certificate is now available for workspace {0}", ws.Name);
-                            if (!hasCert)
-                            {
-                                this.logger.LogWarning("Expected to find certificate for workspace {0}, but the downloaded zip had none.", ws.Name);
-                                return null;
-                            }
-                            return certPath;
-                        }
-                        return HelperFunc().ConfigureAwait(true).GetAwaiter().GetResult();
-                    }
-                    this.logger.LogTrace("Certificate is downloaded by another thread for workspace {0}", ws.Name);
-                }
-            }
-            else
-            {
-                this.logger.LogTrace("Certificate is already available for workspace {0}", ws.Name);
-            }
-
-            return certPath;
-        }
-
+        
         private async Task<List<Workspace>> GetWorkspaces()
         {
             var result = await GetModelFromApi<List<Workspace>>("workspaces", true, true).ConfigureAwait(false);
             if (result.Count == 0) throw new InvalidTokenException("Could not find any workspaces for this token.");
+            return result;
+        }
+        
+        private async Task<IDictionary<string, string>> GetWorkspaceLibrdKafkaConfig(string workspaceId)
+        {
+            var result = await GetModelFromApi<IDictionary<string, string>>($"workspaces/{workspaceId}/broker/librdkafka", true, true).ConfigureAwait(false);
             return result;
         }
         
@@ -891,6 +836,7 @@ namespace QuixStreams.Streaming
                 httpRequest.Content = new StringContent(JsonConvert.SerializeObject(bodyModel), Encoding.UTF8, "application/json");
             }
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            httpRequest.Headers.Add("X-Version", "2.0");
             try
             {
                 var response =
