@@ -59,12 +59,13 @@ namespace QuixStreams.Kafka.Transport.SerDes
                 throw new SerializationException(
                     $"Missing Codec with model key '{modelKey}' and codec id '{codecId}'.");
 
+            var key = Constants.Utf8NoBOMEncoding.GetString(message.Key);
             if (!codec.TryDeserialize(message.Value, out var valueObject))
             {
-                throw new SerializationException($"Failed to deserialize '{modelKey}' with codec '{codecId}'");
+                package = new TransportPackage(typeof(byte[]), key, message.Value, message);
+                return true;
             }
 
-            var key = Constants.Utf8NoBOMEncoding.GetString(message.Key);
 
             package = new TransportPackage(codec.Type, key, valueObject, message);
             return true;
