@@ -51,5 +51,28 @@ namespace QuixStreams.Streaming.Configuration
         public SecurityOptions()
         {
         }
+        
+        
+        /// <summary>
+        /// Initializes a new instance of <see cref="SecurityOptions"/> that is configured for SSL encryption with SASL authentication
+        /// </summary>
+        /// <param name="sslCertificates">The path to the folder or file containing the certificate authority certificate(s) to validate the ssl connection. Example: "./certificates/ca.cert"</param>
+        /// <param name="username">The username for the SASL authentication</param>
+        /// <param name="password">The password for the SASL authentication</param>
+        /// <param name="saslMechanism">The SASL mechanism to use. Defaulting to ScramSha256</param>
+        [Obsolete("Use parameterless constructor instead")]
+        public SecurityOptions(string sslCertificates, string username, string password, SaslMechanism saslMechanism = Configuration.SaslMechanism.ScramSha256)
+        {
+            this.SslCertificates = sslCertificates;
+            this.Username = username;
+            this.Password = password;
+            this.SaslMechanism = saslMechanism;
+
+            // Assume that if we get sslCertificates it's because we will use ssl
+            this.UseSsl = !string.IsNullOrEmpty(this.SslCertificates);
+
+            // Assume that if we have username, we will use Sasl
+            this.UseSasl = !string.IsNullOrEmpty(this.Username);
+        }
     }
 }
