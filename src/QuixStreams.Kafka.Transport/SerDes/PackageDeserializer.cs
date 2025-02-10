@@ -1,5 +1,7 @@
 ﻿using System.Linq;
 using System.Runtime.Serialization;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using QuixStreams.Kafka.Transport.SerDes.Codecs;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
 using QuixStreams.Kafka.Transport.SerDes.Legacy.MessageValue;
@@ -11,6 +13,8 @@ namespace QuixStreams.Kafka.Transport.SerDes
     /// </summary>
     public class PackageDeserializer
     {
+        private readonly ILogger logger = Logging.CreateLogger<PackageDeserializer>();
+        
         /// <summary>
         /// Deserializes a <see cref="KafkaMessage"/> into <see cref="TransportPackage"/>
         /// </summary>
@@ -54,12 +58,15 @@ namespace QuixStreams.Kafka.Transport.SerDes
             var modelKey = Constants.Utf8NoBOMEncoding.GetString(modelKeyBytes);
 
             var codec = CodecRegistry.RetrieveCodec(modelKey, codecId);
-
-            if (codec == null)
-                throw new SerializationException(
-                    $"Missing Codec with model key '{modelKey}' and codec id '{codecId}'.");
-
             var key = Constants.Utf8NoBOMEncoding.GetString(message.Key);
+            
+            if (codec == null)
+            {
+                this.logger.LogWarning("Missing Codec with model key '{modelKey}' and codec id '{codecId}'.", modelKey, codecId);
+                package = new TransportPackage(typeof(byte[]), key, message.Value, message);
+                return true;
+            }
+            
             if (!codec.TryDeserialize(message.Value, out var valueObject))
             {
                 package = new TransportPackage(typeof(byte[]), key, message.Value, message);
