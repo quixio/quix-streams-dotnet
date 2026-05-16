@@ -23,6 +23,7 @@ jobs:
     outputs:
       package_version: ${{ steps.validate.outputs.package_version }}
       assembly_version: ${{ steps.validate.outputs.assembly_version }}
+      informational_version: ${{ steps.validate.outputs.informational_version }}
       resolved_ref: ${{ steps.validate.outputs.resolved_ref }}
     steps:
       - name: Checkout selected ref
@@ -65,9 +66,11 @@ jobs:
 
           echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
           echo "assembly_version=${ASSEMBLY_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "informational_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
           echo "resolved_ref=${RESOLVED_REF}" >> "$GITHUB_OUTPUT"
           echo "Using package version: ${PACKAGE_VERSION}"
           echo "Using assembly/file version: ${ASSEMBLY_VERSION}"
+          echo "Using informational version: ${PACKAGE_VERSION}"
           echo "Building commit: ${RESOLVED_REF}"
 
   package:
@@ -84,7 +87,7 @@ jobs:
         run: make test
 
       - name: Package
-        run: make package VERSION=${{ needs.validate-release.outputs.assembly_version }} PACKAGE_VERSION=${{ needs.validate-release.outputs.package_version }}
+        run: make package VERSION=${{ needs.validate-release.outputs.assembly_version }} PACKAGE_VERSION=${{ needs.validate-release.outputs.package_version }} INFORMATIONAL_VERSION=${{ needs.validate-release.outputs.informational_version }}
 
       - name: Upload NuGets
         uses: actions/upload-artifact@v4
