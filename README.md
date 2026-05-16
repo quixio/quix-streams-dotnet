@@ -17,8 +17,6 @@ Quix Streams has the following benefits:
 
  - No orchestrator, no server-side engine.
 
- - Simplified [state management](https://quix.io/docs/client-library/state-management.html) backed by Kubernetes PVC for enhanced resiliency.
-
  - Resilient horizontal scaling using [Streaming Context](https://quix.io/docs/client-library/features/streaming-context.html).
 
  - Native support for structured and semistructured (time-series) and unstructured (binary) data files.
@@ -277,42 +275,6 @@ consumer.OnStreamReceived += (sender, streamConsumer) =>
         }
     };
 };
-```
-
-### Support for stateful processing 
-
-Quix Streams includes a state management feature that let's you store intermediate steps in complex calculations. Out of box you are provided with a RocksDB backed state. To use it, you can create an instance of `LocalFileStorage` or use one of our helper classes to manage the state such as `InMemoryStorage`. 
-Here's an example of a stateful operation sum for a selected column in data.
-
-``` csharp
-consumer.OnStreamReceived += (sender, streamConsumer) =>
-{
-    // Create a dictionary for rolling sums, starting with 0
-    // This would allow us to have any number of rolling sums for the stream
-    // rather than just one
-    var rollingSums = streamConsumer.GetDictionaryState("rolling_sums", (key) => 0d);
-    
-    // Scalar state when you do not need a dictionary
-    var gforceMax = streamConsumer.GetScalarState("gforce_max", () => 0d);
-    
-    streamConsumer.Timeseries.OnDataReceived += (o, args) =>
-    {
-        foreach (var timestamp in args.Data.Timestamps)
-        {
-            var gforce = timestamp.Parameters["gforce"].NumericValue;
-            if (gforce > gforceMax.Value)
-            {
-                gforceMax.Value = gforce.Value;
-            }
-
-            rollingSums["gforce"] += gforce ?? 0;
-        }
-    };
-};
-
-// App.SetStateStorageType(StateStorageTypes.InMemory);
-// App.SetStateStorageType(StateStorageTypes.RocksDb); // The default
-// App.SetStateStorageRootDir("./another_folder"); // the default is ./state
 ```
 
 ## Performance and Usability Enhancements

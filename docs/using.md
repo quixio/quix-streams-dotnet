@@ -202,45 +202,6 @@ Let's say there were three streams and two replicas, you'd get the running total
 
 In most practical scenarios you'd want to track a running total per stream (say, total g-forces per race car), or perhaps for some variables a running total across all streams. Each of these scenarios is described in the followng sections.
 
-## Handling system restarts and crashes
-
-One issue you may run into is that in-memory data is not persisted across instance restarts, shutdowns, and instance crashes. This can be mitigated by using the Quix Streams state facility. This will ensure that specified variables are persisted on permanent storage, and this data is preserved across restarts, shutdowns, and system crashes.
-
-The following example code demonstrates a simple use of state to **persist data across system restarts and crashes**:
-
-``` csharp
-...
-topicConsumer.OnStreamReceived += (sender, consumer) =>
-{
-    var producerStream = topicProducer.GetOrCreateStream(consumer.StreamId);
-    var stateManager = consumer.GetStateManager();
-    var runningTotal = stateManager.GetScalarState("gforce_total", () => 0.0);
-    consumer.Timeseries.OnDataReceived += (o, args) =>
-    {
-        foreach (var timestamp in args.Data.Timestamps)
-        {
-            var total = Math.Abs(timestamp.Parameters["gforce_x"].NumericValue!.Value) +
-                        Math.Abs(timestamp.Parameters["gforce_y"].NumericValue!.Value) +
-                        Math.Abs(timestamp.Parameters["gforce_z"].NumericValue!.Value);
-            timestamp.AddValue("gforce_total", total);
-            runningTotal.Value += total;
-            timestamp.AddValue("gforce_running_total", runningTotal.Value);
-        }
-        
-        producerStream.Timeseries.Publish(args.Data);
-    };
-};
-...
-```
-
-This ensures that the variable `gforce_running_total` is persisted when the offset you read is committed.
-
-If the system crashes (or is restarted), Kafka resumes message processing from the last committed offset. This facility is built into Kafka.
-
-!!! tip
-
-    For this facility to work in Quix Cloud you need to enable the State Management feature. You can enable it in the `Deployment` dialog, where you can also specify the size of storage required. When using Quix Streams with a third-party broker such as Kafka, no configuration is required, and data is automatically stored on the local file system.
-
 ## Tracking computed values across multiple streams
 
 Sometimes you want to track a computed value across all streams in a topic such as running total in the previous example. The problem is that when you scale using replicas, there is no way simple way to share data between all replicas in a consumer group. Each replica will only consume a segment of the overall data and calculate the running average on it.
@@ -252,8 +213,7 @@ The solution is to write the computed value to a different topic, then consume t
 In this documentation you have learned:
 
 * How to perform stateless "one message at a time" processing.
-* How to handle the situation where state needs to be preserved, and problems that can arise in naive code.
-* How to persist state, so that your data is preserved in the event of restarts or crashes.
+* How to handle the situation where computed values need to be shared across streams or replicas.
 
 ## Next steps
 
@@ -262,4 +222,3 @@ Continue your Quix Streams learning journey by reading the following more in-dep
 * [Publishing data](publish.md)
 * [Subscribing to data](subscribe.md)
 * [Processing data](process.md)
-* [State management](state-management.md)

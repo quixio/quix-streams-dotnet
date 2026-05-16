@@ -72,8 +72,7 @@ projects = [
     os.path.join(source_root_path, "QuixStreams.Streaming/QuixStreams.Streaming.csproj"),
     os.path.join(source_root_path, "QuixStreams.Telemetry/QuixStreams.Telemetry.csproj"),
     os.path.join(source_root_path, "QuixStreams.Kafka/QuixStreams.Kafka.csproj"),
-    os.path.join(source_root_path, "QuixStreams.Kafka.Transport/QuixStreams.Kafka.Transport.csproj"),
-    os.path.join(source_root_path, "QuixStreams.State/QuixStreams.State.csproj")
+    os.path.join(source_root_path, "QuixStreams.Kafka.Transport/QuixStreams.Kafka.Transport.csproj")
 ]
 
 print(f"Updating project files with version")

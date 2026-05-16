@@ -13,7 +13,6 @@
   <ItemGroup>
     <ProjectReference Include="..\QuixStreams.Telemetry.UnitTests\QuixStreams.Telemetry.UnitTests.csproj" />
     <ProjectReference Include="..\QuixStreams.Telemetry\QuixStreams.Telemetry.csproj" />
-    <ProjectReference Include="..\QuixStreams.State\QuixStreams.State.csproj" />
   </ItemGroup>
 
   <ItemGroup>

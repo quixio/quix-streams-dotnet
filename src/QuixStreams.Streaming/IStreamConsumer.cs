@@ -1,7 +1,6 @@
 using System;
 using QuixStreams.Streaming.Models;
 using QuixStreams.Streaming.Models.StreamConsumer;
-using QuixStreams.Streaming.States;
 using QuixStreams.Telemetry.Models;
 
 namespace QuixStreams.Streaming
@@ -47,43 +46,6 @@ namespace QuixStreams.Streaming
         /// </summary>
         event EventHandler<StreamClosedEventArgs> OnStreamClosed;
 
-        /// <summary>
-        /// Gets the manager for the stream states
-        /// </summary>
-        /// <returns>Stream state manager</returns>
-        StreamStateManager GetStateManager();
-    }
-
-    /// <summary>
-    /// Extensions for IStreamConsumer
-    /// </summary>
-    public static class IStreamConsumerExtensions
-    {
-        /// <summary>
-        /// Gets the dictionary type stream state for the specified storage name using the provided default value factory.
-        /// </summary>
-        /// <typeparam name="T">The type of the stream state value.</typeparam>
-        /// <param name="streamConsumer">The stream consumer to get the state for</param>
-        /// <param name="stateName">The name of the state.</param>
-        /// <param name="defaultValueFactory">A delegate that creates the default value for the stream state when a previously not set key is accessed.</param>
-        /// <returns>The dictionary stream state for the specified storage name using the provided default value factory.</returns>
-        public static StreamDictionaryState<T> GetDictionaryState<T>(this IStreamConsumer streamConsumer, string stateName, StreamStateDefaultValueDelegate<T> defaultValueFactory = null)
-        {
-            return streamConsumer.GetStateManager().GetDictionaryState(stateName, defaultValueFactory);
-        }
-        
-        /// <summary>
-        /// Gets the scalar type stream state for the specified storage name using the provided default value factory.
-        /// </summary>
-        /// <typeparam name="T">The type of the stream state value.</typeparam>
-        /// <param name="streamConsumer">The stream consumer to get the state for</param>
-        /// <param name="stateName">The name of the state.</param>
-        /// <param name="defaultValueFactory">A delegate that creates the default value for the stream state.</param>
-        /// <returns>The dictionary stream state for the specified storage name using the provided default value factory.</returns>
-        public static StreamScalarState<T> GetScalarState<T>(this IStreamConsumer streamConsumer, string stateName, StreamStateScalarDefaultValueDelegate<T> defaultValueFactory = null)
-        {
-            return streamConsumer.GetStateManager().GetScalarState(stateName, defaultValueFactory);
-        }
     }
     
     /// <summary>

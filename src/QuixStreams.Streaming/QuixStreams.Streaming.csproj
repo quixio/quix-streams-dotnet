@@ -43,13 +43,10 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />
-    <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
-    <PackageReference Include="System.Runtime.Caching" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\QuixStreams.Telemetry\QuixStreams.Telemetry.csproj" />
-    <ProjectReference Include="..\QuixStreams.State\QuixStreams.State.csproj" />
   </ItemGroup>
 
 </Project>

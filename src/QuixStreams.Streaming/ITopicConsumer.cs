@@ -1,5 +1,4 @@
 ﻿using System;
-using QuixStreams.Streaming.States;
 
 namespace QuixStreams.Streaming
 {
@@ -56,9 +55,5 @@ namespace QuixStreams.Streaming
         /// </summary>
         public event EventHandler OnDisposed;
         
-        /// <summary>
-        /// Get stream state manager
-        /// </summary>
-        StreamStateManager GetStreamStateManager(string streamId);
     }
 }

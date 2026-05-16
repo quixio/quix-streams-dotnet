@@ -4,7 +4,6 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Streaming.Models;
 using QuixStreams.Streaming.Models.StreamConsumer;
-using QuixStreams.Streaming.States;
 using QuixStreams.Telemetry;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
@@ -67,27 +66,6 @@ namespace QuixStreams.Streaming
 
         /// <inheritdoc />
         public event EventHandler<StreamClosedEventArgs> OnStreamClosed;
-        
-        public StreamDictionaryState<T> GetDictionaryState<T>(string stateName, StreamStateDefaultValueDelegate<T> defaultValueFactory)
-        {
-            return this.GetStateManager().GetDictionaryState(stateName, defaultValueFactory);
-        }
-        
-        public StreamScalarState<T> GetScalarState<T>(string stateName, StreamStateScalarDefaultValueDelegate<T> defaultValueFactory)
-        {
-            return this.GetStateManager().GetScalarState(stateName, defaultValueFactory);
-        }
-
-        /// <inheritdoc />
-        public StreamStateManager GetStateManager()
-        {
-            this.logger.LogTrace("Creating Stream state manager for {0}", StreamId);
-            return StreamStateManager.GetOrCreate(
-                this.topicConsumer,
-                new StreamConsumerId(Id.ConsumerGroup, Id.TopicName, Id.Partition, StreamId),
-                Logging.Factory);
-            
-        }
         
         /// <inheritdoc />
         public virtual event Action<IStreamConsumer, StreamProperties> OnStreamPropertiesChanged;
