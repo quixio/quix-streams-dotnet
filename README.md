@@ -1,326 +1,77 @@
 ![Quix - React to data, fast](https://github.com/quixio/quix-streams-dotnet/blob/main/images/quixstreams-banner.jpg)
 
-[//]: <> (This will be a banner image w/ the name e.g. Quix Streams.)
-
 [![Quix on Twitter](https://img.shields.io/twitter/url?label=Twitter&style=social&url=https%3A%2F%2Ftwitter.com%2Fquix_io)](https://twitter.com/quix_io)
 [![The Stream Community Slack](https://img.shields.io/badge/-The%20Stream%20Slack-blueviolet)](https://quix.io/slack-invite)
 [![Linkedin](https://img.shields.io/badge/LinkedIn-0A66C2.svg?logo=linkedin)](https://www.linkedin.com/company/70925173/)
 [![Events](https://img.shields.io/badge/-Events-blueviolet)](https://quix.io/community#events)
 [![YouTube](https://img.shields.io/badge/YouTube-FF0000.svg?logo=youtube)](https://www.youtube.com/channel/UCrijXvbQg67m9-le28c7rPA)
-[![Roadmap](https://img.shields.io/badge/-Roadmap-red)](https://github.com/orgs/quixio/projects/1)
 
-# Quix Streams
+# Quix Streams for .NET
 
-Quix Streams is a cloud-native library for processing data in Kafka. It’s designed to give you the power of a distributed system in a lightweight library by combining the low-level scalability and resiliency features of Kafka and Kubernetes in a highly abstracted and easy to use interface.
+Quix Streams for .NET is a Kafka streaming client library used mainly for Quix internal platform needs and existing .NET integrations.
 
-Quix Streams has the following benefits:
+This repository is in maintenance mode. It remains published because it is still useful for .NET services that need to produce or consume Quix Streams-compatible data, but Quix's primary open source focus is now the Python library:
 
- - No orchestrator, no server-side engine.
+**Use [quixio/quix-streams](https://github.com/quixio/quix-streams) for new Quix Streams projects.**
 
- - Resilient horizontal scaling using [Streaming Context](https://quix.io/docs/client-library/features/streaming-context.html).
+The Python library is where active feature development happens first. No major new work is expected in this .NET repository, but we aim to keep it updated for internal platform needs and community contributions.
 
- - Native support for structured and semistructured (time-series) and unstructured (binary) data files.
+## When to Use This Library
 
- - Support for handling larger data files (video, audio etc) in Kafka with enhanced serialisation and deserialisation.
+Use this package if you:
 
- - Treats time as a first class citizen - time being the most important factor in real-TIME applications!
+- Have an existing .NET application using Quix Streams.
+- Need a C# producer or consumer for Quix Streams-compatible Kafka data.
+- Are integrating with Quix platform services that already depend on this library.
+- Need lower-level Kafka transport building blocks. The library includes practical handling for Kafka edge cases found in production use, and other libraries can be built on top of `QuixStreams.Kafka.Transport`.
+- Want the convenience APIs in `QuixStreams.Streaming` or telemetry helpers for working with Kafka messages in .NET.
 
+For complex stream processing or new stream processing applications, start with the Python library instead: [github.com/quixio/quix-streams](https://github.com/quixio/quix-streams).
 
-Use Quix Streams if you’re building machine learning/AI and physics-based applications that depend on real-time data from Kafka to deliver quick, reliable insights and efficient end-user experiences. 
+## Install
 
+Install the .NET package from NuGet:
 
-## Getting started 🏄
+[QuixStreams.Streaming](https://www.nuget.org/packages/QuixStreams.Streaming)
 
-### Install Quix Streams
+## Documentation
 
-Install Quix streams using [nuget](https://www.nuget.org/packages/QuixStreams.Streaming).
+The documentation in this repository is retained for existing .NET users:
 
-### Install Kafka
+- [Quickstart](docs/quickstart.md)
+- [Connect to Kafka or Quix Cloud](docs/connect.md)
+- [Publish data](docs/publish.md)
+- [Subscribe to data](docs/subscribe.md)
+- [Kafka and Quix Streams](docs/kafka.md)
 
-This library needs to utilize a message broker to send and receive data. Quix uses [Apache Kafka](https://kafka.apache.org/) because it is the leading message broker in the field of streaming data, with enough performance to support high volumes of time-series data, with minimum latency.
+Some docs may describe the broader Quix Streams model rather than the current direction of this repository. For current Quix Streams development, use the Python project: [quixio/quix-streams](https://github.com/quixio/quix-streams).
 
-**To install and test Kafka locally**:
-* Download the Apache Kafka binary from the [Apache Kafka Download](https://kafka.apache.org/downloads) page.
-* Extract the contents of the file to a convenient location (i.e. `kafka_dir`), and start the Kafka services with the following commands:<br><br>
+## Compatibility
 
-  * **Linux / macOS**
-    ```
-    <kafka_dir>/bin/zookeeper-server-start.sh config/zookeeper.properties
-    <kafka_dir>/bin/zookeeper-server-start.sh config/server.properties
-    ```
+This library is intended to remain compatible with Quix Streams data produced and consumed by Quix platform services and the primary Python library where applicable. Compatibility work is driven by platform needs, maintenance, and community contributions rather than a separate .NET feature roadmap.
 
-  * **Windows**
-    ```
-    <kafka_dir>\bin\windows\zookeeper-server-start.bat.\config\zookeeper.properties
-    <kafka_dir>\bin\windows\kafka-server-start.bat .\config\server.properties
-    ```
-* Create a test topic with the `kafka-topics` script.
-  
-  * **Linux / macOS**
-    `<kafka_dir>/bin/kafka-topics.sh --create --topic mytesttopic --bootstrap-server localhost:9092`
+## Using Quix Streams with Quix Cloud
 
-  * **Windows**
-    `bin\windows\kafka-topics.bat --create --topic mytesttopic --bootstrap-server localhost:9092`
+This library does not require a commercial product. When used with the [Quix platform](https://www.quix.io), it can integrate with Quix-managed Kafka, configuration, monitoring, data exploration, pipeline visualization, and related platform workflows.
 
-You can find more detailed instructions in Apache Kafka's [official documentation](https://kafka.apache.org/quickstart).
+## Contributing
 
-To get started with Quix Streams, we recommend following the comprehensive [Quick Start guide](https://quix.io/docs/client-library/quickstart.html) in our official documentation. 
+Community feedback and fixes are welcome, especially for bugs, compatibility issues, and documentation improvements. Before opening a larger PR, please create an issue so we can discuss whether the change fits the maintenance scope of this repository.
 
-However, the following examples will give you a basic idea of how to produce and consume data with Quix Streams.:
+Read the [Contributing Guide](CONTRIBUTING.md) for local development and PR guidance.
 
-### Producing time-series data
+## Need Help?
 
-Here's an example of how to <b>produce</b> time-series data into a Kafka Topic.
+If you run into a problem, ask in [The Stream Slack community](https://quix.io/slack-invite) or create an [issue](https://github.com/quixio/quix-streams-dotnet/issues) in this repository.
 
-``` csharp
-// Open the topic producer which will be used to send data to a topic
-using var topicProducer = client.GetTopicProducer("mytesttopic");
+For help with new Quix Streams projects, please start with the Python library: [github.com/quixio/quix-streams](https://github.com/quixio/quix-streams).
 
-// Set stream ID or leave parameters empty to get stream ID generated.
-var stream = topicProducer.CreateStream();
-stream.Properties.Name = "Hello World stream";
+## Community
 
-// Add metadata about time series data you are about to send. 
-stream.Timeseries.AddDefinition("ParameterA").SetRange(-1.2, 1.2);
-stream.Timeseries.Buffer.TimeSpanInMilliseconds = 100;
+Join other software engineers in [The Stream Slack community](https://quix.io/slack-invite), an online community for people interested in data streaming.
 
-Console.WriteLine("Sending values for 30 seconds.");
-
-for (var index = 0; index < 3000; index++)
-{
-    stream.Timeseries
-        .Buffer
-        .AddTimestamp(DateTime.UtcNow)
-        .AddValue("ParameterA", Math.Sin(index / 100.0) + Math.Sin(index) / 5.0)
-        .Publish();
-    
-    Thread.Sleep(10);
-}
-
-Console.WriteLine("Closing stream");
-stream.Close();
-```
-
-### Consuming time-series data
-
-Here's an example of how to <b>consume</b> time-series data from a Kafka Topic:
-
-``` csharp
-// Connect to your kafka client
-var client = new KafkaStreamingClient("127.0.0.1:9092");
-
-// get the topic consumer for a specific consumer group
-var topicConsumer = client.GetTopicConsumer("TestTopic", "myConsumer", autoOffset: AutoOffsetReset.Latest);
-
-// subscribe to new streams received
-topicConsumer.OnStreamReceived += (sender, consumer) =>
-{
-    // subscribe to incoming timeseries
-    consumer.Timeseries.OnDataReceived += (o, args) =>
-    {
-        foreach (var timestamp in args.Data.Timestamps)
-        {
-            // Example read of a numeric value
-            var rpm = timestamp.Parameters["EngineRPM"].NumericValue;
-        }
-    };
-};
-
-Console.WriteLine("Listening to streams. Press CTRL-C to exit.");
-
-// Handle termination signals and provide a graceful exit
-App.Run();
-```
-
-Quix Streams allows multiple configurations to leverage resources while consuming and producing data from a Topic depending on the use case, frequency, language, and data types. 
-
-For full documentation of how to [<b>consume</b>](https://www.quix.io/docs/client-library/subscribe.html) and [<b>produce</b>](https://www.quix.io/docs/client-library/publish.html) time-series and event data with Quix Streams, [visit our docs](https://www.quix.io/docs/client-library-intro.html).
-
-## Library features
-
-The following features are designed to address common issues faced when developing real-time streaming applications:
-
-### Streaming contexts
-Streaming contexts allow you to bundle data from one data source into the same scope with supplementary metadata—thus enabling workloads to be horizontally scaled with multiple replicas.
-
-* In the following sample, the `CreateStream` function is used to create a stream called _bus-123AAAV_ which gets assigned to one particular consumer and will receive messages in the correct order: 
-
-``` csharp
-var topicProducer = client.GetTopicProducer("data");
-var stream = topicProducer.CreateStream("bus-123AAAV");
-
-// Message 1 sent (the stream context)
-stream.Properties.Name = "BUS 123 AAAV";
-// Message 2 sent (the human-readable identifier the bus)
-stream.Timeseries
-    .Buffer
-    .AddTimestamp(DateTime.UtcNow)
-    .AddValue("Lat", 1.23)
-    .AddValue("Long", 4.56)
-    .Publish();
-// Message 3 sent (the time-series telemetry data from the bus)
-
-stream.Events
-    .AddTimestampNanoseconds(DateTime.UtcNow.ToUnixNanoseconds())
-    .AddValue("driver_bell", "Doors 3 bell activated by passenger")
-    .Publish();
-// Message 4 sent (an event related to something that happened on the bus)
-```
-
-### Time-series data serialization and deserialization
-
-Quix Streams serializes and deserializes time-series data using different codecs and optimizations to <b>minimize payloads</b> in order to increase throughput and reduce latency.
-
-* The following example shows data being appended to as stream with the `add_value` method.<br><br>
-
-``` csharp
-// Open the producer topic where the data should be published.
-var topicProducer = client.GetTopicProducer("data");
-// Create a new stream for each device.
-var stream = topicProducer.CreateStream("bus-123AAAV");
-Console.WriteLine("Sending values for 30 seconds.")
-
-for (var index = 0; index < 30; index++)
-{
-    stream.Timeseries
-        .Buffer
-        .AddTimestamp(DateTime.UtcNow)
-        .AddValue("Lat", Math.Sin(index / 100.0) + Math.Sin(index) / 5.0)
-        .AddValue("Long", Math.Sin(index / 200.0) + Math.Sin(index) / 5.0)
-        .Publish();
-}
-```
-
-### Built-in time-series buffers
-
-If you’re sending data at <b>high frequency</b>, processing each message can be costly. Alternatively your business logic may be best executed using a certain volume of data. The library provides built-in time-series buffers for producing and consuming, allowing several configurations for balancing between latency and cost.
-
-* For example, you can configure the library to release values from the buffer whenever 100 timestamps are collected or when a certain number of milliseconds in data have elapsed (note that this is using time in the data, not the consumer clock).
-
-``` csharp
-// subscribe to new streams received
-topicConsumer.OnStreamReceived += (sender, consumer) =>
-{
-    // create buffer
-    var buffer = consumer.Timeseries.CreateBuffer(new TimeseriesBufferConfiguration()
-    {
-        PacketSize = 100,
-        TimeSpanInMilliseconds = 100
-    });
-    // subscribe to incoming timeseries
-    buffer.OnDataReleased += (o, args) =>
-    {
-        foreach (var timestamp in args.Data.Timestamps)
-        {
-            // Example read of a numeric value
-            var rpm = timestamp.Parameters["EngineRPM"].NumericValue;
-        }
-    };
-};
-```
-
-
-For a detailed overview of built-in buffers, [visit our documentation](https://quix.io/docs/client-library/features/builtin-buffers.html).
-
-### Multiple data types
-
-This library allows you to produce and consume different types of mixed data in the same timestamp, like <b>Numbers</b>, <b>Strings</b> or <b>Binary data</b>.
-
-* For example, you can produce both time-series data and large binary blobs together.<br><br>
-
-    Often, you’ll want to combine time series data with binary data. In the following example, we combine bus's onboard camera with telemetry from its ECU unit so we can analyze the onboard camera feed with context.
-
-    ``` csharp 
-    // Open the producer topic where to publish data.
-    using var topicProducer = client.GetTopicProducer("mytesttopic");
-
-    // Create new stream for each device
-    var stream = topicProducer.CreateStream("bus-123AAAV");
-
-    stream.Timeseries.Buffer
-        .AddTimestamp(DateTime.UtcNow)
-        .AddValue("numeric", 123.432)
-        .AddValue("string", "green")
-        .AddValue("binary", Encoding.UTF8.GetBytes("binary"));
-    ```
-
-* You can also produce events that include payloads:<br><br>For example, you might need to listen for changes in time-series or binary streams and produce an event (such as "speed limit exceeded"). These  might require some kind of document to send along with the event message (e.g. transaction invoices, or a speeding ticket with photographic proof). Here's an example for a speeding camera:
-  
-``` csharp
-consumer.OnStreamReceived += (sender, streamConsumer) =>
-{
-    streamConsumer.Timeseries.OnDataReceived += (o, args) =>
-    {
-        foreach (var timestamp in args.Data.Timestamps)
-        {
-            var speed = timestamp.Parameters["speed"].NumericValue;
-            if (speed > 130)
-            {
-                // create a document that will be consumed by the ticket service.
-                var ticket = new
-                {
-                    speed = speed,
-                    fine = (speed - 130) * 100,
-                    photo_proof = timestamp.Parameters["camera_frame"].BinaryValue
-                };
-
-                producer.GetOrCreateStream(streamConsumer.StreamId)
-                    .Events
-                    .AddTimestamp(timestamp.Timestamp)
-                    .AddValue("ticket", JsonSerializer.Serialize(ticket));
-
-                // preferably some logic to avoid ticketing more than once per certain period
-                // would be better user experience but is out of the scope of this sample
-            }
-        }
-    };
-};
-```
-
-## Performance and Usability Enhancements
-
-The library also includes a number of other enhancements that are designed to simplify the process of managing configuration and performance when interacting with Kafka:
-
-- <b>No schema registry required</b>: Quix Streams doesn't need a schema registry to send different set of types or parameters, this is handled internally by the protocol. This means that you can send <b>more than one schema per topic</b><br>.
-
-- <b>Message splitting</b>: Quix Streams automatically handles <b>large messages</b> on the producer side, splitting them up if required. You no longer need to worry about Kafka message limits. On the consumer side, those messages are automatically merged back.<br><br>
-
-- <b>Message Broker configuration</b>: Many configuration settings are needed to use Kafka at its best, and the ideal configuration takes time. Quix Streams takes care of Kafka configuration by default but also supports custom configurations.<br><br>
-
-- <b>Checkpointing</b>: Quix Streams supports manual or automatic checkpointing when you consume data from a Kafka Topic. This provides the ability to inform the Message Broker that you have already processed messages up to one point.<br><br>
-
-- <b>Horizontal scaling</b>: Quix Streams handles horizontal scaling using the streaming context feature. You can scale the processing services, from one replica to many and back to one, and the library ensures that the data load is always shared between your replicas reliably.<br>
-
-For a detailed overview of features, [visit our documentation](https://www.quix.io/docs/client-library-intro.html).
-
-### What's Next
-
-This library is being actively developed, however we have separated out the python library into https://github.com/quixio/quix-streams, where python version of 2.0 and above will be hosted. Because of this, you will find this repo only contains C#. If you're looking for the maintenance branch of 0.5.x, you can find it at https://github.com/quixio/quix-streams/tree/release/v0.5. We're going to maintain compatibility between the two versions and over time take new features developed in python to C#.
-
-
-## Using Quix Streams with the Quix SaaS platform
-
-This library doesn't have any dependency on any commercial product, but if you use it together with [Quix SaaS platform](https://www.quix.io) you will get some advantages out of the box during your development process such as auto-configuration, monitoring, data explorer, data persistence, pipeline visualization, metrics, and more.
-
-## Contribution Guide
-
-Contributing is a great way to learn and we especially welcome those who haven't contributed to an OSS project before. We're very open to any feedback or code contributions to this OSS project ❤️. Before contributing, please read our [Contributing File](https://github.com/quixio/quix-streams-dotnet/blob/main/CONTRIBUTING.md) and familiarize yourself with our [architecture](https://github.com/quixio/quix-streams-dotnet/blob/main/arch-notes.md) for how you can best give feedback and contribute. 
-
-## Need help?
-
-If you run into any problems, ask on #quix-help in [The Stream Slack channel](https://quix.io/slack-invite), alternatively create an [issue](https://github.com/quixio/quix-streams-dotnet/issues)
-
-
-## Community 👭
-
-Join other software engineers in our [slack](https://quix.io/slack-invite), an online community of people interested in all things data streaming. This is a space to both listen to and share learnings.
+You can also follow Quix on [Twitter](https://twitter.com/quix_io), [LinkedIn](https://www.linkedin.com/company/70925173), and [YouTube](https://www.youtube.com/channel/UCrijXvbQg67m9-le28c7rPA).
 
 ## License
 
-Quix Streams is licensed under the Apache 2.0 license. View a copy of the License file [here](https://github.com/quixio/quix-streams-dotnet/blob/main/LICENSE).
-
-## Stay in touch 👋
-
-You can follow us on [Twitter](https://twitter.com/quix_io) and [Linkedin](https://www.linkedin.com/company/70925173) where we share our latest tutorials, forthcoming community events and the occasional meme.  
-
-If you have any questions or feedback - write to us at support@quix.io!
+Quix Streams for .NET is licensed under the Apache 2.0 license. See [LICENSE](LICENSE).
