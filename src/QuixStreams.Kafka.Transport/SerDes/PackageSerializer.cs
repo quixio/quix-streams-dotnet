@@ -58,7 +58,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
         {
             var value = this.GetSerializedValue(package, codec);
             
-            return new KafkaMessage(Constants.Utf8NoBOMEncoding.GetBytes(package.Key), value, new []
+            return new KafkaMessage(package.Key == null ? null : Constants.Utf8NoBOMEncoding.GetBytes(package.Key), value, new []
             {
                 new KafkaHeader(Constants.KafkaMessageHeaderModelKey, Constants.Utf8NoBOMEncoding.GetBytes(valueCodecBundle.ModelKey)),
                 new KafkaHeader(Constants.KafkaMessageHeaderCodecId, Constants.Utf8NoBOMEncoding.GetBytes(valueCodecBundle.CodecId)),
@@ -78,7 +78,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             var transportPackageValue = new TransportPackageValue(value, valueCodecBundle);
             var serializedTransportPackageValue = TransportPackageValueCodec.Serialize(transportPackageValue, PackageSerializationSettings.LegacyValueCodecType);
             
-            return new KafkaMessage(Constants.Utf8NoBOMEncoding.GetBytes(package.Key), serializedTransportPackageValue, null);
+            return new KafkaMessage(package.Key == null ? null : Constants.Utf8NoBOMEncoding.GetBytes(package.Key), serializedTransportPackageValue, null);
         }
 
         /// <summary>

@@ -122,6 +122,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             {
                 logger.LogWarning("A message could not be split because your message limit is {0} bytes.", this.MaximumKafkaMessageSize);
                 yield return message;
+                yield break;
             }
             
             var compressedMessage = CompressMessage(message);
@@ -135,12 +136,14 @@ namespace QuixStreams.Kafka.Transport.SerDes
             else
             {
                 var compressedValueSizeMax = this.MaximumKafkaMessageSize - compressedMessage.HeaderSize - (compressedMessage.Key?.Length ?? 0);
-                var compressedCount = (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
+                var compressedCount = compressedValueSizeMax < 1
+                    ? int.MaxValue
+                    : (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
                 if (compressedCount != 1)
                 {
                     // In this case we have to recalculate count assuming we have to add split info
                     compressedValueSizeMax -= ExpectedHeaderSplitInfoSize;
-                    if (compressedValueSizeMax < -1) compressedCount = int.MaxValue;
+                    if (compressedValueSizeMax < 1) compressedCount = int.MaxValue;
                     else compressedCount = (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
                 }
                 var nonCompressedCount = (int)Math.Ceiling((double)message.Value.Length / valueSizeMax);

@@ -180,6 +180,25 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             segments.Count.Should().Be(1, "Bytes should not be split");
             segments[0].Value.Should().BeSameAs(data);
         }
+
+        [Fact]
+        public void Split_UsingHeaderProtocolWhenHeaderOverheadExceedsLimit_ShouldReturnOriginalMessageOnce()
+        {
+            // Arrange
+            PackageSerializationSettings.Mode = PackageSerializationMode.Header;
+            var splitter = new KafkaMessageSplitter(1);
+            var data = new byte[50];
+            var random = new Random();
+            random.NextBytes(data);
+            var message = new KafkaMessage(null, data, null);
+
+            // Act
+            var segments = splitter.Split(message).ToList();
+
+            // Assert
+            segments.Count.Should().Be(1);
+            segments[0].Should().BeSameAs(message);
+        }
         
         [Fact]
         public void Split_UsingHeaderProtocolWithExcessiveValueSize_ShouldUseCompression()

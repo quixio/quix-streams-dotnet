@@ -94,6 +94,25 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             deserialized.TryConvertTo<string>(out var converted).Should().BeTrue();
             converted.Value.Should().BeEquivalentTo("test string value");
         }
+
+        [Fact]
+        public void deserializer_WithNullKey_ShouldCorrespondToserializer()
+        {
+            // Arrange
+            var transportPackage = new TransportPackage<string>(null, "test string value");
+            var deserializer = new PackageDeserializer();
+            var serializer = new PackageSerializer();
+
+            // Act
+            var serialized = serializer.Serialize(transportPackage);
+            var deserialized = deserializer.Deserialize(serialized);
+
+            // Assert
+            serialized.Key.Should().BeNull();
+            deserialized.Key.Should().BeNull();
+            deserialized.TryConvertTo<string>(out var converted).Should().BeTrue();
+            converted.Value.Should().BeEquivalentTo("test string value");
+        }
         
         [Fact]
         public void deserializer_WithRawData_ShouldWork()

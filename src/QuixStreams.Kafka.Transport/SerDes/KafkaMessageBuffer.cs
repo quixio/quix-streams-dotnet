@@ -289,7 +289,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
                 }
 
                 segmentLengths = buffer.MessageLength;
-                messageCount = (byte) buffer.MessageBuffer.Length;
+                messageCount = buffer.MessageBuffer.Length;
 
                 var val = buffer.MessageBuffer;
                 return val;

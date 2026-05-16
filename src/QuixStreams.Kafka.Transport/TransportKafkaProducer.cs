@@ -88,9 +88,15 @@ namespace QuixStreams.Kafka.Transport
 
         
         /// <inheritdocs/>
-        public Task Flush(CancellationToken cancellationToken = default)
+        public async Task Flush(CancellationToken cancellationToken = default)
         {
-            return this.lastPublishTask ?? Task.CompletedTask;
+            var publishTask = this.lastPublishTask;
+            if (publishTask != null)
+            {
+                await publishTask;
+            }
+
+            this.producer.Flush(cancellationToken);
         }
 
         /// <inheritdocs/>
