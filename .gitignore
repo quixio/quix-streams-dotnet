@@ -32,3 +32,5 @@ _ReSharper*/
 .vs/
 #Nuget packages folder
 packages/
+builds/csharp/nuget/build-result/
+test-results/
