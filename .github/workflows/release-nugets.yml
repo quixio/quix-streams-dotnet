@@ -1,0 +1,118 @@
+name: Release NuGets
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag to build, for example v0.8.1 or v0.8.1-rc.1. Stable tags must be on main.
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: true
+  DOTNET_NOLOGO: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+
+jobs:
+  validate-release:
+    name: Validate release inputs
+    runs-on: ubuntu-latest
+    outputs:
+      package_version: ${{ steps.validate.outputs.package_version }}
+      assembly_version: ${{ steps.validate.outputs.assembly_version }}
+      resolved_ref: ${{ steps.validate.outputs.resolved_ref }}
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+          fetch-depth: 0
+
+      - name: Validate tag and main ancestry
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG="${{ inputs.release_tag }}"
+
+          if [[ ! "${RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "Invalid release tag: ${RELEASE_TAG}" >&2
+            echo "Expected tag like v0.8.1 or v0.8.1-rc.1" >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          RESOLVED_REF="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+
+          PACKAGE_VERSION="${RELEASE_TAG#v}"
+          BASE_VERSION="${PACKAGE_VERSION%%-*}"
+          ASSEMBLY_VERSION="${BASE_VERSION}.0"
+
+          if [[ "${PACKAGE_VERSION}" != *-* ]]; then
+            if ! git merge-base --is-ancestor "${RESOLVED_REF}" origin/main; then
+              echo "Stable release tag is not on origin/main." >&2
+              echo "Release tag: ${RELEASE_TAG}" >&2
+              echo "Resolved commit: ${RESOLVED_REF}" >&2
+              exit 1
+            fi
+          else
+            echo "Prerelease tag detected; origin/main ancestry is not required."
+          fi
+
+          echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "assembly_version=${ASSEMBLY_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "resolved_ref=${RESOLVED_REF}" >> "$GITHUB_OUTPUT"
+          echo "Using package version: ${PACKAGE_VERSION}"
+          echo "Using assembly/file version: ${ASSEMBLY_VERSION}"
+          echo "Building commit: ${RESOLVED_REF}"
+
+  package:
+    name: Build NuGets
+    needs: validate-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-release.outputs.resolved_ref }}
+
+      - name: Test
+        run: make test
+
+      - name: Package
+        run: make package VERSION=${{ needs.validate-release.outputs.assembly_version }} PACKAGE_VERSION=${{ needs.validate-release.outputs.package_version }}
+
+      - name: Upload NuGets
+        uses: actions/upload-artifact@v4
+        with:
+          name: nugetresult
+          path: builds/csharp/nuget/build-result/*.nupkg
+          if-no-files-found: error
+
+  publish-nuget-org:
+    name: Publish NuGet.org
+    needs: package
+    runs-on: ubuntu-latest
+    environment: nuget.org-release
+    steps:
+      - name: Download NuGets
+        uses: actions/download-artifact@v4
+        with:
+          name: nugetresult
+          path: nugetresult
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Push to NuGet.org
+        run: |
+          dotnet nuget push "nugetresult/*.nupkg" \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
