@@ -2,6 +2,9 @@ name: CI
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - 'main'
   push:
     branches:
       - 'main'
@@ -33,7 +36,7 @@ jobs:
       - name: Run C# tests
         run: make test
       - name: Upload test results
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: test-results
@@ -54,6 +57,7 @@ jobs:
       - name: Build NuGets
         run: make package
       - name: Upload NuGets
+        if: ${{ github.event_name != 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: linux-docker-nugets
