@@ -169,19 +169,11 @@ namespace QuixStreams
                 _prefix = prefix;
             }
 
-#if (NET7_0 || NET8_0) 
             /// <inheritdoc/>
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull
             {
                 return innerLogger.BeginScope(state);
             }
-#else
-            /// <inheritdoc/>
-            public IDisposable BeginScope<TState>(TState state)
-            {
-                return innerLogger.BeginScope(state);
-            }
-#endif
 
             /// <inheritdoc/>
             public bool IsEnabled(LogLevel logLevel)
