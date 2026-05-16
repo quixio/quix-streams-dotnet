@@ -41,7 +41,7 @@ namespace QuixStreams.Transport.Kafka.Tests
             }
             catch (CreatePartitionsException ex)
             {
-                if (!ex.Message.Contains($"Topic already has {partitionCount} partitions")) throw;
+                if (!ex.Message.Contains($"Topic already has {partitionCount} partition")) throw;
             }
             await EnsureTopic(topic, partitionCount);
         }
