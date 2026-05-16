@@ -6,6 +6,7 @@ SOLUTION := src/Quix.Streams.sln
 CONFIGURATION ?= Release
 VERSION ?= 0.8.0.0
 PACKAGE_VERSION ?= $(VERSION)
+TEST_HANG_TIMEOUT ?= 2m
 PACKAGE_OUTPUT := builds/csharp/nuget/build-result
 TEST_RESULTS := test-results
 PACK_PROJECTS := \
@@ -67,6 +68,7 @@ help:
 	@echo "  CONFIGURATION=$(CONFIGURATION)"
 	@echo "  VERSION=$(VERSION)"
 	@echo "  PACKAGE_VERSION=$(PACKAGE_VERSION)"
+	@echo "  TEST_HANG_TIMEOUT=$(TEST_HANG_TIMEOUT)"
 	@echo "  DOCKER_HOST=$(DOCKER_HOST)"
 
 build-image:
@@ -79,7 +81,7 @@ build: build-image
 	$(DOCKER_RUN) bash -lc 'set -euo pipefail; dotnet restore $(SOLUTION) --source https://api.nuget.org/v3/index.json; dotnet build $(SOLUTION) --configuration $(CONFIGURATION) --no-restore'
 
 test: build-image
-	$(DOCKER_TEST_RUN) bash -lc 'set -euo pipefail; rm -rf "$(TEST_RESULTS)"; mkdir -p "$(TEST_RESULTS)"; dotnet restore $(SOLUTION) --source https://api.nuget.org/v3/index.json; dotnet test $(SOLUTION) --configuration $(CONFIGURATION) --no-restore --results-directory "$(TEST_RESULTS)" --logger "console;verbosity=normal" --logger "trx" --blame --blame-hang-timeout=30s'
+	$(DOCKER_TEST_RUN) bash -lc 'set -euo pipefail; rm -rf "$(TEST_RESULTS)"; mkdir -p "$(TEST_RESULTS)"; dotnet restore $(SOLUTION) --source https://api.nuget.org/v3/index.json; dotnet test $(SOLUTION) --configuration $(CONFIGURATION) --no-restore --results-directory "$(TEST_RESULTS)" --logger "console;verbosity=normal" --logger "trx" --blame --blame-hang-timeout=$(TEST_HANG_TIMEOUT)'
 
 package: build-image
 	$(DOCKER_RUN) bash -lc 'set -euo pipefail; dotnet restore $(SOLUTION) --source https://api.nuget.org/v3/index.json; rm -rf "$(PACKAGE_OUTPUT)"; mkdir -p "$(PACKAGE_OUTPUT)"; cp LICENSE src/LICENSE; trap "rm -f src/LICENSE" EXIT; for project in $(PACK_PROJECTS); do dotnet pack "$$project" --configuration $(CONFIGURATION) --no-restore --output "$(PACKAGE_OUTPUT)" /p:Version=$(VERSION) /p:AssemblyVersion=$(VERSION) /p:FileVersion=$(VERSION) /p:InformationalVersion=$(VERSION) /p:PackageVersion=$(PACKAGE_VERSION); done'

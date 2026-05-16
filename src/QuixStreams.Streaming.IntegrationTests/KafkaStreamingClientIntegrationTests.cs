@@ -1200,22 +1200,27 @@ namespace QuixStreams.Streaming.IntegrationTests
         {
             // Arrange
             var topic = nameof(ReadingAStreamWithSameConsumerGroup_ShouldGetRevokedOnOne);
-            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
+            await this.kafkaDockerTestFixture.EnsureTopic(topic, 2);
 
-            var consumerGroup = "doesntmatteraslongassame";
-            var topicConsumer1 = client.GetTopicConsumer(topic, consumerGroup, autoOffset: AutoOffsetReset.Latest);
-            var topicProducer = client.GetTopicProducer(topic);
+            var consumerGroup = $"{nameof(ReadingAStreamWithSameConsumerGroup_ShouldGetRevokedOnOne)}-{Guid.NewGuid():N}";
+            var rebalanceClient = new KafkaStreamingClient(kafkaDockerTestFixture.BrokerList, null, new Dictionary<string, string>
+            {
+                ["session.timeout.ms"] = "6000",
+                ["heartbeat.interval.ms"] = "1000"
+            });
+            var topicConsumer1 = rebalanceClient.GetTopicConsumer(topic, consumerGroup, autoOffset: AutoOffsetReset.Latest);
 
-            var expectedStreamCount = 1;
             long streamsRevoked = 0;
             long streamsReceived = 0;
-            var cts = new CancellationTokenSource();
+            using var cts = new CancellationTokenSource();
 
-            var streams = new List<IStreamProducer>();
-            for (var i = 0; i <= expectedStreamCount; i++)
+            var topicProducer = client.GetTopicProducer(topic, (partitionerTopic, streamId, partitionCount) =>
+                streamId.EndsWith("-0", StringComparison.Ordinal) ? new Partition(0) : new Partition(1));
+            var streams = new[]
             {
-                streams.Add(topicProducer.CreateStream());
-            }
+                topicProducer.CreateStream($"{topic}-0"),
+                topicProducer.CreateStream($"{topic}-1")
+            };
 
             topicConsumer1.OnStreamReceived += (sender, sr) =>
             {
@@ -1229,7 +1234,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             
             var writerTask = Task.Run(async () =>
             {
-                while (!cts.IsCancellationRequested)
+                while (!cts.Token.IsCancellationRequested)
                 {
                     this.output.WriteLine("Generating data for streams");
                     foreach (var stream in streams)
@@ -1240,30 +1245,37 @@ namespace QuixStreams.Streaming.IntegrationTests
                         stream.Timeseries.Buffer.Flush();
                     }
 
-                    await Task.Delay(1000, cts.Token);
+                    await Task.Delay(200, cts.Token);
                 }
-            });
+            }, cts.Token);
             
-            SpinWait.SpinUntil(() => streamsReceived > 0, TimeSpan.FromSeconds(20));
-            streamsReceived.Should().BeGreaterThan(0);
+            SpinWait.SpinUntil(() => Interlocked.Read(ref streamsReceived) >= streams.Length, TimeSpan.FromSeconds(10));
+            streamsReceived.Should().BeGreaterOrEqualTo(streams.Length);
 
             // Act 
-            // Add additional consumers to force kafka a rebalance
+            // Add an additional consumer to force Kafka to rebalance the two partitions.
             long streamsReceived2 = 0;
-            for (var index = 0; index <= 5; index++)
+            using var consumerToStealPartition = rebalanceClient.GetTopicConsumer(topic, consumerGroup, autoOffset: AutoOffsetReset.Latest);
+            consumerToStealPartition.OnStreamReceived += (sender, sr) =>
             {
-                if (streamsReceived2 > 0) break;
-                var timer = Stopwatch.StartNew();
-                var consumerToStealPartition = client.GetTopicConsumer(topic, consumerGroup, autoOffset: AutoOffsetReset.Latest);
-                consumerToStealPartition.OnStreamReceived += (sender, sr) => { Interlocked.Increment(ref streamsReceived2); };
-                consumerToStealPartition.Subscribe();
-                this.output.WriteLine("Took {0:g} to start a new consumer", timer.Elapsed);
-            }
+                Interlocked.Increment(ref streamsReceived2);
+            };
+            var timer = Stopwatch.StartNew();
+            consumerToStealPartition.Subscribe();
+            this.output.WriteLine("Took {0:g} to start a new consumer", timer.Elapsed);
 
-            SpinWait.SpinUntil(() => streamsReceived2 > 0, TimeSpan.FromSeconds(20));
+            SpinWait.SpinUntil(() => Interlocked.Read(ref streamsReceived2) > 0, TimeSpan.FromSeconds(10));
             streamsReceived2.Should().BeGreaterThan(0);
             SpinWait.SpinUntil(() => streamsRevoked > 0, TimeSpan.FromSeconds(10));
             streamsRevoked.Should().BeGreaterThan(0, $"found {streamsReceived2} streams from new consumer but original hasn't revoked");
+            cts.Cancel();
+            try
+            {
+                await writerTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
     }
