@@ -8,6 +8,7 @@
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <NoWarn>$(NoWarn);CS0419;CS1572;CS1573;CS1574;CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

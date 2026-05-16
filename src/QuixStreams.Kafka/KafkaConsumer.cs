@@ -475,9 +475,9 @@ namespace QuixStreams.Kafka
                             this.logger.LogDebug("[{0}] Partition revoked: {1}", this.configId, partition.ToString());
                         }
                     }
-                    this.logger.LogTrace("[{0}] Calling Revoked event handler", this.configId, this.configId);
+                    this.logger.LogTrace("[{0}] Calling Revoked event handler", this.configId);
                     this.OnRevoked?.Invoke(this, new RevokedEventArgs(topicPartitionOffsets));
-                    this.logger.LogTrace("[{0}] Called Revoked event handler", this.configId, this.configId);
+                    this.logger.LogTrace("[{0}] Called Revoked event handler", this.configId);
                 };
                 if (closing || !EnableReAssignedLogic)
                 {
@@ -491,7 +491,7 @@ namespace QuixStreams.Kafka
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[{0}] Exception occurred in PartitionsRevokedHandler", this.configId, this.configId);
+                logger.LogError(ex, "[{0}] Exception occurred in PartitionsRevokedHandler", this.configId);
             }
         }
 
@@ -783,7 +783,7 @@ namespace QuixStreams.Kafka
                         }
                         catch (Exception e)
                         {
-                            
+                            this.logger.LogDebug(e, "[{0}] Exception occurred while polling Kafka", this.configId);
                         }
                     }
 

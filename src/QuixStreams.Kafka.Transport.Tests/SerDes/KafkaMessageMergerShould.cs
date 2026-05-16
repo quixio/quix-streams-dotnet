@@ -11,7 +11,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
     public class KafkaMessageMergerShould
     {
         [Fact]
-        public void Modify_MergeReturnsBytes_ShouldRaisePackageAndReturnCompletedTask()
+        public async Task Modify_MergeReturnsBytes_ShouldRaisePackageAndReturnCompletedTask()
         {
             // Arrange
             var random = new Random();
@@ -31,7 +31,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             var task = merger.Merge(package);
 
             // Assert
-            task.Wait(2000);
+            await task.WaitAsync(TimeSpan.FromSeconds(2));
             task.IsCompleted.Should().BeTrue();
             kafkaMessage.Should().NotBeNull();
             (kafkaMessage.Value).Should().BeEquivalentTo(package.Value);

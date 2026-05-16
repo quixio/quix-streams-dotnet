@@ -70,7 +70,7 @@ namespace QuixStreams.Telemetry.UnitTests
                 .AddComponent(new TelemetryKafkaProducer(testBroker, "StreamId_3"));
 
             // ACT
-            Task.WaitAll(new [] {
+            await Task.WhenAll(new [] {
                 stream1.Send(testModel1),
                 stream2.Send(testModel1),
                 stream2.Send(testModel2),
@@ -191,5 +191,4 @@ namespace QuixStreams.Telemetry.UnitTests
     }
 
 }
-
 

@@ -230,8 +230,6 @@ namespace QuixStreams.Streaming
         /// </summary>
         public TimeSpan CachePeriod = TimeSpan.FromMinutes(1);
 
-        private bool tokenChecked;
-
         private static JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
         {
             Converters = new List<JsonConverter>()

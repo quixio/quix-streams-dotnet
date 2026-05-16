@@ -18,7 +18,7 @@ namespace QuixStreams.Streaming.IntegrationTests
                 await this.AdminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification() { Name = topic, NumPartitions = partitionCount } });
                 Console.WriteLine($"Created topic {topic} with desired {partitionCount} partitions");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // it exists
             }

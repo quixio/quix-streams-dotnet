@@ -71,10 +71,6 @@ namespace QuixStreams.Streaming.IntegrationTests
             IList<TimeseriesDataRaw> data = new List<TimeseriesDataRaw>();
             IList<EventDataRaw> events = new List<EventDataRaw>();
             var streamStarted = false;
-            var streamEnded = false;
-            StreamProperties streamProperties = null;
-            var parameterDefinitionsChanged = false;
-            var eventDefinitionsChanged = false;
             string streamId = null;
 
             topicConsumer.OnStreamReceived += (s, e) =>
@@ -1152,7 +1148,7 @@ namespace QuixStreams.Streaming.IntegrationTests
 
                 SpinWait.SpinUntil(() => data.Count == 1, 2000);
 
-                Assert.Equal(1, data.Count);
+                Assert.Single(data);
 
 
                 // Close stream
@@ -1460,7 +1456,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             var senderTask = Task.Run(BackgroundSender);
             var committerTask = Task.Run(BackgroundCommitter);
 
-            Task.WaitAll(senderTask, committerTask);
+            await Task.WhenAll(senderTask, committerTask);
             
             streamProducer.Timeseries.Flush();
             this.output.WriteLine($"Wrote {iteration} iteration");
@@ -1599,13 +1595,13 @@ namespace QuixStreams.Streaming.IntegrationTests
             var storageDir = topicConsumer.GetStreamStateManager(streamName).StorageDir;
             var openRocksDBinSecondProcessTask = Task.Run(() => AttemptToOpenRocksDb(storageDir));
             
-            openRocksDBinSecondProcessTask.Result.Should().BeFalse("because the second process shouldn't be able to open a RocksDB connection, as one is already open at the same location.");
+            (await openRocksDBinSecondProcessTask).Should().BeFalse("because the second process shouldn't be able to open a RocksDB connection, as one is already open at the same location.");
             
             topicConsumer.Dispose();
             
             openRocksDBinSecondProcessTask = Task.Run(() => AttemptToOpenRocksDb(storageDir));
 
-            openRocksDBinSecondProcessTask.Result.Should().BeTrue("because the second process should be able to open a RocksDB connection, as the connection of the first db was disposed.");
+            (await openRocksDBinSecondProcessTask).Should().BeTrue("because the second process should be able to open a RocksDB connection, as the connection of the first db was disposed.");
 
             
             bool AttemptToOpenRocksDb(string dbPath)

@@ -223,20 +223,20 @@ namespace QuixStreams.State.UnitTests
         }
         
         [Fact]
-        public void Dipose_SecondProcessesShouldBeAbleToAccessTheDbAfterDisposed()
+        public async Task Dipose_SecondProcessesShouldBeAbleToAccessTheDbAfterDisposed()
         { 
             // Act
             var openRocksDBinSecondProcessTask = Task.Run(() => AttemptToOpenRocksDb(dbDirectory));
 
             // Assert
-            openRocksDBinSecondProcessTask.Result.Should().BeFalse("because the second process shouldn't be able to open a RocksDB connection, as one is already open at the same location.");
+            (await openRocksDBinSecondProcessTask).Should().BeFalse("because the second process shouldn't be able to open a RocksDB connection, as one is already open at the same location.");
             
             // Act
             storage.Dispose();
             openRocksDBinSecondProcessTask = Task.Run(() => AttemptToOpenRocksDb(dbDirectory));
             
             // Assert
-            openRocksDBinSecondProcessTask.Result.Should().BeTrue("because the second process should be able to open a RocksDB connection, as the connection of the first db was disposed.");
+            (await openRocksDBinSecondProcessTask).Should().BeTrue("because the second process should be able to open a RocksDB connection, as the connection of the first db was disposed.");
         }
         
         /// <summary>

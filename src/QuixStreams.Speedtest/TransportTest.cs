@@ -30,7 +30,16 @@ namespace QuixStreams.Speedtest
             {
                 configBuilder.SetSaslAuthentication(Configuration.Config.Security.Username,
                     Configuration.Config.Security.Password, SaslMechanism.ScramSha256);
-                configBuilder.SetSslEncryption(Configuration.Config.Security.SslCertificates);
+                if (!string.IsNullOrWhiteSpace(Configuration.Config.Security.SslCaContent))
+                {
+                    configBuilder.SetSslCaContent(Configuration.Config.Security.SslCaContent);
+                }
+                else
+                {
+#pragma warning disable CS0618 // Keep supporting the obsolete path-based SSL option for existing appsettings.
+                    configBuilder.SetSslEncryption(Configuration.Config.Security.SslCertificates);
+#pragma warning restore CS0618
+                }
             }
 
             var config = configBuilder.Build();

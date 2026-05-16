@@ -4,6 +4,7 @@
     <DocumentationFile>bin\$(OutputDir)\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     <Configurations>Debug;Release</Configurations>
     <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <NoWarn>$(NoWarn);CS0419;CS1572;CS1573;CS1574;CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

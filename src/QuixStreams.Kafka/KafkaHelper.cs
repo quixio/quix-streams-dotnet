@@ -70,7 +70,7 @@ namespace QuixStreams.Kafka
                 readyToFetch = true;
                 return true;
             }
-            catch (Exception ex) // left here for debugging purposes
+            catch (Exception) // left here for debugging purposes
             {
                 return false;
             }

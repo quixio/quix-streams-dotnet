@@ -24,8 +24,10 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
         public long MessageCount => msgCount;
         private readonly Func<KafkaMessage, Task> onPublish;
 
-        public Func<KafkaMessage, Task> OnMessageReceived { get; set; }
+#pragma warning disable CS0067 // Test broker implements the transport interface; tests do not exercise error callbacks.
         public event EventHandler<Exception> OnErrorOccurred;
+#pragma warning restore CS0067
+        public Func<KafkaMessage, Task> OnMessageReceived { get; set; }
         public void Commit(ICollection<TopicPartitionOffset> partitionOffsets)
         {
             this.OnCommitting?.Invoke(this, new CommittingEventArgs(partitionOffsets));

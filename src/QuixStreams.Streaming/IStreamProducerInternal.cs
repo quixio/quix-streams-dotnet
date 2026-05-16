@@ -11,11 +11,6 @@ namespace QuixStreams.Streaming
     internal interface IStreamProducerInternal: IStreamProducer
     {
         /// <summary>
-        /// Default Epoch used for Parameters and Events
-        /// </summary>
-        DateTime Epoch { get; set; }
-        
-        /// <summary>
         /// Event raised before the message is being sent
         /// </summary>
         event Action<Type> OnBeforeSend;

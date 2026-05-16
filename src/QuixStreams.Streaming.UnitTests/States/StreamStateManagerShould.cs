@@ -154,21 +154,21 @@ namespace QuixStreams.Streaming.UnitTests.States
         }
         
         [Fact]
-        public void Revoke_ShouldDisposeTheStorage()
+        public async Task Revoke_ShouldDisposeTheStorage()
         {
             // Act
             this.stateManager.GetDictionaryState<string>("testState", key => null);
             var openRocksDBinSecondProcessTask = Task.Run(() => AttemptToOpenRocksDb(this.stateManager.StorageDir));
 
             // Assert
-            openRocksDBinSecondProcessTask.Result.Should().BeFalse("because the second process shouldn't be able to open a RocksDB connection, as one is already open at the same location.");
+            (await openRocksDBinSecondProcessTask).Should().BeFalse("because the second process shouldn't be able to open a RocksDB connection, as one is already open at the same location.");
             
             // Act
             StreamStateManager.TryRevoke(streamConsumerId);
             openRocksDBinSecondProcessTask = Task.Run(() => AttemptToOpenRocksDb(this.stateManager.StorageDir));
             
             // Assert
-            openRocksDBinSecondProcessTask.Result.Should().BeTrue("because the second process should be able to open a RocksDB connection, as the connection of the first db was disposed.");
+            (await openRocksDBinSecondProcessTask).Should().BeTrue("because the second process should be able to open a RocksDB connection, as the connection of the first db was disposed.");
         }
         
         /// <summary>
