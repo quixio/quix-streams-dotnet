@@ -1,32 +1,38 @@
-﻿using System;
-using Newtonsoft.Json;
+using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace QuixStreams.Kafka.Transport.SerDes.Codecs.JsonConverters
 {
     /// <summary>
-    /// <see cref="JsonConverter"/> de/serializing model as a string
+    /// Converts string-backed model identifiers as JSON strings.
     /// </summary>
-    public class AsStringJsonConverter : JsonConverter
+    public sealed class CodecIdJsonConverter : JsonConverter<CodecId>
     {
-        /// <inheritdoc />
-        public override bool CanRead => false;
-
-        /// <inheritdoc />
-        public override bool CanConvert(Type objectType)
+        public override CodecId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return true;
+            return reader.GetString();
         }
 
-        /// <inheritdoc />
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, CodecId value, JsonSerializerOptions options)
         {
-            writer.WriteValue(value.ToString());
+            writer.WriteStringValue(value.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Converts string-backed model keys as JSON strings.
+    /// </summary>
+    public sealed class ModelKeyJsonConverter : JsonConverter<ModelKey>
+    {
+        public override ModelKey Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            return reader.GetString();
         }
 
-        /// <inheritdoc />
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, ModelKey value, JsonSerializerOptions options)
         {
-            return reader.ReadAsString();
+            writer.WriteStringValue(value.ToString());
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
-using System.IO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Text.Json;
+using QuixStreams.Kafka.Transport.SerDes.Json;
 
 namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
 {
@@ -14,49 +13,30 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
         /// <inheritdoc />
         public override CodecId Id => CodecId.WellKnownCodecIds.DefaultTypedJsonCodec;
 
-        private readonly JsonSerializer serializer;
-
         /// <summary>
         /// Initializes a new instance of <see cref="DefaultJsonCodec{TContent}"/>
         /// </summary>
         public DefaultJsonCodec()
         {
-            serializer = JsonSerializer.Create();
-            serializer.Converters.Add(new StringEnumConverter());
-            serializer.DefaultValueHandling = DefaultValueHandling.Ignore;
         }
 
 
         /// <inheritdoc />
         public override TContent Deserialize(byte[] contentBytes)
         {
-            using (var stream = new MemoryStream(contentBytes))
-            using (var reader = new StreamReader(stream, Constants.Utf8NoBOMEncoding))
-            {
-                return (TContent) serializer.Deserialize(reader, typeof(TContent));
-            }
+            return JsonSerializer.Deserialize<TContent>(contentBytes, QuixJsonOptions.Default);
         }
         
         /// <inheritdoc />
         public override TContent Deserialize(ArraySegment<byte> contentBytes)
         {
-            using (var stream = new MemoryStream(contentBytes.Array, contentBytes.Offset, contentBytes.Count))
-            using (var reader = new StreamReader(stream, Constants.Utf8NoBOMEncoding))
-            {
-                return (TContent) serializer.Deserialize(reader, typeof(TContent));
-            }
+            return JsonSerializer.Deserialize<TContent>(contentBytes, QuixJsonOptions.Default);
         }
 
         /// <inheritdoc />
         public override byte[] Serialize(TContent obj)
         {
-            using (var stream = new MemoryStream())
-            using (var writer = new StreamWriter(stream, Constants.Utf8NoBOMEncoding))
-            {
-                serializer.Serialize(writer, obj);
-                writer.Flush();
-                return stream.ToArray();
-            }
+            return JsonSerializer.SerializeToUtf8Bytes(obj, QuixJsonOptions.Default);
         }
     }
 
@@ -70,13 +50,8 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
         /// </summary>
         public static readonly DefaultJsonCodec Instance = new DefaultJsonCodec();
         
-        private readonly JsonSerializer serializer;
-
         private DefaultJsonCodec()
         {
-            serializer = JsonSerializer.Create();
-            serializer.Converters.Add(new StringEnumConverter());
-            serializer.DefaultValueHandling = DefaultValueHandling.Ignore;
         }
 
         /// <inheritdoc />
@@ -88,14 +63,8 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
             serialized = null;
             try
             {
-                using (var stream = new MemoryStream())
-                using (var writer = new StreamWriter(stream, Constants.Utf8NoBOMEncoding))
-                {
-                    serializer.Serialize(writer, obj);
-                    writer.Flush();
-                    serialized = stream.ToArray();
-                    return true;
-                }
+                serialized = JsonSerializer.SerializeToUtf8Bytes(obj, QuixJsonOptions.Default);
+                return true;
             }
             catch
             {
@@ -109,12 +78,8 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
             content = null;
             try
             {
-                using (var stream = new MemoryStream(contentBytes))
-                using (var reader = new StreamReader(stream, Constants.Utf8NoBOMEncoding))
-                {
-                    content = serializer.Deserialize(reader, typeof(object));
-                    return content != null;
-                }
+                content = JsonSerializer.Deserialize<object>(contentBytes, QuixJsonOptions.Default);
+                return content != null;
             }
             catch
             {
@@ -128,14 +93,8 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs
             content = null;
             try
             {
-                using (var stream = new MemoryStream(contentBytes.Array, contentBytes.Offset, contentBytes.Count))
-                {
-                    using (var reader = new StreamReader(stream, Constants.Utf8NoBOMEncoding))
-                    {
-                        content = serializer.Deserialize(reader, typeof(object));
-                        return content != null;
-                    }
-                }
+                content = JsonSerializer.Deserialize<object>(contentBytes, QuixJsonOptions.Default);
+                return content != null;
             }
             catch
             {

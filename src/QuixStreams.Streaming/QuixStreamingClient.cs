@@ -10,12 +10,12 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using QuixStreams.Kafka;
 using QuixStreams.Kafka.Transport;
 using QuixStreams.Streaming.Configuration;
@@ -230,11 +230,13 @@ namespace QuixStreams.Streaming
         /// </summary>
         public TimeSpan CachePeriod = TimeSpan.FromMinutes(1);
 
-        private static JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
+        private static readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
         {
-            Converters = new List<JsonConverter>()
+            AllowTrailingCommas = true,
+            PropertyNameCaseInsensitive = true,
+            Converters =
             {
-                new SafeEnumConverter()
+                new SafeEnumConverterFactory()
             }
         };
 
@@ -817,7 +819,7 @@ namespace QuixStreams.Streaming
             var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             try
             {
-                var converted = JsonConvert.DeserializeObject<Topic>(content, jsonSerializerSettings);
+                var converted = JsonSerializer.Deserialize<Topic>(content, jsonSerializerOptions);
                 return converted;
             }
             catch
@@ -831,7 +833,7 @@ namespace QuixStreams.Streaming
             var httpRequest = new HttpRequestMessage(method, uri);
             if (bodyModel != null)
             {
-                httpRequest.Content = new StringContent(JsonConvert.SerializeObject(bodyModel), Encoding.UTF8, "application/json");
+                httpRequest.Content = new StringContent(JsonSerializer.Serialize(bodyModel, jsonSerializerOptions), Encoding.UTF8, "application/json");
             }
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             httpRequest.Headers.Add("X-Version", "2.0");
@@ -848,7 +850,7 @@ namespace QuixStreams.Streaming
                     var cid = String.Empty;
                     try
                     {
-                        var error = JsonConvert.DeserializeObject<PortalException>(responseContent, jsonSerializerSettings);
+                        var error = JsonSerializer.Deserialize<PortalException>(responseContent, jsonSerializerOptions);
                         msg = error.Message;
                         cid = error.CorrelationId;
                     }
@@ -888,7 +890,7 @@ namespace QuixStreams.Streaming
             this.logger.LogTrace("Request {0} had {1} response:{2}{3}", uri.AbsolutePath, response.StatusCode, Environment.NewLine, responseContent);
             try
             {
-                var converted = JsonConvert.DeserializeObject<T>(responseContent, jsonSerializerSettings);
+                var converted = JsonSerializer.Deserialize<T>(responseContent, jsonSerializerOptions);
 
                 return converted;
             }
@@ -898,28 +900,61 @@ namespace QuixStreams.Streaming
             }
         }
         
-        private class SafeEnumConverter: StringEnumConverter
+        private class SafeEnumConverterFactory : JsonConverterFactory
         {
-            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            public override bool CanConvert(Type typeToConvert)
             {
-                try
-                {
-                    if (reader.TokenType == JsonToken.Null) return null;
-                    var enumText = reader.Value.ToString();
-                    if (string.IsNullOrEmpty(enumText)) return null;
+                return typeToConvert.IsEnum;
+            }
 
-                    return base.ReadJson(reader, objectType, existingValue, serializer);
-                }
-                catch
+            public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+            {
+                var converterType = typeof(SafeEnumConverter<>).MakeGenericType(typeToConvert);
+                return (JsonConverter)Activator.CreateInstance(converterType);
+            }
+        }
+
+        private class SafeEnumConverter<TEnum> : JsonConverter<TEnum> where TEnum : struct, Enum
+        {
+            public override TEnum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                if (reader.TokenType == JsonTokenType.Null)
                 {
-                    // Return the default 'Unknown' value when an exception occurs
-                    if (Enum.GetNames(objectType).Contains("Unknown", StringComparer.InvariantCultureIgnoreCase))
+                    return GetFallback(typeToConvert);
+                }
+
+                if (reader.TokenType == JsonTokenType.String)
+                {
+                    var enumText = reader.GetString();
+                    if (!string.IsNullOrEmpty(enumText) && Enum.TryParse(enumText, true, out TEnum result))
                     {
-                        return Enum.Parse(objectType, "Unknown", true);
+                        return result;
                     }
 
-                    throw;
+                    return GetFallback(typeToConvert);
                 }
+
+                if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out var enumValue))
+                {
+                    return (TEnum)Enum.ToObject(typeToConvert, enumValue);
+                }
+
+                return GetFallback(typeToConvert);
+            }
+
+            public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
+            {
+                writer.WriteStringValue(value.ToString());
+            }
+
+            private static TEnum GetFallback(Type enumType)
+            {
+                if (Enum.GetNames(enumType).Contains("Unknown", StringComparer.InvariantCultureIgnoreCase))
+                {
+                    return (TEnum)Enum.Parse(enumType, "Unknown", true);
+                }
+
+                return default;
             }
         }
     }

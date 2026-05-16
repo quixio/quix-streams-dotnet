@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
 using FluentAssertions;
-using Newtonsoft.Json;
 using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.SerDes.Legacy;
 using Xunit;
@@ -194,7 +194,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
                 data[ii] = $"Some_value_that_should_get_compressed_{ii}";
             }
 
-            var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
+            var dataBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
 
             var key = Encoding.UTF8.GetBytes("My super key");
             var testCodecId = "Stuff";
@@ -232,7 +232,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
                 data[ii] = $"Some_value_that_should_get_compressed_{ii}";
             }
 
-            var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
+            var dataBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
 
             var key = Encoding.UTF8.GetBytes("My super key");
             var message = new KafkaMessage(key, dataBytes);

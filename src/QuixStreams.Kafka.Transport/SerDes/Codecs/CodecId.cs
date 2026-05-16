@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.JsonConverters;
 
 namespace QuixStreams.Kafka.Transport.SerDes.Codecs
@@ -9,7 +9,7 @@ namespace QuixStreams.Kafka.Transport.SerDes.Codecs
     /// The Id uniquely used to identify a codec
     /// </summary>
     [DebuggerDisplay("{id}")]
-    [JsonConverter(typeof(AsStringJsonConverter))]
+    [JsonConverter(typeof(CodecIdJsonConverter))]
     public struct CodecId : IEquatable<CodecId>
     {
         private readonly string id;

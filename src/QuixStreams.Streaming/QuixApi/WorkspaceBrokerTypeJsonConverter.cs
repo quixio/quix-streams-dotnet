@@ -1,21 +1,22 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using QuixStreams.Streaming.QuixApi.Portal;
 
 namespace QuixStreams.Streaming.QuixApi
 {
-    internal class WorkspaceBrokerTypeJsonConverter : JsonConverter
+    internal class WorkspaceBrokerTypeJsonConverter : JsonConverter<WorkspaceBrokerType>
     {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, WorkspaceBrokerType value, JsonSerializerOptions options)
         {
-            writer.WriteValue(value.ToString());
+            writer.WriteStringValue(value.ToString());
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override WorkspaceBrokerType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (reader.TokenType == JsonToken.String)
+            if (reader.TokenType == JsonTokenType.String)
             {
-                string value = reader.Value.ToString();
+                string value = reader.GetString();
                 if (Enum.TryParse(value, out WorkspaceBrokerType result))
                 {
                     return result;
@@ -23,11 +24,6 @@ namespace QuixStreams.Streaming.QuixApi
             }
 
             return WorkspaceBrokerType.Unknown;
-        }
-
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(WorkspaceBrokerType);
         }
     }
 }

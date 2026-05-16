@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using QuixStreams.Kafka.Transport.SerDes.Json;
 using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Streaming;
 using QuixStreams.Streaming.Models;
@@ -179,7 +180,7 @@ namespace QuixStreams.Tester
 
                     var builder = stream.Events.AddTimestamp(DateTime.UtcNow);
 
-                    builder.AddValue("an_event", JsonConvert.SerializeObject(obj));
+                    builder.AddValue("an_event", JsonSerializer.Serialize(obj, QuixJsonOptions.Default));
 
                     if (random.Next(0, 2) == 1) builder.AddTag("Random_Tag", $"tag{random.Next(0, 10)}");
                     builder.Publish();
@@ -284,7 +285,7 @@ namespace QuixStreams.Tester
                     if (Configuration.ConsumerConfig.PrintTimeseries)
                     {
                         Console.WriteLine($"Received new timeseries data for {consumer.StreamId}");
-                        var asJson = JsonConvert.SerializeObject(args.Data, Formatting.Indented);
+                        var asJson = JsonSerializer.Serialize(args.Data, QuixJsonOptions.Indented);
                         Console.WriteLine(asJson);
                     }
                 };
@@ -295,7 +296,7 @@ namespace QuixStreams.Tester
                     if (Configuration.ConsumerConfig.PrintEvents)
                     {
                         Console.WriteLine($"Received new event data for {consumer.StreamId}");
-                        var asJson = JsonConvert.SerializeObject(args.Data, Formatting.Indented);
+                        var asJson = JsonSerializer.Serialize(args.Data, QuixJsonOptions.Indented);
                         Console.WriteLine(asJson);
                     }
                 };
@@ -329,5 +330,4 @@ namespace QuixStreams.Tester
         }
     }
 }
-
 

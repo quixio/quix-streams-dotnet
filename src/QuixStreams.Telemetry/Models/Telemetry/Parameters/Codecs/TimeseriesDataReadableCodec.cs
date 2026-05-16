@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using QuixStreams.Kafka.Transport.SerDes.Codecs;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
 
@@ -72,16 +72,16 @@ namespace QuixStreams.Telemetry.Models.Telemetry.Parameters.Codecs
                     var val = paramPair.Value[valIndex];
                     if (!readingVal)
                     {
-                        indexToInsertAt += (int)((long) val); // newtonsoft unpacks it as int64, but it limited to int32
+                        indexToInsertAt += GetInt32(val);
                         readingVal = true;
                         continue;
                     }
                     
-                    if (val is JArray listVal) // newtonsoft doesn't auto unpack it as list as it has no information to do it (object type for vals)
+                    if (IsArray(val))
                     {
-                        foreach (var t in listVal)
+                        foreach (var t in EnumerateArray(val))
                         {
-                            var value = t.Value<double>();
+                            var value = GetDouble(t);
                             prevValue = value + prevValue; // they're deltas from previous value
                             paramNumericValues[indexToInsertAt] = prevValue;
                             indexToInsertAt++;
@@ -91,7 +91,7 @@ namespace QuixStreams.Telemetry.Models.Telemetry.Parameters.Codecs
                         continue;
                     }
 
-                    prevValue = (double) val + prevValue;
+                    prevValue = GetDouble(val) + prevValue;
                     paramNumericValues[indexToInsertAt] = prevValue;
                     indexToInsertAt++;
                     readingVal = false;
@@ -113,17 +113,17 @@ namespace QuixStreams.Telemetry.Models.Telemetry.Parameters.Codecs
                         var val = indexValues[valIndex];
                         if (!readingVal)
                         {
-                            indexToInsertAt += (int)((long) val); // newtonsoft unpacks it as int64, but it limited to int32
+                            indexToInsertAt += GetInt32(val);
                             readingVal = true;
                             continue;
                         }
 
                         int valueIndex;
-                        if (val is JArray listVal) // newtonsoft doesn't auto unpack it as list as it has no information to do it (object type for vals)
+                        if (IsArray(val))
                         {
-                            foreach (var t in listVal)
+                            foreach (var t in EnumerateArray(val))
                             {
-                                valueIndex = (int)t.Value<long>();
+                                valueIndex = GetInt32(t);
                                 stringValues[indexToInsertAt] = uniqueValues[valueIndex];
                                 indexToInsertAt++;
                             }
@@ -132,7 +132,7 @@ namespace QuixStreams.Telemetry.Models.Telemetry.Parameters.Codecs
                             continue;
                         }
 
-                        valueIndex = (int)(long) val;
+                        valueIndex = GetInt32(val);
                         stringValues[indexToInsertAt] = uniqueValues[valueIndex];
                         indexToInsertAt++;
                         readingVal = false;
@@ -151,6 +151,36 @@ namespace QuixStreams.Telemetry.Models.Telemetry.Parameters.Codecs
                 BinaryValues = binary,
                 TagValues = GetStringValues(tags),
             };
+        }
+
+        private static bool IsArray(object value)
+        {
+            return value is JsonElement element && element.ValueKind == JsonValueKind.Array;
+        }
+
+        private static IEnumerable<JsonElement> EnumerateArray(object value)
+        {
+            return ((JsonElement)value).EnumerateArray();
+        }
+
+        private static int GetInt32(object value)
+        {
+            if (value is JsonElement element)
+            {
+                return element.GetInt32();
+            }
+
+            return (int)Convert.ToInt64(value);
+        }
+
+        private static double GetDouble(object value)
+        {
+            if (value is JsonElement element)
+            {
+                return element.GetDouble();
+            }
+
+            return Convert.ToDouble(value);
         }
 
         private TimeseriesDataCodeDto ConvertToDto(TimeseriesDataRaw rawData)
@@ -310,10 +340,10 @@ namespace QuixStreams.Telemetry.Models.Telemetry.Parameters.Codecs
         
         private class StringValueDto
         {
-            [JsonProperty(PropertyName = "K")]
+            [JsonPropertyName("K")]
             public List<string> Keys = new List<string>();
 
-            [JsonProperty(PropertyName = "V")]
+            [JsonPropertyName("V")]
             public List<object> Values = new List<object>();
         }
     }
