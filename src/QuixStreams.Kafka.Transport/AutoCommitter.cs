@@ -18,9 +18,6 @@ namespace QuixStreams.Kafka.Transport
         private readonly Func<TransportPackage, CancellationToken, Task> onPublish = null;
         private Action closeAction = null;
         private bool closed = false;
-        private readonly EventHandler<RevokingEventArgs> revokingHandler = null;
-        private readonly EventHandler<RevokedEventArgs> revokedHandler = null;
-        
         /// <summary>
         /// this is used to avoid two concurrent commits at the same time. The commits could possibly be a problem
         /// if they happened out of order

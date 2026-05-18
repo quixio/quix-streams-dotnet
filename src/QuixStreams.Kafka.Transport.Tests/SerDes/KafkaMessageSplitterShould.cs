@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
 using FluentAssertions;
-using Newtonsoft.Json;
 using QuixStreams.Kafka.Transport.SerDes;
 using QuixStreams.Kafka.Transport.SerDes.Legacy;
 using Xunit;
@@ -180,6 +180,25 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             segments.Count.Should().Be(1, "Bytes should not be split");
             segments[0].Value.Should().BeSameAs(data);
         }
+
+        [Fact]
+        public void Split_UsingHeaderProtocolWhenHeaderOverheadExceedsLimit_ShouldReturnOriginalMessageOnce()
+        {
+            // Arrange
+            PackageSerializationSettings.Mode = PackageSerializationMode.Header;
+            var splitter = new KafkaMessageSplitter(1);
+            var data = new byte[50];
+            var random = new Random();
+            random.NextBytes(data);
+            var message = new KafkaMessage(null, data, null);
+
+            // Act
+            var segments = splitter.Split(message).ToList();
+
+            // Assert
+            segments.Count.Should().Be(1);
+            segments[0].Should().BeSameAs(message);
+        }
         
         [Fact]
         public void Split_UsingHeaderProtocolWithExcessiveValueSize_ShouldUseCompression()
@@ -194,7 +213,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
                 data[ii] = $"Some_value_that_should_get_compressed_{ii}";
             }
 
-            var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
+            var dataBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
 
             var key = Encoding.UTF8.GetBytes("My super key");
             var testCodecId = "Stuff";
@@ -232,7 +251,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
                 data[ii] = $"Some_value_that_should_get_compressed_{ii}";
             }
 
-            var dataBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
+            var dataBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(data));
 
             var key = Encoding.UTF8.GetBytes("My super key");
             var message = new KafkaMessage(key, dataBytes);

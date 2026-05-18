@@ -136,7 +136,9 @@ namespace QuixStreams.Streaming
                     }
                     else
                     {
+#pragma warning disable CS0618 // Keep supporting the obsolete path-based SSL option for existing callers.
                         securityOptionsBuilder.SetSslEncryption(securityOptions.SslCertificates);
+#pragma warning restore CS0618
                     }
                 }
                 else
@@ -198,7 +200,7 @@ namespace QuixStreams.Streaming
                 CommitOptions = options
             };
 
-            var kafkaReader = new TelemetryKafkaConsumer(kafkaReaderConfiguration, topic, partitionOffset);
+            var kafkaReader = new TelemetryKafkaConsumer(kafkaReaderConfiguration, topic, new[] { partitionOffset });
 
             var topicConsumer = new TopicConsumer(kafkaReader);
 

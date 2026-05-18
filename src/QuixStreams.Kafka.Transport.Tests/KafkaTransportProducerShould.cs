@@ -48,5 +48,19 @@ namespace QuixStreams.Kafka.Transport.Tests
             action.Should().Throw<Exception>().WithMessage(exception.Message);
         }
 
+        [Fact]
+        public async Task Flush_ShouldFlushUnderlyingProducer()
+        {
+            // Arrange
+            var testBroker = new TestBroker();
+            var transportProducer = new KafkaTransportProducer(testBroker);
+
+            // Act
+            await transportProducer.Flush();
+
+            // Assert
+            testBroker.FlushCount.Should().Be(1);
+        }
+
     }
 }

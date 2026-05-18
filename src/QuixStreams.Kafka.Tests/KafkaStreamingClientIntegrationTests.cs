@@ -19,7 +19,6 @@ namespace QuixStreams.Transport.Kafka.Tests
     {
         private readonly ITestOutputHelper output;
         private readonly KafkaDockerTestFixture kafkaDockerTestFixture;
-        private int MaxTestRetry = 3;
 
         public KafkaStreamingClientIntegrationTests(ITestOutputHelper output, KafkaDockerTestFixture kafkaDockerTestFixture)
         {
@@ -74,16 +73,21 @@ namespace QuixStreams.Transport.Kafka.Tests
 
                     using (var producer = new KafkaProducer(new ProducerConfiguration(this.kafkaDockerTestFixture.BrokerList), new ProducerTopicConfiguration(topic)))
                     {
+                        async Task PublishAndLog(KafkaMessage kafkaMessage, int index)
+                        {
+                            await producer.Publish(kafkaMessage);
+                            this.output.WriteLine($"Produced message {index}");
+                        }
+
+                        var publishTasks = new List<Task>();
                         for (var index = 0; index < messagesToSend.Count; index++)
                         {
                             var kafkaMessage = messagesToSend[index];
                             var indexCached = index;
-                            producer.Publish(kafkaMessage).ContinueWith(y =>
-                            {
-                                this.output.WriteLine($"Produced message {indexCached}");
-                            });
+                            publishTasks.Add(PublishAndLog(kafkaMessage, indexCached));
                         }
 
+                        await Task.WhenAll(publishTasks);
                         producer.Flush(CancellationToken.None);
                     }
 
@@ -136,16 +140,21 @@ namespace QuixStreams.Transport.Kafka.Tests
 
                 using (var producer = new KafkaProducer(new ProducerConfiguration(this.kafkaDockerTestFixture.BrokerList), new ProducerTopicConfiguration(topic)))
                 {
+                    async Task PublishAndLog(KafkaMessage kafkaMessage, int index)
+                    {
+                        await producer.Publish(kafkaMessage);
+                        this.output.WriteLine($"Produced message {index}");
+                    }
+
+                    var publishTasks = new List<Task>();
                     for (var index = 0; index < messagesToSend.Count; index++)
                     {
                         var kafkaMessage = messagesToSend[index];
                         var indexCached = index;
-                        producer.Publish(kafkaMessage).ContinueWith(y =>
-                        {
-                            this.output.WriteLine($"Produced message {indexCached}");
-                        });
+                        publishTasks.Add(PublishAndLog(kafkaMessage, indexCached));
                     }
 
+                    await Task.WhenAll(publishTasks);
                     producer.Flush(CancellationToken.None);
                 }
 

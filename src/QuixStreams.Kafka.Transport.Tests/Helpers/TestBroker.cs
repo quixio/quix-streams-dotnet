@@ -22,10 +22,14 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
 
         private long msgCount = 0;
         public long MessageCount => msgCount;
+        private long flushCount = 0;
+        public long FlushCount => flushCount;
         private readonly Func<KafkaMessage, Task> onPublish;
 
-        public Func<KafkaMessage, Task> OnMessageReceived { get; set; }
+#pragma warning disable CS0067 // Test broker implements the transport interface; tests do not exercise error callbacks.
         public event EventHandler<Exception> OnErrorOccurred;
+#pragma warning restore CS0067
+        public Func<KafkaMessage, Task> OnMessageReceived { get; set; }
         public void Commit(ICollection<TopicPartitionOffset> partitionOffsets)
         {
             this.OnCommitting?.Invoke(this, new CommittingEventArgs(partitionOffsets));
@@ -76,7 +80,7 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
 
         public void Flush(CancellationToken cancellationToken)
         {
-            // do nothing;
+            Interlocked.Increment(ref flushCount);
         }
 
         public Task<int> GetMaxMessageSizeBytes(TimeSpan maxWait)

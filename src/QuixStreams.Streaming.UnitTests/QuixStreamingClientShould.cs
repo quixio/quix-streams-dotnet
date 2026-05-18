@@ -32,6 +32,7 @@ namespace QuixStreams.Streaming.UnitTests
             // Arrange
             var messageHandler = new MockHttpMessageHandler(new Dictionary<string, string>()
             {
+                { "/broker/librdkafka", librdkafka},
                 { "/workspaces", workspaces },
                 { "/topics", topics }
             });
@@ -44,6 +45,15 @@ namespace QuixStreams.Streaming.UnitTests
             // Assert
             topicConsumer.Should().NotBeNull();
         }
+
+        private string librdkafka = @"
+{
+  ""bootstrap.servers"": ""xyz:9092"",
+  ""security.protocol"": ""SASL_SSL"",
+  ""sasl.mechanism"": ""SCRAM-SHA-512"",
+  ""sasl.username"": ""someuser"",
+  ""sasl.password"": ""somepassword""
+}";
 
         private string topics = @"
 [

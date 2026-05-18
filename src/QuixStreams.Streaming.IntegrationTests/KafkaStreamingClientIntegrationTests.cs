@@ -15,7 +15,6 @@ using QuixStreams.Streaming.Raw;
 using QuixStreams.Telemetry;
 using QuixStreams.Telemetry.Models;
 using QuixStreams.Telemetry.Models.Utility;
-using RocksDbSharp;
 using Xunit;
 using Xunit.Abstractions;
 using AutoOffsetReset = QuixStreams.Telemetry.Kafka.AutoOffsetReset;
@@ -71,10 +70,6 @@ namespace QuixStreams.Streaming.IntegrationTests
             IList<TimeseriesDataRaw> data = new List<TimeseriesDataRaw>();
             IList<EventDataRaw> events = new List<EventDataRaw>();
             var streamStarted = false;
-            var streamEnded = false;
-            StreamProperties streamProperties = null;
-            var parameterDefinitionsChanged = false;
-            var eventDefinitionsChanged = false;
             string streamId = null;
 
             topicConsumer.OnStreamReceived += (s, e) =>
@@ -1152,7 +1147,7 @@ namespace QuixStreams.Streaming.IntegrationTests
 
                 SpinWait.SpinUntil(() => data.Count == 1, 2000);
 
-                Assert.Equal(1, data.Count);
+                Assert.Single(data);
 
 
                 // Close stream
@@ -1205,22 +1200,27 @@ namespace QuixStreams.Streaming.IntegrationTests
         {
             // Arrange
             var topic = nameof(ReadingAStreamWithSameConsumerGroup_ShouldGetRevokedOnOne);
-            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
+            await this.kafkaDockerTestFixture.EnsureTopic(topic, 2);
 
-            var consumerGroup = "doesntmatteraslongassame";
-            var topicConsumer1 = client.GetTopicConsumer(topic, consumerGroup, autoOffset: AutoOffsetReset.Latest);
-            var topicProducer = client.GetTopicProducer(topic);
+            var consumerGroup = $"{nameof(ReadingAStreamWithSameConsumerGroup_ShouldGetRevokedOnOne)}-{Guid.NewGuid():N}";
+            var rebalanceClient = new KafkaStreamingClient(kafkaDockerTestFixture.BrokerList, null, new Dictionary<string, string>
+            {
+                ["session.timeout.ms"] = "6000",
+                ["heartbeat.interval.ms"] = "1000"
+            });
+            var topicConsumer1 = rebalanceClient.GetTopicConsumer(topic, consumerGroup, autoOffset: AutoOffsetReset.Latest);
 
-            var expectedStreamCount = 1;
             long streamsRevoked = 0;
             long streamsReceived = 0;
-            var cts = new CancellationTokenSource();
+            using var cts = new CancellationTokenSource();
 
-            var streams = new List<IStreamProducer>();
-            for (var i = 0; i <= expectedStreamCount; i++)
+            var topicProducer = client.GetTopicProducer(topic, (partitionerTopic, streamId, partitionCount) =>
+                streamId.EndsWith("-0", StringComparison.Ordinal) ? new Partition(0) : new Partition(1));
+            var streams = new[]
             {
-                streams.Add(topicProducer.CreateStream());
-            }
+                topicProducer.CreateStream($"{topic}-0"),
+                topicProducer.CreateStream($"{topic}-1")
+            };
 
             topicConsumer1.OnStreamReceived += (sender, sr) =>
             {
@@ -1234,7 +1234,7 @@ namespace QuixStreams.Streaming.IntegrationTests
             
             var writerTask = Task.Run(async () =>
             {
-                while (!cts.IsCancellationRequested)
+                while (!cts.Token.IsCancellationRequested)
                 {
                     this.output.WriteLine("Generating data for streams");
                     foreach (var stream in streams)
@@ -1245,387 +1245,38 @@ namespace QuixStreams.Streaming.IntegrationTests
                         stream.Timeseries.Buffer.Flush();
                     }
 
-                    await Task.Delay(1000, cts.Token);
+                    await Task.Delay(200, cts.Token);
                 }
-            });
+            }, cts.Token);
             
-            SpinWait.SpinUntil(() => streamsReceived > 0, TimeSpan.FromSeconds(20));
-            streamsReceived.Should().BeGreaterThan(0);
+            SpinWait.SpinUntil(() => Interlocked.Read(ref streamsReceived) >= streams.Length, TimeSpan.FromSeconds(10));
+            streamsReceived.Should().BeGreaterOrEqualTo(streams.Length);
 
             // Act 
-            // Add additional consumers to force kafka a rebalance
+            // Add an additional consumer to force Kafka to rebalance the two partitions.
             long streamsReceived2 = 0;
-            for (var index = 0; index <= 5; index++)
+            using var consumerToStealPartition = rebalanceClient.GetTopicConsumer(topic, consumerGroup, autoOffset: AutoOffsetReset.Latest);
+            consumerToStealPartition.OnStreamReceived += (sender, sr) =>
             {
-                if (streamsReceived2 > 0) break;
-                var timer = Stopwatch.StartNew();
-                var consumerToStealPartition = client.GetTopicConsumer(topic, consumerGroup, autoOffset: AutoOffsetReset.Latest);
-                consumerToStealPartition.OnStreamReceived += (sender, sr) => { Interlocked.Increment(ref streamsReceived2); };
-                consumerToStealPartition.Subscribe();
-                this.output.WriteLine("Took {0:g} to start a new consumer", timer.Elapsed);
-            }
+                Interlocked.Increment(ref streamsReceived2);
+            };
+            var timer = Stopwatch.StartNew();
+            consumerToStealPartition.Subscribe();
+            this.output.WriteLine("Took {0:g} to start a new consumer", timer.Elapsed);
 
-            SpinWait.SpinUntil(() => streamsReceived2 > 0, TimeSpan.FromSeconds(20));
+            SpinWait.SpinUntil(() => Interlocked.Read(ref streamsReceived2) > 0, TimeSpan.FromSeconds(10));
             streamsReceived2.Should().BeGreaterThan(0);
             SpinWait.SpinUntil(() => streamsRevoked > 0, TimeSpan.FromSeconds(10));
             streamsRevoked.Should().BeGreaterThan(0, $"found {streamsReceived2} streams from new consumer but original hasn't revoked");
-        }
-
-        [Fact]
-        public async Task StreamState_ShouldWorkAsExpected()
-        {
-            var topic = nameof(StreamState_ShouldWorkAsExpected);
-            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
-
-            var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest);
-            var topicProducer = client.GetTopicProducer(topic);
-            
-            var msgCounter = 0;
-            topicConsumer.OnStreamReceived += (sender, stream) =>
+            cts.Cancel();
+            try
             {
-                // Clean previous run
-                stream.GetStateManager().DeleteStates();
-
-                var rollingSum = stream.GetScalarState("RollingSumTotal", () => 0d);
-                var rollingSumPerParameter = stream.GetDictionaryState("RollingSum", (sid) => 0d);
-
-                stream.Timeseries.OnDataReceived += (o, args) =>
-                {
-                    foreach (var data in args.Data.Timestamps)
-                    {
-                        foreach (var parameter in data.Parameters)
-                        {
-                            if (parameter.Value.Type == ParameterValueType.Numeric)
-                            {
-                                rollingSumPerParameter[parameter.Key] += parameter.Value.NumericValue ?? 0;
-                                rollingSum.Value += parameter.Value.NumericValue ?? 0;
-
-                                this.output.WriteLine($"Rolling sum for {parameter.Key} is {rollingSumPerParameter[parameter.Key]}");
-                            }  
-                        }
-                    }
-                    
-                    msgCounter++;
-                };
-            };
-            
-            topicConsumer.Subscribe();
-
-            var start = DateTime.UtcNow;
-            var streamProducer = topicProducer.GetOrCreateStream("stream1");
-            streamProducer.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(1)).AddValue("param1", 5).Publish();
-            streamProducer.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(2)).AddValue("param2", 10).Publish();
-            streamProducer.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(3)).AddValue("param1", 9).Publish();
-            streamProducer.Timeseries.Flush();
-            //streamProducer.Close();
-            
-            var streamProducer2 = topicProducer.GetOrCreateStream("stream2");
-            streamProducer2.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(1)).AddValue("param1", 5).Publish();
-            streamProducer2.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(2)).AddValue("param2", 7).Publish();
-            streamProducer2.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(3)).AddValue("param1", 4).Publish();
-            streamProducer2.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(4)).AddValue("param2", 3).Publish();
-            streamProducer2.Timeseries.Flush();
-            //streamProducer2.Close();
-
-            topicProducer.Dispose();
-            output.WriteLine("Closed Producer");
-
-            // Wait for enough messages to be received
-            
-            output.WriteLine("Waiting for messages");
-            SpinWait.SpinUntil(() => msgCounter == 7, TimeSpan.FromSeconds(10000));
-            output.WriteLine($"Waited for messages, got {msgCounter}");
-            
-            msgCounter.Should().Be(7);
-            output.WriteLine($"Got expected number of messages");
-            topicConsumer.Commit();
-
-            output.WriteLine($"Checking Stream 1 Rolling sum for params");
-            var stream1StateRollingSum = topicConsumer.GetStreamStateManager(streamProducer.StreamId).GetScalarState<double>("RollingSumTotal");
-            var stream1StateRollingSumPerParam = topicConsumer.GetStreamStateManager(streamProducer.StreamId).GetDictionaryState<double>("RollingSum");
-            stream1StateRollingSumPerParam["param1"].Should().Be(14);
-            stream1StateRollingSumPerParam["param2"].Should().Be(10);
-            stream1StateRollingSum.Value.Should().Be(24);
-            output.WriteLine($"Checked Stream 1 Rolling sum for params");
-            output.WriteLine($"Checking Stream 2 Rolling sum for params");
-            var stream2StateRollingSum = topicConsumer.GetStreamStateManager(streamProducer2.StreamId).GetScalarState<double>("RollingSumTotal");
-            var stream2StateRollingSumPerParam = topicConsumer.GetStreamStateManager(streamProducer2.StreamId).GetDictionaryState<double>("RollingSum");
-            stream2StateRollingSumPerParam["param1"].Should().Be(9);
-            stream2StateRollingSumPerParam["param2"].Should().Be(10);
-            stream2StateRollingSum.Value.Should().Be(19);
-            output.WriteLine($"Checked Stream 2 Rolling sum for params");
-            topicConsumer.Dispose();
-        }
-        
-        [Fact(Skip = "intermittent failure, review")]
-        public async Task StreamState_CommittedFromAnotherThread_ShouldWorkAsExpected()
-        {
-            var topic = nameof(StreamState_CommittedFromAnotherThread_ShouldWorkAsExpected);
-            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
-            
-            var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest);
-            var topicProducer = client.GetTopicProducer(topic);
-
-            var testLength = TimeSpan.FromSeconds(10);
-            var mre = new ManualResetEvent(false);
-
-            var exceptionOccurred = false;
-
-            var msgCounter = 0;
-            topicConsumer.OnStreamReceived += (sender, stream) =>
-            {
-                // Clean previous run
-                stream.GetStateManager().DeleteStates();
-                
-                mre.Set();
-                stream.Timeseries.OnDataReceived += (o, args) =>
-                {
-                    var rollingSum = stream.GetDictionaryState("RollingSum", (sid) => 0d);
-                    try
-                    {
-                        foreach (var data in args.Data.Timestamps)
-                        {
-                            foreach (var parameter in data.Parameters)
-                            {
-                                if (parameter.Value.Type == ParameterValueType.Numeric)
-                                {
-                                    rollingSum[parameter.Key] += parameter.Value.NumericValue ?? 0;
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        exceptionOccurred = true;
-                        this.output.WriteLine($"Exception while consuming{Environment.NewLine}{ex}");
-                    }
-
-                    msgCounter++;
-                };
-            };
-            
-            topicConsumer.Subscribe();
-            
-            var start = DateTime.UtcNow;
-            var streamProducer = topicProducer.GetOrCreateStream("stream1");
-            streamProducer.Properties.Name = "test";
-            streamProducer.Flush();
-
-            if (!mre.WaitOne(TimeSpan.FromSeconds(10))) throw new Exception("Did not receive stream in time");
-
-            var end = DateTime.UtcNow.Add(testLength);
-
-            void BackgroundCommitter()
-            {
-                try
-                {
-                    while (!exceptionOccurred && DateTime.UtcNow < end)
-                    {
-                        topicConsumer.Commit();
-                        Thread.Sleep(3);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    exceptionOccurred = true;
-                    this.output.WriteLine($"Exception while committing{Environment.NewLine}{ex}");
-                }
+                await writerTask;
             }
-            
-            var iteration = 0;
-            void BackgroundSender()
+            catch (OperationCanceledException)
             {
-                try
-                {
-                    while (!exceptionOccurred && DateTime.UtcNow < end)
-                    {
-                        iteration++;
-                        streamProducer.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(iteration))
-                            .AddValue("param1", iteration).Publish();
-                        if (iteration % 5 == 0) // to create a bit bigger batches
-                        {
-                            streamProducer.Timeseries.Buffer.Flush();
-                            Thread.Sleep(6); // to avoid completely hammering underlying kafka
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    exceptionOccurred = true;
-                    this.output.WriteLine($"Exception while sending {Environment.NewLine}{ex}");
-
-                }
-            }
-
-            var senderTask = Task.Run(BackgroundSender);
-            var committerTask = Task.Run(BackgroundCommitter);
-
-            Task.WaitAll(senderTask, committerTask);
-            
-            streamProducer.Timeseries.Flush();
-            this.output.WriteLine($"Wrote {iteration} iteration");
-            exceptionOccurred.Should().BeFalse();
-        }
-
-        [Fact(Skip = "Intermittent fail")]
-        public async Task StreamState_ShouldWorkOnRebalancing()
-        {
-            var topic = nameof(StreamState_ShouldWorkOnRebalancing);
-            await this.kafkaDockerTestFixture.EnsureTopic(topic, 2);
-
-            var topicConsumer = client.GetTopicConsumer(topic, "same_group", autoOffset: AutoOffsetReset.Latest);
-            var topicConsumer2 = client.GetTopicConsumer(topic, "same_group", autoOffset: AutoOffsetReset.Latest);
-            
-            var topicProducer = client.GetTopicProducer(topic);
-            
-            var msgCounter = 0;
-
-            void StreamReceived(object sender, IStreamConsumer stream)
-            {
-                // Clean previous run
-                stream.GetStateManager().DeleteStates();
-
-                var rollingSum = stream.GetScalarState("RollingSumTotal", () => 0d);
-
-                stream.Timeseries.OnDataReceived += (o, args) =>
-                {
-                    foreach (var data in args.Data.Timestamps)
-                    {
-                        foreach (var parameter in data.Parameters)
-                        {
-                            if (parameter.Value.Type == ParameterValueType.Numeric)
-                            {
-                                rollingSum.Value += parameter.Value.NumericValue ?? 0;
-
-                                this.output.WriteLine($"Rolling sum is {rollingSum.Value}");
-                            }
-                        }
-                    }
-
-                    msgCounter++;
-                };
-            }
-
-            topicConsumer.OnStreamReceived += StreamReceived;
-            topicConsumer2.OnStreamReceived += StreamReceived;
-
-            topicConsumer.Subscribe();
-
-            var start = DateTime.UtcNow;
-            var streamProducer = topicProducer.GetOrCreateStream("stream1");
-            streamProducer.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(1)).AddValue("param1", 1).Publish();
-            streamProducer.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(2)).AddValue("param2", 1).Publish();
-            streamProducer.Timeseries.Flush();
-            //streamProducer.Close();
-            
-            var streamProducer2 = topicProducer.GetOrCreateStream("stream2");
-            streamProducer2.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(1)).AddValue("param1", 5).Publish();
-            streamProducer2.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(2)).AddValue("param2", 5).Publish();
-            streamProducer2.Timeseries.Flush();
-            //streamProducer2.Close();
-
-            topicConsumer2.Subscribe();
-            
-            streamProducer2.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(1)).AddValue("param1", 10).Publish();
-            streamProducer2.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(2)).AddValue("param2", 10).Publish();
-            streamProducer2.Timeseries.Flush();
-            
-            topicProducer.Dispose();
-            output.WriteLine("Closed Producer");
-            
-            // Wait for enough messages to be received
-            output.WriteLine("Waiting for messages");
-            SpinWait.SpinUntil(() => msgCounter == 6, TimeSpan.FromSeconds(10000));
-            output.WriteLine($"Waited for messages, got {msgCounter}");
-            
-            msgCounter.Should().Be(6);
-            output.WriteLine($"Got expected number of messages");
-            
-            topicConsumer.Commit();
-
-            output.WriteLine($"Checking Stream 1 Rolling sum for params");
-            var stream1StateRollingSum = topicConsumer.GetStreamStateManager(streamProducer.StreamId).GetScalarState<double>("RollingSumTotal");
-            stream1StateRollingSum.Value.Should().Be(2);
-            output.WriteLine($"Checked Stream 1 Rolling sum for params");
-            output.WriteLine($"Checking Stream 2 Rolling sum for params");
-            var stream2StateRollingSum = topicConsumer.GetStreamStateManager(streamProducer2.StreamId).GetScalarState<double>("RollingSumTotal");
-            stream2StateRollingSum.Value.Should().Be(30);
-            output.WriteLine($"Checked Stream 2 Rolling sum for params");
-            
-            topicConsumer.Dispose();
-            topicConsumer2.Dispose();
-        }
-        
-        [Fact]
-        public async Task StreamState_RocksDbDatabaseDisposedOnStreamRevoke()
-        {
-            var topic = nameof(StreamState_RocksDbDatabaseDisposedOnStreamRevoke);
-            await this.kafkaDockerTestFixture.EnsureTopic(topic, 1);
-
-            var topicConsumer = client.GetTopicConsumer(topic, "somerandomgroup", autoOffset: AutoOffsetReset.Latest);
-            var topicProducer = client.GetTopicProducer(topic);
-            
-            var msgCounter = 0;
-            topicConsumer.OnStreamReceived += (sender, stream) =>
-            {
-                // Clean previous run
-                stream.GetStateManager().DeleteStates();
-                stream.GetScalarState("RandomScalar", () => 0d);
-
-                stream.Timeseries.OnDataReceived += (o, args) =>
-                {
-                    msgCounter++;
-                };
-            };
-            
-            topicConsumer.Subscribe();
-
-            var start = DateTime.UtcNow;
-            var streamName = "stream1";
-            var streamProducer = topicProducer.GetOrCreateStream(streamName);
-            streamProducer.Timeseries.Buffer.AddTimestamp(start.AddMicroseconds(1)).AddValue("param1", 5).Publish();
-            streamProducer.Timeseries.Flush();
-
-            topicProducer.Dispose();
-            output.WriteLine("Closed Producer");
-
-            // Wait for enough messages to be received
-            
-            output.WriteLine("Waiting for messages");
-            SpinWait.SpinUntil(() => msgCounter == 1, TimeSpan.FromSeconds(10000));
-            output.WriteLine($"Waited for messages, got {msgCounter}");
-            
-            topicConsumer.Commit();
-            var storageDir = topicConsumer.GetStreamStateManager(streamName).StorageDir;
-            var openRocksDBinSecondProcessTask = Task.Run(() => AttemptToOpenRocksDb(storageDir));
-            
-            openRocksDBinSecondProcessTask.Result.Should().BeFalse("because the second process shouldn't be able to open a RocksDB connection, as one is already open at the same location.");
-            
-            topicConsumer.Dispose();
-            
-            openRocksDBinSecondProcessTask = Task.Run(() => AttemptToOpenRocksDb(storageDir));
-
-            openRocksDBinSecondProcessTask.Result.Should().BeTrue("because the second process should be able to open a RocksDB connection, as the connection of the first db was disposed.");
-
-            
-            bool AttemptToOpenRocksDb(string dbPath)
-            {
-                try
-                {
-                    using (RocksDb.Open(new DbOptions(), dbPath))
-                    {
-                        // This code path means that it was able to access the DB
-                        return true;
-                    }
-                }
-                catch (RocksDbException ex)
-                {
-                    // Returns false if the exception message contains the keyword "lock".
-                    return !ex.Message.Contains("lock");
-                }
             }
         }
-        
-        
+
     }
 }

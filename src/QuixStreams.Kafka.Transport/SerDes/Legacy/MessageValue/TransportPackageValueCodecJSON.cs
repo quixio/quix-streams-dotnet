@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
-using Newtonsoft.Json;
+using System.Text.Json;
 using QuixStreams.Kafka.Transport.SerDes.Codecs;
 using QuixStreams.Kafka.Transport.SerDes.Codecs.DefaultCodecs;
 
@@ -67,141 +67,126 @@ namespace QuixStreams.Kafka.Transport.SerDes.Legacy.MessageValue
         
         public static TransportPackageValue Deserialize(byte[] contentBytes)
         {
-            using (var ms = new MemoryStream(contentBytes))
-            using (var sr = new StreamReader(ms, Constants.Utf8NoBOMEncoding))
+            var codecId = CodecId.WellKnownCodecIds.None;
+            var modelKey = ModelKey.WellKnownModelKeys.Default;
+            var valueAvailable = false;
+            int valueStartsAt = -1;
+            int valueEndsAt = -1;
+
+            using (var document = JsonDocument.Parse(contentBytes))
             {
-                var codecId = CodecId.WellKnownCodecIds.None;
-                var modelKey = ModelKey.WellKnownModelKeys.Default;
-                var valueAvailable = false;
-                int valueStartsAt = -1;
-                int valueEndsAt = -1;
-                using (var reader = new JsonTextReader(sr))
+                var root = document.RootElement;
+                if (root.ValueKind != JsonValueKind.Object)
                 {
-                    reader.CloseInput = false;
-                    while (reader.Read())
+                    FailSerialization();
+                }
+
+                foreach (var property in root.EnumerateObject())
+                {
+                    switch (property.Name)
                     {
-                        if (reader.TokenType == JsonToken.PropertyName)
-                        {
-                            switch (reader.Value)
+                        case CodecIdPropertyName:
+                            if (property.Value.ValueKind == JsonValueKind.Null)
                             {
-                                case CodecIdPropertyName:
-                                    ReadNext(reader);
-                                    if (reader.TokenType != JsonToken.String)
-                                    {
-                                        FailSerialization();
-                                    }
-
-                                    codecId = (string) reader.Value;
-                                    break;
-                                case ModelKeyPropertyName:
-                                    ReadNext(reader);
-                                    if (reader.TokenType != JsonToken.String)
-                                    {
-                                        FailSerialization();
-                                    }
-
-                                    modelKey = (string) reader.Value;
-                                    break;
-                                case MetaDataPropertyName:
-                                    reader.Skip();
-                                    break;
-                                case ValueBytesStartPropertyName:
-                                    ReadNext(reader);
-                                    if (reader.TokenType != JsonToken.Integer)
-                                    {
-                                        FailSerialization();
-                                    }
-
-                                    valueStartsAt = (int)(long) reader.Value;
-                                    break;
-                                case ValueBytesEndPropertyName:
-                                    ReadNext(reader);
-                                    if (reader.TokenType != JsonToken.Integer)
-                                    {
-                                        FailSerialization();
-                                    }
-
-                                    valueEndsAt = (int)(long) reader.Value;
-                                    break;
-                                case ValueBytesPropertyName:
-                                    valueAvailable = true;
-                                    reader.Skip();
-                                    break;
+                                codecId = default;
+                                break;
                             }
-                        }
+
+                            if (property.Value.ValueKind != JsonValueKind.String)
+                            {
+                                FailSerialization();
+                            }
+
+                            codecId = property.Value.GetString();
+                            break;
+                        case ModelKeyPropertyName:
+                            if (property.Value.ValueKind == JsonValueKind.Null)
+                            {
+                                modelKey = default;
+                                break;
+                            }
+
+                            if (property.Value.ValueKind != JsonValueKind.String)
+                            {
+                                FailSerialization();
+                            }
+
+                            modelKey = property.Value.GetString();
+                            break;
+                        case MetaDataPropertyName:
+                            break;
+                        case ValueBytesStartPropertyName:
+                            if (!property.Value.TryGetInt32(out valueStartsAt))
+                            {
+                                FailSerialization();
+                            }
+
+                            break;
+                        case ValueBytesEndPropertyName:
+                            if (!property.Value.TryGetInt32(out valueEndsAt))
+                            {
+                                FailSerialization();
+                            }
+
+                            break;
+                        case ValueBytesPropertyName:
+                            valueAvailable = true;
+                            break;
                     }
                 }
-
-                if (!valueAvailable || (valueStartsAt == -1) | (valueEndsAt == -1))
-                {
-                    throw new SerializationException($"Failed to deserialize '{nameof(TransportPackageValue)}' because model value details are not found");
-                }
-
-                var content = new ArraySegment<byte>(contentBytes, valueStartsAt, valueEndsAt - valueStartsAt);
-                if (!IsJson(content))
-                {
-                    // +1, -2, because the value is "....", so trimming the leading and trailing "
-                    byte[] decodedByteArray =Convert.FromBase64String(Encoding.ASCII.GetString(content.Array, content.Offset + 1 , content.Count -2 )); 
-
-                    content = new ArraySegment<byte>(decodedByteArray);
-                }
-                
-                return new TransportPackageValue(content, new CodecBundle(modelKey, codecId));
             }
+
+            if (!valueAvailable || (valueStartsAt == -1) | (valueEndsAt == -1))
+            {
+                throw new SerializationException($"Failed to deserialize '{nameof(TransportPackageValue)}' because model value details are not found");
+            }
+
+            var content = new ArraySegment<byte>(contentBytes, valueStartsAt, valueEndsAt - valueStartsAt);
+            if (!IsJson(content))
+            {
+                // +1, -2, because the value is "....", so trimming the leading and trailing "
+                byte[] decodedByteArray = Convert.FromBase64String(Encoding.ASCII.GetString(content.Array, content.Offset + 1, content.Count - 2));
+
+                content = new ArraySegment<byte>(decodedByteArray);
+            }
+
+            return new TransportPackageValue(content, new CodecBundle(modelKey, codecId));
         }
         
 
         public static byte[] Serialize(TransportPackageValue transportPackageValue)
         {
             using (var ms = new MemoryStream())
-            using (var sw = new StreamWriter(ms, Constants.Utf8NoBOMEncoding))
+            using (var writer = new Utf8JsonWriter(ms))
             {
-                using (var writer = new JsonTextWriter(sw)
+                writer.WriteStartObject();
+                writer.WriteString(CodecIdPropertyName, transportPackageValue.CodecBundle.CodecId.ToString());
+                writer.WriteString(ModelKeyPropertyName, transportPackageValue.CodecBundle.ModelKey.ToString());
+
+                writer.WritePropertyName(ValueBytesPropertyName);
+                writer.Flush();
+                var startPosition = ms.Position;
+                var value = transportPackageValue.Value;
+                if (IsJson(value))
                 {
-                    Formatting = Formatting.None // This is extremely important, because this way there is no Byte Order Marker
-                })
+                    var sentData = StringCodec.Instance.Deserialize(value);
+                    writer.WriteRawValue(sentData);
+                }
+                else
                 {
-                    writer.WriteStartObject();
-                    writer.WritePropertyName(CodecIdPropertyName);
-                    writer.WriteValue(transportPackageValue.CodecBundle.CodecId);
-                    writer.WritePropertyName(ModelKeyPropertyName);
-                    writer.WriteValue(transportPackageValue.CodecBundle.ModelKey);
-
-                    writer.WritePropertyName(ValueBytesPropertyName);
-                    writer.Flush();
-                    var startPosition = ms.Position;
-                    var value = transportPackageValue.Value;
-                    if (IsJson(value))
-                    {
-                        var sentData = StringCodec.Instance.Deserialize(value);
-                        writer.WriteRawValue(sentData);
-                    }
-                    else
-                    {
-                        writer.WriteValue(value.ToArray());
-                    }
-
-                    writer.Flush();
-                    var endPosition = ms.Position;
-
-                    writer.WritePropertyName(ValueBytesStartPropertyName);
-                    writer.WriteValue(startPosition);
-                    writer.WritePropertyName(ValueBytesEndPropertyName);
-                    writer.WriteValue(endPosition);
-
-                    writer.WriteEnd();
-                    writer.Flush();
+                    writer.WriteBase64StringValue(value.ToArray());
                 }
 
-                return ms.ToArray();
-            }
-        }
+                writer.Flush();
+                var endPosition = ms.Position;
 
-        private static void ReadNext(JsonReader reader)
-        {
-            if (!reader.Read())
-            {
-                FailSerialization();
+                writer.WriteNumber(ValueBytesStartPropertyName, startPosition);
+                writer.WriteNumber(ValueBytesEndPropertyName, endPosition);
+
+                writer.WriteEndObject();
+                writer.Flush();
+
+                return ms.ToArray();
             }
         }
 

@@ -5,15 +5,16 @@
     <Configurations>Debug;Release</Configurations>
     <Platforms>AnyCPU</Platforms>
     <LangVersion>8.0</LangVersion>
-    <TargetFrameworks>net8.0;net7.0;net6.0;netstandard2.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
+    <NoWarn>$(NoWarn);CS0419;CS1572;CS1573;CS1574;CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackageId>QuixStreams.Streaming</PackageId>
-    <Version>0.7.0.0</Version>
-    <AssemblyVersion>0.7.0.0</AssemblyVersion>
-    <FileVersion>0.7.0.0</FileVersion>
-    <InformationalVersion>0.7.0.0</InformationalVersion>
+    <Version>0.8.0.0</Version>
+    <AssemblyVersion>0.8.0.0</AssemblyVersion>
+    <FileVersion>0.8.0.0</FileVersion>
+    <InformationalVersion>0.8.0.0</InformationalVersion>
     <Company>Quix Analytics Ltd</Company>
     <Authors>devs@quix.io</Authors>
     <Product>QuixStreams.Streaming</Product>
@@ -42,13 +43,10 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />
-    <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
-    <PackageReference Include="System.Runtime.Caching" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\QuixStreams.Telemetry\QuixStreams.Telemetry.csproj" />
-    <ProjectReference Include="..\QuixStreams.State\QuixStreams.State.csproj" />
   </ItemGroup>
 
 </Project>

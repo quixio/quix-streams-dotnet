@@ -28,21 +28,13 @@ namespace QuixStreams.IntegrationTestBase
             try
             {
                 var builder = new Builder().UseContainer();
-                
-                if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
-                {
-                    builder = builder.UseImage("dougdonohoe/fast-data-dev:latest");
-                }
-                else if (RuntimeInformation.OSArchitecture == Architecture.X64)
-                {
-                    builder = builder.UseImage("lensesio/fast-data-dev:3.3.1");
-                }
+
+                builder = builder.UseImage("lensesio/fast-data-dev:3.9");
                 
                 builder.ExposePort(ZookeeperPort, ZookeeperPort)
                 .ExposePort(KafkaPort, KafkaPort)
                 .WithEnvironment(
                     $"BROKER_PORT={KafkaPort}", 
-                    $"ZK_PORT={ZookeeperPort}",
                     $"ADV_HOST={host}",
                     "REST_PORT=0",
                     "WEB_PORT=0",

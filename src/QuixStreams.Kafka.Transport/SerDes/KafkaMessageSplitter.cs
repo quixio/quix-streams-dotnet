@@ -39,17 +39,6 @@ namespace QuixStreams.Kafka.Transport.SerDes
         /// </summary>
         internal readonly int MaximumKafkaMessageSize;
         
-        /// <summary>
-        /// The amount of segments at which a warning message should be logged
-        /// </summary>
-        private const int VerboseWarnAboveSegmentCount = 3;
-        
-        /// <summary>
-        /// The message size above which a warning message should be logged. This is a moving size to avoid
-        /// constant spamming of warning
-        /// </summary>
-        private static int MovingWarnAboveSize = 0;
-        
         private static readonly ILogger logger = Logging.CreateLogger(typeof(KafkaMessageSplitter));
 
         /// <summary>
@@ -122,6 +111,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             {
                 logger.LogWarning("A message could not be split because your message limit is {0} bytes.", this.MaximumKafkaMessageSize);
                 yield return message;
+                yield break;
             }
             
             var compressedMessage = CompressMessage(message);
@@ -135,12 +125,14 @@ namespace QuixStreams.Kafka.Transport.SerDes
             else
             {
                 var compressedValueSizeMax = this.MaximumKafkaMessageSize - compressedMessage.HeaderSize - (compressedMessage.Key?.Length ?? 0);
-                var compressedCount = (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
+                var compressedCount = compressedValueSizeMax < 1
+                    ? int.MaxValue
+                    : (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
                 if (compressedCount != 1)
                 {
                     // In this case we have to recalculate count assuming we have to add split info
                     compressedValueSizeMax -= ExpectedHeaderSplitInfoSize;
-                    if (compressedValueSizeMax < -1) compressedCount = int.MaxValue;
+                    if (compressedValueSizeMax < 1) compressedCount = int.MaxValue;
                     else compressedCount = (int)Math.Ceiling((double)compressedMessage.Value.Length / compressedValueSizeMax);
                 }
                 var nonCompressedCount = (int)Math.Ceiling((double)message.Value.Length / valueSizeMax);
@@ -253,18 +245,12 @@ namespace QuixStreams.Kafka.Transport.SerDes
 
         private void WarningCheck(int segmentCount, int messageLength)
         {
-            if (segmentCount <= VerboseWarnAboveSegmentCount) return;
-                
-            if (messageLength > MovingWarnAboveSize)
-            {
-                // not thread safe, but better than having too many warnings or some performance implication 
-                MovingWarnAboveSize = Math.Max(messageLength, MovingWarnAboveSize) * 2;
-                logger.LogWarning("One or more of your messages exceed the optimal size. Consider publishing smaller for better consumer experience. Your message was over {0}KB.", Math.Round((double)messageLength/1024, 1));
-            }
-            else
-            {
-                logger.LogTrace("One or more of your messages exceed the optimal size. Consider publishing smaller for better consumer experience. Your message was over {0}KB.", Math.Round((double)messageLength/1024, 1));
-            }
+            if (segmentCount <= 1) return;
+
+            logger.LogWarning(
+                "Message splitting produced {0} Kafka messages for one transport package. Split package publish is not atomic; consider publishing smaller messages. The original message was {1}KB.",
+                segmentCount,
+                Math.Round((double)messageLength / 1024, 1));
         }
     }
 }

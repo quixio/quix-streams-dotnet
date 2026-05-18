@@ -26,7 +26,7 @@ namespace QuixStreams.Kafka.Transport.Tests.Helpers
             {
                 ByteArray = new byte[size]
             };
-            var random = new Random();
+            var random = new Random(42);
             random.NextBytes(p.ByteArray);
 
             p.StringProp = Encoding.ASCII.GetString(p.ByteArray);

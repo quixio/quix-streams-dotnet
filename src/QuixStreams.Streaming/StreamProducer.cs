@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using QuixStreams.Kafka.Transport.SerDes.Json;
 using QuixStreams.Streaming.Exceptions;
 using QuixStreams.Streaming.Models.StreamProducer;
 using QuixStreams.Telemetry;
@@ -134,7 +135,7 @@ namespace QuixStreams.Streaming
         {
             CheckIfClosed();
             definitions.Validate();
-            var hash = JsonConvert.SerializeObject(definitions).GetHashCode();
+            var hash = JsonSerializer.Serialize(definitions, QuixJsonOptions.Default).GetHashCode();
             if (this.lastParameterDefinitionHash == hash) return;
             this.lastParameterDefinitionHash = hash;
             var send = this.Send(definitions);
@@ -186,7 +187,7 @@ namespace QuixStreams.Streaming
         {
             CheckIfClosed();
             definitions.Validate();
-            var hash = JsonConvert.SerializeObject(definitions).GetHashCode();
+            var hash = JsonSerializer.Serialize(definitions, QuixJsonOptions.Default).GetHashCode();
             if (this.lastEventDefinitionHash == hash) return;
             this.lastEventDefinitionHash = hash;
             var send = this.Send(definitions);

@@ -2,7 +2,6 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using QuixStreams.Streaming.Models;
-using QuixStreams.Streaming.States;
 using QuixStreams.Telemetry;
 using QuixStreams.Telemetry.Kafka;
 
@@ -16,7 +15,6 @@ namespace QuixStreams.Streaming
         private readonly ILogger logger = Logging.CreateLogger<StreamConsumer>();
         private readonly TelemetryKafkaConsumer telemetryKafkaConsumer;
         private bool isDisposed = false;
-        private readonly object stateLock = new object();
         
         /// <inheritdoc />
         public event EventHandler<IStreamConsumer> OnStreamReceived;
@@ -102,7 +100,6 @@ namespace QuixStreams.Streaming
             {
                 if (iStreamPipeline is IStreamConsumer streamConsumer)
                 {
-                    StreamStateManager.TryRevoke(streamConsumer.Id);
                 }
             }
             
@@ -127,22 +124,6 @@ namespace QuixStreams.Streaming
             telemetryKafkaConsumer.Stop();
         }
 
-        /// <inheritdoc />
-        public StreamStateManager GetStreamStateManager(string streamId)
-        {
-            if (!this.telemetryKafkaConsumer.ContextCache.TryGet(streamId, out var streamContext))
-            {
-                throw new ArgumentException($"Stream {streamId} not found. It hasn't been consumed by this consumer.");
-            }
-
-            var topicPartition = streamContext.LastTopicPartitionOffset.Partition.Value;
-
-            this.logger.LogTrace("Creating Stream state manager for {0}", streamId);
-            return StreamStateManager.GetOrCreate(this,
-                new StreamConsumerId(telemetryKafkaConsumer.GroupId, telemetryKafkaConsumer.Topic, topicPartition, streamId),
-                Logging.Factory);
-        }
-        
         /// <inheritdoc />
         public void Dispose()
         {

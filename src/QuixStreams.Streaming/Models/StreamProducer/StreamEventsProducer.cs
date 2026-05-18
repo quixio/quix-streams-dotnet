@@ -265,7 +265,7 @@ namespace QuixStreams.Streaming.Models.StreamProducer
             {
                 this.FlushDefinitions();
             }
-            catch (StreamClosedException exception) when (this.isDisposed)
+            catch (StreamClosedException) when (this.isDisposed)
             {
                 // Ignore exception because the timer flush definition may finish executing only after closure due to how close lock works in streamProducer
             }

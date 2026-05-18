@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json;
+using QuixStreams.Kafka.Transport.SerDes.Json;
 
 namespace QuixStreams.Telemetry.Models
 {
@@ -87,10 +88,7 @@ namespace QuixStreams.Telemetry.Models
         /// <returns>Json string</returns>
         public string ToJson()
         {
-            JsonSerializerSettings settings = new JsonSerializerSettings();
-            settings.Formatting = Formatting.Indented;
-
-            return JsonConvert.SerializeObject(this, settings);
+            return JsonSerializer.Serialize(this, QuixJsonOptions.Indented);
         }
     }
 

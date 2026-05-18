@@ -17,7 +17,7 @@ namespace QuixStreams.Transport.Kafka.Tests
                 await this.AdminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification() { Name = topic, NumPartitions = partitionCount } });
                 Console.WriteLine($"Created topic {topic} with desired {partitionCount} partitions");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // it exists
             }
@@ -41,7 +41,7 @@ namespace QuixStreams.Transport.Kafka.Tests
             }
             catch (CreatePartitionsException ex)
             {
-                if (!ex.Message.Contains($"Topic already has {partitionCount} partitions")) throw;
+                if (!ex.Message.Contains($"Topic already has {partitionCount} partition")) throw;
             }
             await EnsureTopic(topic, partitionCount);
         }

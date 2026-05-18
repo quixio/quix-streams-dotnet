@@ -33,5 +33,4 @@ nav:
     - 'Publishing data': 'publish.md'
     - 'Subscribing to data': 'subscribe.md'
     - 'Processing data': 'process.md'
-    - 'State management': 'state-management.md'
     - 'Migration guide': 'versionmigration.md'

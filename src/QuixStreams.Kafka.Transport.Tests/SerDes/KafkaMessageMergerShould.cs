@@ -11,7 +11,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
     public class KafkaMessageMergerShould
     {
         [Fact]
-        public void Modify_MergeReturnsBytes_ShouldRaisePackageAndReturnCompletedTask()
+        public async Task Modify_MergeReturnsBytes_ShouldRaisePackageAndReturnCompletedTask()
         {
             // Arrange
             var random = new Random();
@@ -31,7 +31,7 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             var task = merger.Merge(package);
 
             // Assert
-            task.Wait(2000);
+            await task.WaitAsync(TimeSpan.FromSeconds(2));
             task.IsCompleted.Should().BeTrue();
             kafkaMessage.Should().NotBeNull();
             (kafkaMessage.Value).Should().BeEquivalentTo(package.Value);
@@ -204,6 +204,37 @@ namespace QuixStreams.Kafka.Transport.Tests.SerDes
             
             // Assert
             packagesReceived.Should().BeEquivalentTo(expectedOrder, o => o.WithStrictOrdering());
+        }
+
+        [Fact]
+        public async Task Modify_HeaderSplitPackageWith256Segments_ShouldMerge()
+        {
+            // Arrange
+            PackageSerializationSettings.Mode = PackageSerializationMode.Header;
+            var valuableMessageSize = 50;
+            var allowedKafkaMessage = KafkaMessageSplitter.ExpectedHeaderSplitInfoSize + valuableMessageSize;
+            var splitter = new KafkaMessageSplitter(allowedKafkaMessage);
+            var merger = new KafkaMessageMerger(new KafkaMessageBuffer());
+            var originalMessage = this.CreateMessage(valuableMessageSize * 256);
+            var segments = splitter.Split(originalMessage).ToList();
+
+            KafkaMessage receivedMessage = null;
+            merger.OnMessageAvailable = (message) =>
+            {
+                receivedMessage = message;
+                return Task.CompletedTask;
+            };
+
+            // Act
+            foreach (var segment in segments)
+            {
+                await merger.Merge(segment);
+            }
+
+            // Assert
+            segments.Count.Should().Be(256);
+            receivedMessage.Should().NotBeNull();
+            receivedMessage.Value.Should().BeEquivalentTo(originalMessage.Value);
         }
         
         

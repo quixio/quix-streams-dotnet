@@ -58,7 +58,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             var modelKey = Constants.Utf8NoBOMEncoding.GetString(modelKeyBytes);
 
             var codec = CodecRegistry.RetrieveCodec(modelKey, codecId);
-            var key = Constants.Utf8NoBOMEncoding.GetString(message.Key);
+            var key = message.Key == null ? null : Constants.Utf8NoBOMEncoding.GetString(message.Key);
             
             if (codec == null)
             {
@@ -90,7 +90,7 @@ namespace QuixStreams.Kafka.Transport.SerDes
             var transportPackageValue = TransportPackageValueCodec.Deserialize(message.Value);
             var valueCodec = this.LegacyGetCodec(transportPackageValue.CodecBundle);
             var value = this.LegacyDeserializeToObject(valueCodec, transportPackageValue);
-            var key = message.Key == null ? string.Empty : Constants.Utf8NoBOMEncoding.GetString(message.Key);
+            var key = message.Key == null ? null : Constants.Utf8NoBOMEncoding.GetString(message.Key);
 
 
             var transportPackage = new TransportPackage(valueCodec.Type, key, value, message);
