@@ -7,6 +7,8 @@ namespace QuixStreams.Kafka
 {
     public class ConsumerConfiguration
     {
+        public ConsumerRecoveryPolicy Recovery { get; set; } = new ConsumerRecoveryPolicy();
+
         private readonly IDictionary<string, string> consumerProperties = new Dictionary<string, string>();
         public static string ConsumerGroupIdWhenNotSet = "UNSET-" +Guid.NewGuid().ToString("D"); // technically any random static would do, but in case something does commit under that consumer id, it would possibly break things
 

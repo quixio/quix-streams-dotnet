@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -13,24 +12,20 @@ namespace QuixStreams.Kafka
     /// <summary>
     /// Kafka consumer implemented using polling mechanism from Kafka
     /// </summary>
-    public class KafkaConsumer : IKafkaConsumer
+    public partial class KafkaConsumer : IKafkaConsumer, IKafkaConsumerDiagnostics
     {
         private readonly ILogger logger = Logging.CreateLogger<KafkaConsumer>();
-        private bool disableKafkaLogsByConnectWorkaround = false; // if enabled, no actual kafka logs should be shown
         private readonly ConsumerConfig config;
 
         private readonly object consumerLock = new object();
 
         private readonly ConsumerTopicConfiguration consumerTopicConfiguration;
-        private readonly object workerThreadLock = new object();
 
         private IConsumer<byte[]?, byte[]>? consumer;
-        private bool disposed;
-        private bool closing;
-        private bool disconnected; // connection is deemed dead
+        private volatile bool disposed;
+        private volatile bool closing;
+        private volatile bool disconnected; // connection is deemed dead
         private bool canReconnect = true;
-        private DateTime? lastReconnect = null;
-        private readonly TimeSpan minimumReconnectDelay = TimeSpan.FromSeconds(30); // the absolute minimum time between two reconnect attempts
 
         private Task? workerTask;
         private TaskCompletionSource<object?>? workerTaskPollFinished; // Resolved when WorkerTask's polling loop is completed. Used for stopping more efficiently
@@ -95,118 +90,23 @@ namespace QuixStreams.Kafka
         public KafkaConsumer(ConsumerConfiguration consumerConfiguration,
             ConsumerTopicConfiguration consumerTopicConfiguration)
         {
+            this.recoveryPolicy = consumerConfiguration.Recovery.ValidateAndCopy();
             this.consumerTopicConfiguration = consumerTopicConfiguration;
             this.config = GetKafkaConsumerConfig(consumerConfiguration);
+            this.config.EnablePartitionEof = true;
             this.consumerGroupSet = consumerConfiguration.ConsumerGroupSet;
             this.checkForKeepAlivePackets = consumerConfiguration.CheckForKeepAlivePackets;
-            this.configId = GetConfigId();
+            this.configId = Guid.NewGuid().ToString("N");
 
             this.OnMessageReceived = message => Task.CompletedTask; 
             
-            // Helpers
-            string GetConfigId()
-            {
-                var logBuilder = new StringBuilder();
-                var configId = Guid.NewGuid().GetHashCode().ToString("X8");
-                logBuilder.AppendLine();
-                logBuilder.AppendLine("=================== Kafka Consumer Configuration =====================");
-                logBuilder.AppendLine("= Configuration Id: " + configId);
-                if (consumerTopicConfiguration.Partitions != null && consumerTopicConfiguration.Partitions.Any())
-                {
-                    if (consumerTopicConfiguration.Partitions.Count == 1)
-                    {
-                        logBuilder.AppendLine(
-                            $"= Topic with partition: {consumerTopicConfiguration.Partitions.First()}");
-                    }
-                    else
-                    {
-                        logBuilder.AppendLine("= Topics with partitions");
-                        foreach (var topicConfigurationPartition in consumerTopicConfiguration.Partitions)
-                        {
-                            logBuilder.AppendLine(
-                                $"=   |_{topicConfigurationPartition.Topic}[{topicConfigurationPartition.Partition.Value} | {topicConfigurationPartition.Offset}]");
-                        }
-                    }
-                }
-
-                if (consumerTopicConfiguration.Topics != null && consumerTopicConfiguration.Topics.Any())
-                {
-                    if (consumerTopicConfiguration.Topics.Count == 1)
-                    {
-                        logBuilder.AppendLine($"= Topic: {consumerTopicConfiguration.Topics.First()}");
-                    }
-                    else
-                    {
-                        logBuilder.AppendLine("= Topics");
-                        foreach (var topic in consumerTopicConfiguration.Topics)
-                        {
-                            logBuilder.AppendLine($"=   |_{topic}");
-                        }
-                    }
-                }
-
-                if (this.consumerGroupSet)
-                {
-                    logBuilder.AppendLine($"= ConsumerGroup: {this.config.GroupId}");
-                    if (!string.IsNullOrWhiteSpace(this.config.GroupInstanceId))
-                    {
-                        logBuilder.AppendLine($"= ConsumerInstanceId: {this.config.GroupInstanceId}");
-                    }
-                }
-
-                foreach (var keyValuePair in this.config)
-                {
-                    if (keyValuePair.Key?.IndexOf("password", StringComparison.InvariantCultureIgnoreCase) > -1 ||
-                        keyValuePair.Key?.IndexOf("username", StringComparison.InvariantCultureIgnoreCase) > -1 ||
-                        keyValuePair.Key?.IndexOf("ssl.ca.pem", StringComparison.InvariantCultureIgnoreCase) > -1)
-                    {
-                        logBuilder.AppendLine($"= {keyValuePair.Key}: [REDACTED]");
-                    }
-                    else logBuilder.AppendLine($"= {keyValuePair.Key}: {keyValuePair.Value}");
-                }
-
-                logBuilder.Append("======================================================================");
-                this.logger.LogDebug(logBuilder.ToString());
-
-                return configId;
-            }
         }
 
-        private ConsumerConfig GetKafkaConsumerConfig(ConsumerConfiguration consumerConfiguration)
+        private ConsumerConfig GetKafkaConsumerConfig(ConsumerConfiguration consumerConfiguration) => consumerConfiguration.ToConsumerConfig();
+
+        private void CreateConsumer()
         {
-            var config = consumerConfiguration.ToConsumerConfig();
-            config.Debug = config.Debug;
-            if (!string.IsNullOrWhiteSpace(config.Debug))
-            {
-                if (config.Debug.Contains("all")) return config;
-                if (config.Debug.Contains("queue")) return config;
-                // There is a debug configuration other than all or queue
-                this.logger.LogDebug("In order to enable a workaround to wait for consumer to become ready, additional queue logs will be visible");
-                config.Debug = (config.Debug.TrimEnd(new[] { ',', ' ' }) + ",queue").TrimStart(',');
-                return config;
-            }
-
-            disableKafkaLogsByConnectWorkaround = true;
-            config.Debug = "queue";
-
-            return config;
-        }
-        
-        /// <inheritdoc />
-        public void Open()
-        {
-            if (this.disposed)
-            {
-                throw new ObjectDisposedException($"[{this.configId}] Unable to open connection to kafka when disposed.");
-            }
-
-            if (this.consumer != null) return;
-            lock (this.consumerLock)
-            {
-                if (this.consumer != null) return;
-                this.logger.LogTrace("[{0}] Open started", this.configId);
-                closing = false;
-                this.lastRevokeCancelAction?.Invoke();
+                if (closing || disposed || Snapshot.State == ConsumerLifecycleState.Failed) return;
                 var consumerBuilder = new ConsumerBuilder<byte[]?, byte[]>(this.config);
                 consumerBuilder.SetErrorHandler(this.ConsumerErrorHandler);
                 consumerBuilder.SetOffsetsCommittedHandler(this.AutomaticOffsetsCommittedHandler);
@@ -320,12 +220,14 @@ namespace QuixStreams.Kafka
                     }
                 }
                 
-                this.consumer = consumerBuilder.Build();                
+                this.consumer = ConsumerFactory(consumerBuilder);
+                if (closing || disposed || Snapshot.State == ConsumerLifecycleState.Failed) return;
                 
                 if (partitions != null)
                 {
                     this.logger.LogTrace("[{0}] Assigning partitions {1} to consumer", this.configId, string.Join(",",partitions.Select(y=> y.TopicPartition.ToString())));
                     this.consumer.Assign(partitions);
+                    SetAssignment(partitions.Select(p => p.TopicPartition).ToList());
                     this.logger.LogTrace("[{0}] Assigned partitions {1} to consumer", this.configId, string.Join(",",partitions.Select(y=> y.TopicPartition.ToString())));
                 }
                 else
@@ -335,27 +237,8 @@ namespace QuixStreams.Kafka
                     this.logger.LogTrace("[{0}] Assigned topics to consumer", this.configId);
                 }
 
-                disconnected = false;
-                connectionEstablishedEvent.Reset();
-                var connectSw = Stopwatch.StartNew();
-                this.StartWorkerThread(this.consumer);
-                if (VerifyBrokerConnection)
-                {
-                    if (connectionEstablishedEvent.Wait(TimeSpan.FromSeconds(5)))
-                    {
-                        connectSw.Stop();
-                        this.logger.LogTrace("[{0}] Connected to broker in {1}", this.configId, connectSw.Elapsed);
-                    }
-                    else
-                    {
-                        this.logger.LogDebug("[{0}] Connection to broker was not verified in {1}", this.configId, connectSw.Elapsed);
-                    }
-                }
-
-                this.logger.LogTrace("[{0}] Open finished", this.configId);       
-            }
         }
-        
+
         private AdminClientBuilder GetAdminClientBuilder(ConsumerConfig config)
         {
             var filteredConfig = config.Where(prop =>
@@ -381,13 +264,6 @@ namespace QuixStreams.Kafka
 
         private void ConsumerLogHandler(IConsumer<byte[]?, byte[]> consumer, LogMessage msg)
         {
-            if (this.VerifyBrokerConnection && !this.connectionEstablishedEvent.IsSet && KafkaHelper.TryParseWakeup(msg, out var ready) && ready)
-            {
-                this.connectionEstablishedEvent.Set();
-            }
-
-            if (disableKafkaLogsByConnectWorkaround) return;
-
             switch (msg.Level)
             {
                 case SyslogLevel.Alert:
@@ -416,6 +292,8 @@ namespace QuixStreams.Kafka
         
         private void PartitionsLostHandler(IConsumer<byte[]?, byte[]> consumer, List<TopicPartitionOffset> topicPartitionOffsets)
         {
+            if (!ReferenceEquals(consumer, this.consumer)) return;
+            SetAssignment(null);
             try
             {
                 this.lastRevokeCancelAction?.Invoke();
@@ -440,6 +318,8 @@ namespace QuixStreams.Kafka
 
         private void PartitionsRevokedHandler(IConsumer<byte[]?, byte[]> consumer, List<TopicPartitionOffset> topicPartitionOffsets)
         {
+            if (!ReferenceEquals(consumer, this.consumer)) return;
+            SetAssignment(null);
             try
             {
                 lastRevokingState = null;
@@ -453,7 +333,7 @@ namespace QuixStreams.Kafka
 
                 this.OnRevoking?.Invoke(this, new RevokingEventArgs(topicPartitionOffsets));
                 this.lastRevokingState = topicPartitionOffsets;
-                var cts = new CancellationTokenSource();
+                revokeDeadline = UtcNow().AddMilliseconds(RevokeTimeoutPeriodInMs);
                 var shouldInvoke = true;
                 lastRevokeCancelAction = () =>
                 {
@@ -461,8 +341,7 @@ namespace QuixStreams.Kafka
                     this.lastRevokeCancelAction = null;
                     this.lastRevokingState = null;
                     this.lastRevokeCompleteAction = null;
-                    cts.Cancel();
-                    cts.Dispose();
+                    revokeDeadline = null;
                 };
                 lastRevokeCompleteAction = () =>
                 {
@@ -485,8 +364,7 @@ namespace QuixStreams.Kafka
                 }
                 else
                 {
-                    Task.Delay(RevokeTimeoutPeriodInMs, cts.Token).ContinueWith(t => lastRevokeCompleteAction(),
-                        TaskContinuationOptions.OnlyOnRanToCompletion);
+                    // Completed by the lifecycle owner on a later poll; never by a timer thread.
                 }
             }
             catch (Exception ex)
@@ -495,19 +373,17 @@ namespace QuixStreams.Kafka
             }
         }
 
-        private void PartitionsAssignedHandler(IConsumer<byte[]?, byte[]> consumer, List<TopicPartition> topicPartitions)
+        internal void PartitionsAssignedHandler(IConsumer<byte[]?, byte[]> consumer, List<TopicPartition> topicPartitions)
         {
             if (consumer == null) throw new ArgumentNullException(nameof(consumer));
+            if (!ReferenceEquals(consumer, this.consumer)) return;
+            SetAssignment(topicPartitions);
             try
             {
                 var lrs = this.lastRevokingState;
                 this.lastRevokeCancelAction?.Invoke();
 
                 var assignedPartitions = topicPartitions.ToList(); // Just in case source doesn't like us modifying this list
-                if (this.VerifyBrokerConnection && !this.connectionEstablishedEvent.IsSet && assignedPartitions.Count > 0)
-                {
-                    this.connectionEstablishedEvent.Set();
-                }
                 if (lrs != null && this.OnRevoked != null)
                 {
                     var sameTopicPartitions = topicPartitions
@@ -600,13 +476,17 @@ namespace QuixStreams.Kafka
             //
         }
 
-        private void ConsumerErrorHandler(IConsumer<byte[]?, byte[]> consumer, Error error)
+        internal void ConsumerErrorHandler(IConsumer<byte[]?, byte[]> consumer, Error error)
         {
             this.OnErrorOccurredHandler(new KafkaException(error));
         }
 
         private void OnErrorOccurredHandler(KafkaException exception)
         {
+            if (exception.Error.IsFatal) { Fail(exception.Error.Code.ToString(), "Fatal consumer error"); disconnected = true; }
+            else if (IsOffsetInitializationFailure(exception.Error))
+                RequestRecovery(exception.Error.Code.ToString(), "Committed offset initialization failed");
+
             if (exception.Message.ToLowerInvariant().Contains("disconnect"))
             {
                 var match = Constants.ExceptionMsRegex.Match(exception.Message);
@@ -628,14 +508,14 @@ namespace QuixStreams.Kafka
             if (exception.Message.Contains("Local: Maximum application poll interval (max.poll.interval.ms) exceeded"))
             {
                 this.logger.LogWarning(exception, "[{0}] Processing of package took longer ({1}ms) than configured max.poll.interval.ms ({2}ms). Application was deemed dead/stuck and the consumer left the group so the assigned partitions could be assigned to a live application instance. Consider setting max.poll.interval.ms to a higher number if this a valid use case.", this.configId, Math.Round(currentPackageProcessTime.Elapsed.TotalMilliseconds), this.config.MaxPollIntervalMs ?? 300000);
-                this.disconnected = true;
+                RequestRecovery(exception.Error.Code.ToString(), "Consumer disconnected");
                 return;
             }
             
             if (exception.Message.Contains("Broker: Static consumer fenced by other consumer with same group.instance.id"))
             {
                 this.logger.LogWarning(exception, "[{0}] Static consumer fenced by other consumer with same group.instance.id '{1}' in group '{2}'.", this.configId, this.config.GroupInstanceId, this.config.GroupId);
-                this.disconnected = true;
+                RequestRecovery(exception.Error.Code.ToString(), "Consumer disconnected");
                 return;
             }
             
@@ -644,6 +524,7 @@ namespace QuixStreams.Kafka
                 this.logger.LogError(exception, "[{0}] Broker: Invalid session timeout {1}", this.configId, this.config.SessionTimeoutMs);
                 this.disconnected = true;
                 this.canReconnect = false;
+                Fail(exception.Error.Code.ToString(), "Invalid consumer session timeout");
                 return;
             }
             
@@ -673,175 +554,69 @@ namespace QuixStreams.Kafka
             {
                 // wrap error to include configId
                 var wrappedError = new KafkaException(new Error(exception.Error.Code, $"[{this.configId}] {exception.Error.Reason}", exception.Error.IsFatal), exception.InnerException);
-                this.OnErrorOccurred?.Invoke(this, wrappedError);
+                NotifyError(wrappedError);
             }
         }
 
         /// <inheritdoc />
         public void Close()
         {
-            if (this.consumer == null) return;
-            IConsumer<byte[]?, byte[]> cons;
-            lock (this.consumerLock)
+            Task? task;
+            lock (lifecycleLock)
             {
-                cons = this.consumer;
-                if (cons == null) return;
-                this.consumer = null;
+                closing = true;
+                workerTaskCts?.Cancel();
+                task = workerTask;
             }
-
-            this.logger.LogTrace("[{0}] Close Started", this.configId);
-            closing = true;
-            if (lastRevokeCompleteAction != null)
+            if (ownerContext.Value) return;
+            if (task != null && !task.Wait(recoveryPolicy.ShutdownTimeout))
             {
-                this.logger.LogTrace("[{0}] Invoking lastRevokeCompleteAction", this.configId);
-                lastRevokeCompleteAction?.Invoke();
-                this.logger.LogTrace("[{0}] Finished lastRevokeCompleteAction", this.configId);
+                Fail("ShutdownTimeout", "Lifecycle owner did not stop within shutdown budget");
+                return; // Only the owner may dispose a native consumer, after Consume returns.
             }
-
-            this.workerTaskCts?.Cancel();
-            try
-            {
-                this.logger.LogTrace("[{0}] Waiting for workerTaskPoll to finish", this.configId);
-                this.workerTaskPollFinished?.Task?.Wait(-1); // length of the wait depends on how long each message takes to get processed
-                this.workerTask = null;
-                this.workerTaskPollFinished = null;
-                this.logger.LogTrace("[{0}] Finished workerTaskPoll", this.configId);
-            }
-            catch (Exception ex)
-            {
-                // Any exception which happens here is related to worker task itself, not the processing of the msges
-                this.logger.LogDebug(ex, "[{0}] WorkerTask failed when closing", this.configId);
-            }
-
-            try
-            {
-                this.logger.LogTrace("[{0}] Closing underlying kafka consumer", this.configId);
-                cons.Close(); // can't close before we're done returning from consumer.consume due to AccessViolationException, so
-                // while it would look like we could close consumer sooner than this, we can't really.
-            }
-            catch (Exception ex)
-            {
-                var loglevel = LogLevel.Information;
-                if (ex.Message.Contains("Static consumer fenced by other consumer with same group.instance.id")) loglevel = LogLevel.Debug; // not relevant enough
-                this.logger.Log(loglevel, ex, "[{0}] Consumer close encountered exception", this.configId);
-            }
-            finally
-            {
-                cons.Dispose();
-                this.logger.LogTrace("[{0}] Closed underlying kafka consumer", this.configId);
-            }
-            closing = false;
-            this.logger.LogTrace("[{0}] Close Finished", this.configId);
+            lock (lifecycleLock)
+                if (ReferenceEquals(task, workerTask)) Publish(ConsumerLifecycleState.Stopped);
         }
 
-        private async Task PollingWork(IConsumer<byte[]?, byte[]> consumer, CancellationToken workerCt)
+        private async Task PollingWork(IConsumer<byte[]?, byte[]> native, CancellationToken ct)
         {
             try
             {
-                bool reconnect = false;
-                logger.LogTrace("[{0}] Kafka polling work starting", this.configId);
-                while (!workerCt.IsCancellationRequested)
+                while (!ct.IsCancellationRequested && !disconnected)
                 {
-                    using (var timedCts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
-                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(workerCt, timedCts.Token))
+                    try
                     {
-                        try
+                        var cr = native.Consume(TimeSpan.FromMilliseconds(100));
+                        lock (diagnosticsLock) lastPoll = UtcNow();
+                        if (cr != null)
                         {
-                            logger.LogTrace("[{0}] Polling msg", this.configId);
-                            var cr = consumer.Consume(linkedCts.Token);
-                            if (seekFunc(cr))
+                            if (!cr.IsPartitionEOF && seekFunc(cr)) continue;
+                            lock (diagnosticsLock)
                             {
-                                logger.LogDebug(
-                                    "[{0}] Polled for msg, but dropped because it came from a partition which we seeked into further than this message.",
-                                    this.configId);
-                                continue;
+                                if (assignmentSettled) initialized.Add(cr.TopicPartition);
+                                if (!cr.IsPartitionEOF) lastRecord = UtcNow();
                             }
-
-                            logger.LogTrace("[{0}] Polled for msg", this.configId);
-                            if (cr == null) continue;
-                            
-                            if (this.VerifyBrokerConnection && !this.connectionEstablishedEvent.IsSet) connectionEstablishedEvent.Set();
-                            currentPackageProcessTime.Restart();
-                            await this.AddMessage(cr);
-                            currentPackageProcessTime.Stop();
-                        }
-                        catch (ConsumeException e)
-                        {
-                            this.OnErrorOccurredHandler(e);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            if (workerCt.IsCancellationRequested)
+                            ConfirmReady();
+                            if (!cr.IsPartitionEOF)
                             {
-                                // Ensure the consumer leaves the group cleanly and final offsets are committed.
-                                this.Close();
-                                break;
+                                currentPackageProcessTime.Restart();
+                                await AddMessage(cr);
+                                currentPackageProcessTime.Stop();
                             }
-
-                            logger.LogTrace("[{0}] Polled for msg, got nothing", this.configId); // timed out, try again
-                            continue;
                         }
-                        catch (Exception e)
-                        {
-                            this.logger.LogDebug(e, "[{0}] Exception occurred while polling Kafka", this.configId);
-                        }
+                        else ConfirmReady();
+                        RefreshSnapshot();
                     }
-
-                    if (disconnected)
-                    {
-                        this.disconnected = false;
-                        reconnect = true;
-                        break;
-                    }
+                    catch (ConsumeException ex) { OnErrorOccurredHandler(ex); }
+                    catch (OperationCanceledException) { }
+                    if (revokeDeadline.HasValue && UtcNow() >= revokeDeadline.Value) lastRevokeCompleteAction?.Invoke();
+                    if (Snapshot.State != ConsumerLifecycleState.Running && UtcNow() - initializationStarted >= recoveryPolicy.InitializationTimeout)
+                        RequestRecovery("InitializationTimeout", "Assignment initialization deadline expired");
+                    if (episodeStarted.HasValue && UtcNow() - episodeStarted.Value >= recoveryPolicy.EpisodeTimeout)
+                    { Fail("RecoveryTimeout", "Recovery episode budget exhausted"); disconnected = true; }
                 }
-
-                this.workerTaskPollFinished?.SetResult(null);
-
-                reconnect = reconnect && !closing && !disposed;
-                if (!reconnect)
-                {
-                    logger.LogTrace("[{0}] Kafka polling work finished", this.configId);
-                    return;
-                }
-
-                if (!canReconnect)
-                {
-                    logger.LogTrace("[{0}] Kafka disconnected but is not allowed to reconnect.", this.configId);
-                    return;
-                }
-
-                if (disposed) return; // nothing to do here
-                logger.LogDebug("[{0}] Disconnecting from kafka as connection is deemed dead", this.configId);
-                this.Close();
-                // Not able to wait for it as the close is waiting for this method to complete
-                if (lastReconnect != null)
-                {
-                    var cutoff = lastReconnect.Value.Add(minimumReconnectDelay);
-                    var diff = cutoff - DateTime.UtcNow;
-                    if (diff > TimeSpan.Zero)
-                    {
-                        logger.LogDebug("[{0}] Kafka is reconnecting after {1:g} delay", this.configId, diff);
-                        await Task.Delay(diff);
-                    }
-                }
-
-                logger.LogDebug("[{0}] Reconnecting to kafka", this.configId);
-                if (disposed)
-                {
-                    logger.LogDebug("[{0}] Unable to reconnect to Kafka as {1} is disposed", this.configId, nameof(KafkaConsumer));
-                    return;
-                }
-
-                this.Open();
-                this.lastReconnect = DateTime.UtcNow;
-                logger.LogInformation("[{0}] Reconnected to kafka", this.configId);
             }
-            catch (Exception ex)
-            {
-                // While log and throw is an anti-pattern, this is critical enough exception for it.
-                logger.LogCritical(ex, "[{0}] Unexpected exception in kafka message poll thread", this.configId);
-                this.OnErrorOccurred?.Invoke(this, ex);
-            }
+            finally { workerTaskPollFinished?.TrySetResult(null); }
         }
 
         /// <inheritdoc />
@@ -984,35 +759,14 @@ namespace QuixStreams.Kafka
                 }
                 else
                 {
-                    this.OnErrorOccurred?.Invoke(this, ex);
+                    NotifyError(ex);
                 }
-            }
-        }
-
-        private void StartWorkerThread(IConsumer<byte[]?, byte[]> consumer)
-        {
-            if (this.workerTask != null)
-            {
-                return;
-            }
-
-            lock (this.workerThreadLock)
-            {
-                if (this.workerTask != null)
-                {
-                    return;
-                }
-                
-                this.workerTaskCts = new CancellationTokenSource();
-                this.workerTaskPollFinished = new TaskCompletionSource<object?>();
-                this.workerTask = Task.Run(async () => { await this.PollingWork(consumer, this.workerTaskCts.Token); });
             }
         }
 
         /// <inheritdocs/>
         public void Dispose()
         {
-            if (this.disposed) return;
             this.disposed = true;
             this.Close();
         }

@@ -158,6 +158,12 @@ namespace QuixStreams.Kafka.Transport
             }
             else
             {
+                kafkaConsumer.OnRevoked += (sender, args) =>
+                {
+                    try { merger.HandleRevoked(args); }
+                    finally { this.OnRevoked?.Invoke(sender, args); }
+                };
+                kafkaConsumer.OnRevoking += (sender, args) => this.OnRevoking?.Invoke(sender, args);
                 merger.OnMessageAvailable = message =>
                 {
                     var package = deserializer.Deserialize(message);

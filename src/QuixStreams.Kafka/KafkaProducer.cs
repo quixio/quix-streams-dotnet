@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -23,7 +24,7 @@ namespace QuixStreams.Kafka
         private readonly object sendLock = new object();
 
         private readonly ILogger logger = Logging.CreateLogger<KafkaProducer>();
-        private IDictionary<string, string> brokerStates = new Dictionary<string, string>();
+        private readonly ConcurrentDictionary<string, string> brokerStates = new ConcurrentDictionary<string, string>();
         private bool checkBrokerStateBeforeSend = false;
         private bool logOnNextBrokerStateUp = false;
         private bool disableKafkaLogsByBrokerLogWorkaround = false; // if enabled, no actual kafka logs should be shown
@@ -58,6 +59,12 @@ namespace QuixStreams.Kafka
         /// <param name="producerConfiguration">The publisher configuration</param>
         /// <param name="topicConfiguration">The topic configuration</param>
         public KafkaProducer(ProducerConfiguration producerConfiguration, ProducerTopicConfiguration topicConfiguration)
+            : this(producerConfiguration, topicConfiguration, builder => builder.Build())
+        {
+        }
+
+        internal KafkaProducer(ProducerConfiguration producerConfiguration, ProducerTopicConfiguration topicConfiguration,
+            Func<ProducerBuilder<byte[]?, byte[]>, IProducer<byte[]?, byte[]>> producerFactory)
         {
             this.topicConfiguration = topicConfiguration;
             this.config = this.GetKafkaProducerConfig(producerConfiguration);
@@ -155,7 +162,7 @@ namespace QuixStreams.Kafka
                 var builder = new ProducerBuilder<byte[]?, byte[]>(this.config)
                     .SetErrorHandler(this.ErrorHandler)
                     .SetLogHandler(this.ProducerLogHandler);
-                return builder.Build();
+                return producerFactory(builder);
             }
         }
 
@@ -350,14 +357,13 @@ namespace QuixStreams.Kafka
             return this.producerConfiguration.MessageMaxBytes!.Value - 1;
         }
 
-        private void ProducerLogHandler(IProducer<byte[]?, byte[]> producer, LogMessage msg)
+        internal void ProducerLogHandler(IProducer<byte[]?, byte[]> producer, LogMessage msg)
         {
             if (KafkaHelper.TryParseBrokerNameChange(msg, out var oldName, out var newName))
             {
-                if (brokerStates.ContainsKey(oldName))
+                if (brokerStates.TryRemove(oldName, out var previousState))
                 {
-                    brokerStates[newName] = brokerStates[oldName];
-                    brokerStates.Remove(oldName);
+                    brokerStates[newName] = previousState;
                     if (disableKafkaLogsByBrokerLogWorkaround) this.logger.LogTrace("[{0}] Broker {1} is now {2}", this.configId, oldName, newName);
                 }
             }
@@ -399,7 +405,7 @@ namespace QuixStreams.Kafka
             } 
         }
 
-        private void ErrorHandler(IProducer<byte[]?, byte[]> producer, Error error)
+        internal void ErrorHandler(IProducer<byte[]?, byte[]> producer, Error error)
         {
             // TODO possibly allow delegation of error up
             var ex = new KafkaException(error);
@@ -516,14 +522,17 @@ namespace QuixStreams.Kafka
                 if (checkBrokerStateBeforeSend)
                 {
                     checkBrokerStateBeforeSend = false;
-                    var upBrokerCount = this.brokerStates.Count(y => y.Value.Equals("up", StringComparison.InvariantCultureIgnoreCase));
+                    // Native log callbacks update broker states independently of sendLock.
+                    // Keep counting and logging on one snapshot without blocking those callbacks.
+                    var brokerStateSnapshot = this.brokerStates.ToArray();
+                    var upBrokerCount = brokerStateSnapshot.Count(y => y.Value.Equals("up", StringComparison.InvariantCultureIgnoreCase));
                     if (upBrokerCount == 0)
                     {
                         logOnNextBrokerStateUp = true;
                         this.logger.LogError("[{0}] None of the brokers are currently in state 'up'.", this.configId);
                         if (this.logger.IsEnabled(LogLevel.Debug))
                         {
-                            foreach (var brokerState in brokerStates)
+                            foreach (var brokerState in brokerStateSnapshot)
                             {
                                 this.logger.LogDebug("[{0}] Broker {1} has state {2}", this.configId, brokerState.Key, brokerState.Value);
                             }
@@ -531,7 +540,7 @@ namespace QuixStreams.Kafka
                     }
                     else
                     {
-                        this.logger.LogDebug("[{0}] At least {1}/{2} brokers are up (after all being marked down).", this.configId, upBrokerCount, this.brokerStates.Count);
+                        this.logger.LogDebug("[{0}] At least {1}/{2} brokers are up (after all being marked down).", this.configId, upBrokerCount, brokerStateSnapshot.Length);
                     }
                 } 
                 do
