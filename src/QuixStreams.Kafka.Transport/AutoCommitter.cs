@@ -214,9 +214,10 @@ namespace QuixStreams.Kafka.Transport
                     return;
                 }
 
-                var toClearFilter = FilterAffectedOffsets(offsets, args.Revoked);
-
-                var removed = ClearCommittedOffsets(toClearFilter);
+                // Revocation invalidates the entire partition, including when a failed native
+                // generation has no usable position (Offset.Unset). Never carry offsets into replay.
+                var revokedPartitions = new HashSet<TopicPartition>(args.Revoked.Select(p => p.TopicPartition));
+                var removed = committableOffsets.RemoveAll(p => revokedPartitions.Contains(p.TopicPartition));
 
                 if (removed > 0)
                 {
